@@ -4,10 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "pnpm --filter @relaynews/shared build",
     "dev": "tsx watch src/server.ts",
     "prebuild": "pnpm --filter @relaynews/shared build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "pretypecheck": "pnpm --filter @relaynews/shared build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "echo 'origin tests are not implemented yet'",
     "db:migrate": "tsx src/db/migrate.ts",

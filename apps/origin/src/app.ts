@@ -8,6 +8,8 @@ import { config } from "./config";
 import { createDb } from "./db";
 import type { Database } from "./db/types";
 import { refreshPublicData } from "./lib/refresh-public-data";
+import { registerAdminRoutes } from "./routes/admin";
+import { registerProbeRoutes } from "./routes/probe";
 import { registerPublicRoutes } from "./routes/public";
 
 declare module "fastify" {
@@ -32,6 +34,8 @@ export async function buildApp() {
   app.get("/health", async () => ({ ok: true }));
 
   await registerPublicRoutes(app);
+  await registerProbeRoutes(app);
+  await registerAdminRoutes(app);
 
   if (config.ENABLE_SCHEDULER) {
     cron.schedule("*/5 * * * *", async () => {

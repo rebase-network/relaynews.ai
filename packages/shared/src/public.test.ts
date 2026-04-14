@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  adminRelayUpsertSchema,
   homeSummaryResponseSchema,
   leaderboardQuerySchema,
   methodologyResponseSchema,
   publicProbeRequestSchema,
+  publicSubmissionRequestSchema,
   relayHistoryQuerySchema,
 } from "./index";
 
@@ -106,4 +108,23 @@ test("methodology payload parses", () => {
   });
 
   assert.equal(parsed.weights.availability, 35);
+});
+
+test("public submission and admin relay inputs parse", () => {
+  const submission = publicSubmissionRequestSchema.parse({
+    relayName: "Northwind Relay",
+    baseUrl: "https://northwind.example.ai/v1",
+    websiteUrl: "https://northwind.example.ai",
+    submitterEmail: "ops@example.com",
+  });
+
+  const relay = adminRelayUpsertSchema.parse({
+    slug: "northwind-relay",
+    name: "Northwind Relay",
+    baseUrl: "https://northwind.example.ai/v1",
+    catalogStatus: "active",
+  });
+
+  assert.equal(submission.relayName, "Northwind Relay");
+  assert.equal(relay.slug, "northwind-relay");
 });
