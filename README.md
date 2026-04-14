@@ -47,6 +47,7 @@ docs/
   PROBE_SECURITY.md
   ROUTES.md
 apps/
+  admin/
   web/
   origin/
     db/

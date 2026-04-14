@@ -8,6 +8,12 @@ importers:
 
   .: {}
 
+  apps/admin:
+    devDependencies:
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+
   apps/origin:
     devDependencies:
       '@types/node':

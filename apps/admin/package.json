@@ -1,0 +1,15 @@
+{
+  "name": "@relaynews/admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'admin app scaffold is not implemented yet'",
+    "build": "echo 'admin app scaffold is not implemented yet'",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "echo 'admin tests are not implemented yet'"
+  },
+  "devDependencies": {
+    "typescript": "6.0.2"
+  }
+}

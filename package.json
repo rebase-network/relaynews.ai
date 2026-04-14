@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "dev:admin": "pnpm --filter @relaynews/admin run dev",
     "dev:origin": "pnpm --filter @relaynews/origin run dev",
     "dev:web": "pnpm --filter @relaynews/web run dev",
     "typecheck": "pnpm -r run typecheck",

@@ -234,6 +234,7 @@ Recommended monorepo shape:
 
 ```txt
 apps/
+  admin/     # admin frontend app
   web/       # Cloudflare Workers frontend app
   origin/    # Fastify backend app
 packages/

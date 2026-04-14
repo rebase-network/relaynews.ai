@@ -27,7 +27,7 @@ The following decisions are already in place and should be treated as the starti
 ## Phase 1: Repository And Workspace Foundation
 
 Goal:
-- create a clean monorepo foundation for `web`, `origin`, and `shared`
+- create a clean monorepo foundation for `web`, `admin`, `origin`, and `shared`
 
 Work items:
 - initialize git repository
@@ -37,6 +37,7 @@ Work items:
   - `tsconfig.base.json`
   - `.gitignore`
 - create base directories
+  - `apps/admin`
   - `apps/web`
   - `apps/origin`
   - `packages/shared`
