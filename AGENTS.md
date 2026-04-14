@@ -18,7 +18,7 @@ Review `docs/OPEN_DESIGN_ISSUES.md` only when active unresolved design gaps exis
 
 ## Current Stack
 
-- frontend runtime: `Cloudflare Workers`
+- frontend runtime: `Cloudflare Workers Static Assets`
 - frontend app: `React Router v7 + TypeScript + Tailwind + shadcn/ui`
 - backend: `Node.js + Fastify + TypeScript`
 - database: `PostgreSQL`

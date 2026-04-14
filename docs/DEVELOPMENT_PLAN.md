@@ -109,12 +109,13 @@ Exit criteria:
 ## Phase 4: Public Web Foundation
 
 Goal:
-- render the public site shell and connect it to real public APIs
+- render the public site shell, deploy it through Cloudflare Workers Static Assets,
+  and connect it to real public APIs
 
 Work items:
 - scaffold `React Router v7 + TypeScript + Tailwind + shadcn/ui`
 - wire Cloudflare Workers runtime target
-- implement SSR or pre-render routing for:
+- implement client-rendered routing for:
   - `/`
   - `/leaderboard/:modelKey`
   - `/relay/:slug`
@@ -127,7 +128,7 @@ Work items:
 
 Exit criteria:
 - public pages render with live API data
-- SSR and hydration boundaries match `docs/ROUTES.md`
+- SPA route boundaries and browser flows match `docs/ROUTES.md`
 - critical public page flows pass browser-based smoke coverage
 
 ## Phase 5: Relay Detail Integration

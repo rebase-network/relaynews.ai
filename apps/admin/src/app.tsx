@@ -13,6 +13,8 @@ import { Link, NavLink, Route, Routes } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
+const PUBLIC_SITE_URL =
+  import.meta.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:4173";
 
 type AdminModelOption = {
   id: string;
@@ -112,7 +114,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                 {label}
               </NavLink>
             ))}
-            <a className="pill pill-ghost" href="http://127.0.0.1:4173" target="_blank" rel="noreferrer">Public site</a>
+            <a className="pill pill-ghost" href={PUBLIC_SITE_URL} target="_blank" rel="noreferrer">Public site</a>
           </div>
         </div>
       </header>

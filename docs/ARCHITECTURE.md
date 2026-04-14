@@ -24,7 +24,7 @@ The product should:
 
 ### Technology Stack
 - Frontend: React Router v7 + TypeScript + Tailwind + shadcn/ui
-- Frontend hosting/runtime: Cloudflare Workers
+- Frontend hosting/runtime: Cloudflare Workers Static Assets
 - Backend: Node.js + Fastify + TypeScript
 - Origin deployment runtime: Docker Compose on the remote server
 - Database: PostgreSQL
@@ -46,11 +46,11 @@ The product should:
 ```txt
 Browser
   -> relaynews.ai
-     -> Cloudflare Workers
-        - React app
-        - SSR / pre-render for public pages
-        - Client-side hydration
-        - Calls public API
+     -> Cloudflare Workers Static Assets
+        - built web app assets
+        - SPA fallback routing
+        - client-side data fetches
+        - calls public API
 
   -> api.relaynews.ai
      -> Cloudflare Proxy / CDN / WAF
@@ -65,12 +65,12 @@ Browser
 
 ## Runtime Responsibilities
 
-### Cloudflare Workers
-The Worker layer is the web runtime for the frontend app, not a passive file host.
+### Cloudflare Workers Static Assets
+The Worker layer is the web runtime for the frontend app deployment, but the MVP is
+currently shipped as static assets with SPA routing rather than edge SSR.
 It is responsible for:
 - serving the frontend application
-- SSR or pre-render for public pages
-- hydration handoff to the browser
+- serving SPA fallback routes for browser navigation
 - calling public API endpoints
 - edge-level headers, caching integration, and request shaping
 
@@ -137,21 +137,19 @@ Shared types and API payloads should use explicit names such as `catalogStatus`,
 
 ## Rendering Strategy
 
-Use a hybrid rendering model.
+The MVP currently uses a client-rendered SPA deployed on Cloudflare Workers Static
+Assets.
 
-### SSR / Pre-render Routes
-These routes should render HTML on the server/edge for SEO and better first paint:
-- `/`
-- `/leaderboard/:modelKey`
-- `/relay/:slug`
-- `/methodology`
-- `/submit`
+### Current Route Model
+- public routes render through the SPA shell and fetch data from the origin API
+- admin routes render through the admin SPA shell
+- probe flows and chart modules stay client-rendered
 
-### CSR Routes
-These routes can be client-rendered because they are more interactive and less SEO-sensitive:
-- `/probe`
-- `/admin/*`
-- chart-heavy interactive panels after first page load
+### Forward Compatibility
+- keep public route data contracts explicit so edge rendering or pre-render can be
+  added later without changing the origin API shape
+- prefer route modules and page composition that can evolve toward SSR if SEO needs
+  become stronger after the MVP
 
 ## Caching Strategy
 
@@ -217,7 +215,7 @@ MVP assumption:
 
 ## Security Model
 
-- `relaynews.ai` serves the public site via Cloudflare Workers
+- `relaynews.ai` serves the public site via Cloudflare Workers Static Assets
 - `api.relaynews.ai` sits behind Cloudflare Proxy
 - `admin.relaynews.ai` can be used for administrative access
 - admin endpoints should be protected with Cloudflare Access or equivalent auth
@@ -240,7 +238,7 @@ Recommended monorepo shape:
 ```txt
 apps/
   admin/     # admin frontend app
-  web/       # Cloudflare Workers frontend app
+  web/       # Cloudflare Workers Static Assets frontend app
   origin/    # Fastify backend app
 packages/
   shared/    # shared types, schemas, constants
@@ -257,8 +255,8 @@ packages/
 
 ## Notes
 
-- The selected frontend delivery model is hybrid rather than pure SPA.
-- Public routes favor SSR or pre-rendered HTML, while interactive flows can remain
-  client-rendered.
-- The frontend runtime target is Cloudflare Workers rather than a Node-only
+- The current frontend delivery model is a SPA on Cloudflare Workers Static Assets.
+- Public route contracts should stay compatible with a future move to edge rendering
+  if the product later needs stronger SEO guarantees.
+- The frontend runtime target remains Cloudflare Workers rather than a Node-only
   frontend server.

@@ -24,6 +24,8 @@ import {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
+const ADMIN_SITE_URL =
+  import.meta.env.VITE_ADMIN_SITE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:4174";
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -114,7 +116,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               {label}
             </NavLink>
           ))}
-          <a className="button-dark" href="http://127.0.0.1:4174" target="_blank" rel="noreferrer">
+          <a className="button-dark" href={ADMIN_SITE_URL} target="_blank" rel="noreferrer">
             Admin
           </a>
         </nav>

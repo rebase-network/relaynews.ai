@@ -5,9 +5,13 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "build:edge": "bash ops/manage-edge.sh build all",
     "dev:admin": "pnpm --filter @relaynews/admin run dev",
     "dev:origin": "pnpm --filter @relaynews/origin run dev",
     "dev:web": "pnpm --filter @relaynews/web run dev",
+    "deploy:admin": "bash ops/manage-edge.sh deploy admin",
+    "deploy:edge": "bash ops/manage-edge.sh deploy all",
+    "deploy:web": "bash ops/manage-edge.sh deploy web",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "test:e2e": "playwright test",
@@ -15,6 +19,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.59.1",
-    "dotenv": "17.2.3"
+    "dotenv": "17.2.3",
+    "wrangler": "^4.82.2"
   }
 }

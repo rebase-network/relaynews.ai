@@ -5,19 +5,19 @@ for each route, and the primary data source that should back it.
 
 ## Rendering Rules
 
-- use SSR or pre-render for public routes that benefit SEO, sharing, and fast first paint
-- use CSR for interactive tools, admin surfaces, and post-load chart enhancements
+- use CSR for the current MVP frontend deployed through Cloudflare Workers Static Assets
+- keep public route data boundaries clean so SSR or pre-render can be added later if needed
 - keep page data reads on snapshots or aggregate tables when possible
 
 ## Public Routes
 
 | Route | Purpose | Render | Primary Data Source |
 |---|---|---|---|
-| `/` | Homepage with status summary, model leaderboard previews, and recent updates | SSR / pre-render | `GET /public/home-summary` |
-| `/leaderboard/:modelKey` | Main leaderboard for a model | SSR / pre-render | `GET /public/leaderboard/:modelKey` |
-| `/relay/:slug` | Relay detail page with overview and trend charts | SSR shell + CSR chart enhancement | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history`, `GET /public/relay/:slug/incidents` |
-| `/methodology` | Ranking and scoring explanation | SSR / pre-render | static content or `GET /public/methodology` |
-| `/submit` | Relay submission and sponsor inquiry entry point | SSR / pre-render | static content, optional form metadata API |
+| `/` | Homepage with status summary, model leaderboard previews, and recent updates | CSR in public SPA | `GET /public/home-summary` |
+| `/leaderboard/:modelKey` | Main leaderboard for a model | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
+| `/relay/:slug` | Relay detail page with overview and trend charts | CSR in public SPA | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history`, `GET /public/relay/:slug/incidents` |
+| `/methodology` | Ranking and scoring explanation | CSR in public SPA | static content or `GET /public/methodology` |
+| `/submit` | Relay submission and sponsor inquiry entry point | CSR in public SPA | static content, optional form metadata API |
 
 ## Tooling Routes
 

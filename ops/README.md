@@ -13,6 +13,7 @@ service.
 ## Files
 
 - `ops/manage.sh` - deployment and remote operations helper
+- `ops/manage-edge.sh` - Cloudflare frontend build and deploy helper
 - `ops/origin.env.example` - production environment template for origin
 - `ops/docker-compose.origin.yml` - origin runtime definition for remote Docker deploys
 
@@ -25,6 +26,8 @@ service.
    migrations, and restart the container.
 4. Use `./ops/manage.sh status`, `./ops/manage.sh logs`, and
    `./ops/manage.sh health` for ongoing operations.
+5. Use `./ops/manage.sh releases` and `./ops/manage.sh rollback` when a release
+   needs to be inspected or reverted.
 
 ## Notes
 

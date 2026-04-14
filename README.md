@@ -15,7 +15,7 @@ The site is planned to provide:
 ## Current Architecture
 
 - Frontend: `React Router v7 + TypeScript + Tailwind + shadcn/ui`
-- Frontend runtime: `Cloudflare Workers`
+- Frontend runtime: `Cloudflare Workers Static Assets`
 - Backend: `Node.js + Fastify + TypeScript`
 - Origin deployment runtime: `Docker Compose` on the remote server
 - Database: `PostgreSQL`
@@ -46,6 +46,7 @@ docs/
   DATABASE_SCHEMA.md
   API_CONTRACT_V1.md
   DEVELOPMENT_PLAN.md
+  DEPLOYMENT.md
   TESTING_STRATEGY.md
   PROBE_SECURITY.md
   ROUTES.md
@@ -70,6 +71,7 @@ scripts/
 - Database schema: `docs/DATABASE_SCHEMA.md`
 - Public API contract: `docs/API_CONTRACT_V1.md`
 - Development plan: `docs/DEVELOPMENT_PLAN.md`
+- Deployment guide: `docs/DEPLOYMENT.md`
 - Testing strategy: `docs/TESTING_STRATEGY.md`
 - Public probe safety model: `docs/PROBE_SECURITY.md`
 - Route map and rendering strategy: `docs/ROUTES.md`
@@ -103,3 +105,5 @@ Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
 - inspect remote origin deployment paths: `./ops/manage.sh path`
 - bootstrap the remote origin host: `./ops/manage.sh bootstrap`
 - deploy the remote origin service: `./ops/manage.sh deploy`
+- preview Cloudflare frontend deploys: `./ops/manage-edge.sh preview all`
+- deploy Cloudflare frontend apps: `./ops/manage-edge.sh deploy all`

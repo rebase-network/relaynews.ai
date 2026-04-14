@@ -25,6 +25,8 @@ Commands:
   remote <cmd...>          Run an arbitrary command on the remote host
   bootstrap                Create remote directories for Docker-based origin deploys
   deploy                   Sync repo, build image, migrate DB, and restart origin
+  releases                 List remote release directories
+  rollback [release-id]    Point current to a prior release and restart origin
   status                   Show current release and docker compose status
   health                   Check the remote origin health endpoint
   logs [lines]             Show recent docker compose logs (default: 100)
@@ -149,6 +151,57 @@ docker image prune -f >/dev/null 2>&1 || true
   status_remote
 }
 
+list_releases_remote() {
+  run_remote_script "
+if [ -d '${REMOTE_RELEASES_DIR}' ]; then
+  find '${REMOTE_RELEASES_DIR}' -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+fi
+"
+}
+
+rollback_remote() {
+  local requested_release="${1:-previous}"
+
+  run_remote_script "
+$(compose_env_exports)
+if [ ! -d '${REMOTE_RELEASES_DIR}' ]; then
+  echo 'No releases directory found: ${REMOTE_RELEASES_DIR}' >&2
+  exit 1
+fi
+
+current_release=''
+if [ -L '${REMOTE_CURRENT_LINK}' ]; then
+  current_release=\$(basename \"\$(readlink '${REMOTE_CURRENT_LINK}')\")
+fi
+
+target_release='${requested_release}'
+if [ \"\$target_release\" = 'previous' ]; then
+  target_release=\$(find '${REMOTE_RELEASES_DIR}' -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | grep -vx \"\$current_release\" | tail -n 1)
+fi
+
+if [ -z \"\$target_release\" ]; then
+  echo 'Could not determine a rollback target release' >&2
+  exit 1
+fi
+
+target_dir='${REMOTE_RELEASES_DIR}/'\$target_release
+if [ ! -d \"\$target_dir\" ]; then
+  echo \"Release not found: \$target_release\" >&2
+  exit 1
+fi
+
+ln -sfn \"\$target_dir\" '${REMOTE_CURRENT_LINK}'
+cd '${REMOTE_CURRENT_LINK}'
+docker compose -f '${REMOTE_COMPOSE_FILE}' build origin
+docker compose -f '${REMOTE_COMPOSE_FILE}' up -d origin
+sleep 3
+curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
+echo \"Rolled back to \$target_release\"
+"
+
+  status_remote
+}
+
 status_remote() {
   run_remote_script "
 $(compose_env_exports)
@@ -230,6 +283,13 @@ case "${1:-help}" in
     ;;
   deploy)
     deploy_remote
+    ;;
+  releases)
+    list_releases_remote
+    ;;
+  rollback)
+    shift || true
+    rollback_remote "${1:-previous}"
     ;;
   status)
     status_remote
