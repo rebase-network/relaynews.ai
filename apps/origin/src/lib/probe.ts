@@ -117,18 +117,38 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
 
   try {
     await validateTarget(targetUrl);
-    const startedAt = Date.now();
-    const response = await fetch(targetUrl, {
-      method: "GET",
-      redirect: "manual",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      headers: {
-        authorization: `Bearer ${parsed.apiKey}`,
-        accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
-        "user-agent": "relaynews-public-probe/0.1",
-      },
-    });
-    const latencyMs = Date.now() - startedAt;
+    const candidateUrls = [new URL(targetUrl.toString())];
+    const modelsUrl = new URL(targetUrl.toString().replace(/\/?$/, "/"));
+    modelsUrl.pathname = `${modelsUrl.pathname.replace(/\/$/, "")}/models`;
+    if (modelsUrl.toString() !== targetUrl.toString()) {
+      candidateUrls.unshift(modelsUrl);
+    }
+
+    let response: Response | null = null;
+    let latencyMs = 0;
+    for (const candidate of candidateUrls) {
+      const startedAt = Date.now();
+      const nextResponse = await fetch(candidate, {
+        method: "GET",
+        redirect: "manual",
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        headers: {
+          authorization: `Bearer ${parsed.apiKey}`,
+          accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
+          "user-agent": "relaynews-public-probe/0.1",
+        },
+      });
+      latencyMs = Date.now() - startedAt;
+      response = nextResponse;
+      if (![404, 405].includes(nextResponse.status)) {
+        break;
+      }
+    }
+
+    if (!response) {
+      throw new Error("Probe request did not produce a response");
+    }
+
     const body = await readLimitedText(response.body, MAX_RESPONSE_BYTES);
     const contentType = response.headers.get("content-type") ?? "";
     const protocolOk = response.ok && (body.length > 0 || contentType.length > 0);

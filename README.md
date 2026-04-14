@@ -38,6 +38,7 @@ AGENTS.md
 package.json
 pnpm-workspace.yaml
 tsconfig.base.json
+playwright.config.ts
 docs/
   ARCHITECTURE.md
   DATABASE_SCHEMA.md
@@ -52,8 +53,10 @@ apps/
   origin/
     db/
       migrations/
+e2e/
 packages/
   shared/
+scripts/
 ```
 
 ## Document Index
@@ -82,3 +85,12 @@ packages/
 ## Execution Order
 
 Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
+
+## Local Commands
+
+- install workspace dependencies: `pnpm install`
+- start the public app: `pnpm dev:web`
+- start the admin app: `pnpm dev:admin`
+- start the origin API: `pnpm dev:origin`
+- run type checks: `pnpm typecheck`
+- run Playwright acceptance tests: `pnpm test:e2e`

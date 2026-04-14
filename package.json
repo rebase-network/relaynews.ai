@@ -9,6 +9,12 @@
     "dev:origin": "pnpm --filter @relaynews/origin run dev",
     "dev:web": "pnpm --filter @relaynews/web run dev",
     "typecheck": "pnpm -r run typecheck",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1",
+    "dotenv": "17.2.3"
   }
 }

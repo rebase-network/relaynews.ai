@@ -20,6 +20,9 @@ export function createDb() {
     connectionString: config.DATABASE_URL,
     max: config.NODE_ENV === "production" ? 10 : 4,
   });
+  pool.on("error", (error) => {
+    console.error("PostgreSQL pool error", error);
+  });
 
   return new Kysely<Database>({
     dialect: new PostgresDialect({ pool }),

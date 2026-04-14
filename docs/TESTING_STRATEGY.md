@@ -107,6 +107,13 @@ These tests help catch contract regressions earlier than full browser failures.
 - preserve Playwright traces, screenshots, and videos on failure so regressions are
   diagnosable
 
+## Current Repository Setup
+
+- the browser acceptance suite lives in `e2e/`
+- Playwright is configured from `playwright.config.ts`
+- `pnpm test:e2e` starts an isolated PostgreSQL test container, seeds the origin
+  database, boots `origin`, `web`, and `admin`, and then runs the browser suite
+
 ## Non-Goals For The MVP
 
 - do not build a broad unit-test matrix by default
