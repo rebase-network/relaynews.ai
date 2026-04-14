@@ -35,6 +35,9 @@ The site is planned to provide:
 DESIGN.md
 README.md
 AGENTS.md
+package.json
+pnpm-workspace.yaml
+tsconfig.base.json
 docs/
   ARCHITECTURE.md
   DATABASE_SCHEMA.md
@@ -44,9 +47,12 @@ docs/
   PROBE_SECURITY.md
   ROUTES.md
 apps/
+  web/
   origin/
     db/
       migrations/
+packages/
+  shared/
 ```
 
 ## Document Index
