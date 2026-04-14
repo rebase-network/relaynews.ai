@@ -9,9 +9,10 @@ REMOTE_RELEASES_DIR="${REMOTE_RELEASES_DIR:-${REMOTE_BASE_DIR}/releases}"
 REMOTE_SHARED_DIR="${REMOTE_SHARED_DIR:-${REMOTE_BASE_DIR}/shared}"
 REMOTE_CURRENT_LINK="${REMOTE_CURRENT_LINK:-${REMOTE_BASE_DIR}/current}"
 REMOTE_ENV_FILE="${REMOTE_ENV_FILE:-${REMOTE_SHARED_DIR}/origin.env}"
-REMOTE_SERVICE_NAME="${REMOTE_SERVICE_NAME:-relaynews-origin}"
-REMOTE_HEALTHCHECK_URL="${REMOTE_HEALTHCHECK_URL:-http://127.0.0.1:8787/health}"
-REMOTE_NODE_ENV="${REMOTE_NODE_ENV:-production}"
+REMOTE_COMPOSE_PROJECT="${REMOTE_COMPOSE_PROJECT:-relaynews-origin}"
+REMOTE_COMPOSE_FILE="${REMOTE_COMPOSE_FILE:-ops/docker-compose.origin.yml}"
+ORIGIN_HOST_PORT="${ORIGIN_HOST_PORT:-8787}"
+REMOTE_HEALTHCHECK_URL="${REMOTE_HEALTHCHECK_URL:-http://127.0.0.1:${ORIGIN_HOST_PORT}/health}"
 SSH_OPTS=("-o" "ServerAliveInterval=30" "-o" "StrictHostKeyChecking=accept-new")
 
 usage() {
@@ -22,22 +23,23 @@ Commands:
   help                     Show this help message
   ssh                      Open an interactive SSH session
   remote <cmd...>          Run an arbitrary command on the remote host
-  bootstrap                Create remote directories and install the systemd unit
-  deploy                   Sync repo, install, build, migrate, and restart origin
-  status                   Show service status and current release path
+  bootstrap                Create remote directories for Docker-based origin deploys
+  deploy                   Sync repo, build image, migrate DB, and restart origin
+  status                   Show current release and docker compose status
   health                   Check the remote origin health endpoint
-  logs [lines]             Tail service logs with journalctl (default: 100)
-  start                    Start the origin service
-  stop                     Stop the origin service
-  restart                  Restart the origin service
+  logs [lines]             Show recent docker compose logs (default: 100)
+  start                    Start the origin container
+  stop                     Stop the origin container
+  restart                  Restart the origin container
   env-push [local-file]    Upload a local env file to the remote origin env path
   path                     Print the derived remote paths
 
 Overrides:
   REMOTE_HOST              Default: ${REMOTE_HOST}
   REMOTE_BASE_DIR          Default: ${REMOTE_BASE_DIR}
-  REMOTE_SERVICE_NAME      Default: ${REMOTE_SERVICE_NAME}
   REMOTE_ENV_FILE          Default: ${REMOTE_ENV_FILE}
+  REMOTE_COMPOSE_PROJECT   Default: ${REMOTE_COMPOSE_PROJECT}
+  ORIGIN_HOST_PORT         Default: ${ORIGIN_HOST_PORT}
 USAGE
 }
 
@@ -60,56 +62,12 @@ $script
 EOF_REMOTE
 }
 
-render_service_unit() {
-  cat <<EOF_UNIT
-[Unit]
-Description=relaynews.ai origin API
-After=network.target
-
-[Service]
-Type=simple
-User=rebase
-WorkingDirectory=${REMOTE_CURRENT_LINK}
-EnvironmentFile=${REMOTE_ENV_FILE}
-Environment=NODE_ENV=${REMOTE_NODE_ENV}
-ExecStart=/usr/bin/env bash -lc 'cd ${REMOTE_CURRENT_LINK} && pnpm --filter @relaynews/origin start'
-Restart=always
-RestartSec=5
-KillSignal=SIGINT
-TimeoutStopSec=20
-SyslogIdentifier=${REMOTE_SERVICE_NAME}
-
-[Install]
-WantedBy=multi-user.target
-EOF_UNIT
-}
-
-bootstrap_remote() {
-  local unit_file="/tmp/${REMOTE_SERVICE_NAME}.service"
-  local escaped_service
-  escaped_service="$(render_service_unit)"
-
-  run_remote_script "
-mkdir -p '${REMOTE_RELEASES_DIR}' '${REMOTE_SHARED_DIR}'
-if [ ! -f '${REMOTE_ENV_FILE}' ]; then
-  cat > '${REMOTE_ENV_FILE}' <<'EOF_ENV'
-NODE_ENV=production
-HOST=127.0.0.1
-PORT=8787
-DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/relaynews
-ENABLE_SCHEDULER=true
-PUBLIC_PROBE_ALLOW_PRIVATE_HOSTS=false
-EOF_ENV
-fi
-cat > '${unit_file}' <<'EOF_UNIT'
-${escaped_service}
-EOF_UNIT
-sudo mv '${unit_file}' '/etc/systemd/system/${REMOTE_SERVICE_NAME}.service'
-sudo systemctl daemon-reload
-sudo systemctl enable ${REMOTE_SERVICE_NAME}
-"
-
-  echo "Bootstrap completed for ${REMOTE_HOST}"
+compose_env_exports() {
+  cat <<EOF_EXPORTS
+export ORIGIN_ENV_FILE='${REMOTE_ENV_FILE}'
+export COMPOSE_PROJECT_NAME='${REMOTE_COMPOSE_PROJECT}'
+export ORIGIN_HOST_PORT='${ORIGIN_HOST_PORT}'
+EOF_EXPORTS
 }
 
 sync_release() {
@@ -118,7 +76,7 @@ sync_release() {
   release_id="$(date +%Y%m%d%H%M%S)"
   local release_dir="${REMOTE_RELEASES_DIR}/${release_id}"
 
-  run_remote_script "mkdir -p '${release_dir}' '${REMOTE_SHARED_DIR}'"
+  run_remote_script "mkdir -p '${REMOTE_RELEASES_DIR}' '${REMOTE_SHARED_DIR}' '${release_dir}'"
 
   rsync -az --delete \
     --exclude '.git' \
@@ -138,6 +96,32 @@ sync_release() {
   echo "$release_dir"
 }
 
+bootstrap_remote() {
+  run_remote_script "
+mkdir -p '${REMOTE_RELEASES_DIR}' '${REMOTE_SHARED_DIR}'
+if [ ! -f '${REMOTE_ENV_FILE}' ]; then
+  cat > '${REMOTE_ENV_FILE}' <<'EOF_ENV'
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=8787
+DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/relaynews
+ENABLE_SCHEDULER=true
+PUBLIC_PROBE_ALLOW_PRIVATE_HOSTS=false
+EOF_ENV
+fi
+if ! command -v docker >/dev/null 2>&1; then
+  echo 'docker is required on the remote host' >&2
+  exit 1
+fi
+if ! docker compose version >/dev/null 2>&1; then
+  echo 'docker compose is required on the remote host' >&2
+  exit 1
+fi
+"
+
+  echo "Bootstrap completed for ${REMOTE_HOST}"
+}
+
 deploy_remote() {
   require_cmd ssh
   require_cmd rsync
@@ -146,20 +130,19 @@ deploy_remote() {
   release_dir="$(sync_release)"
 
   run_remote_script "
-set -a
-[ -f '${REMOTE_ENV_FILE}' ] && . '${REMOTE_ENV_FILE}'
-set +a
-cd '${release_dir}'
-corepack enable >/dev/null 2>&1 || true
-pnpm install --frozen-lockfile
-pnpm --filter @relaynews/shared build
-pnpm --filter @relaynews/origin build
-pnpm --filter @relaynews/origin run db:migrate
+$(compose_env_exports)
+if [ ! -f '${REMOTE_ENV_FILE}' ]; then
+  echo 'Missing remote env file: ${REMOTE_ENV_FILE}' >&2
+  exit 1
+fi
 ln -sfn '${release_dir}' '${REMOTE_CURRENT_LINK}'
-sudo systemctl daemon-reload
-sudo systemctl restart '${REMOTE_SERVICE_NAME}'
-sleep 2
+cd '${REMOTE_CURRENT_LINK}'
+docker compose -f '${REMOTE_COMPOSE_FILE}' build origin
+docker compose -f '${REMOTE_COMPOSE_FILE}' run --rm origin node apps/origin/dist/db/migrate.js
+docker compose -f '${REMOTE_COMPOSE_FILE}' up -d origin
+sleep 3
 curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
+docker image prune -f >/dev/null 2>&1 || true
 "
 
   echo "Deploy completed"
@@ -168,13 +151,18 @@ curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
 
 status_remote() {
   run_remote_script "
+$(compose_env_exports)
 echo 'remote_host: ${REMOTE_HOST}'
-echo 'service: ${REMOTE_SERVICE_NAME}'
+echo 'compose_project: ${REMOTE_COMPOSE_PROJECT}'
 echo 'current_release:'
 readlink '${REMOTE_CURRENT_LINK}' || true
 echo
-echo 'systemd status:'
-sudo systemctl --no-pager --full status '${REMOTE_SERVICE_NAME}' || true
+if [ -e '${REMOTE_CURRENT_LINK}/${REMOTE_COMPOSE_FILE}' ]; then
+  cd '${REMOTE_CURRENT_LINK}'
+  docker compose -f '${REMOTE_COMPOSE_FILE}' ps || true
+else
+  echo 'compose file is not available in current release yet'
+fi
 "
 }
 
@@ -184,7 +172,11 @@ health_remote() {
 
 logs_remote() {
   local lines="${1:-100}"
-  run_ssh sudo journalctl -u "$REMOTE_SERVICE_NAME" -n "$lines" --no-pager
+  run_remote_script "
+$(compose_env_exports)
+cd '${REMOTE_CURRENT_LINK}'
+docker compose -f '${REMOTE_COMPOSE_FILE}' logs --tail '${lines}' origin
+"
 }
 
 push_env() {
@@ -199,9 +191,23 @@ push_env() {
   echo "Uploaded ${local_file} -> ${REMOTE_ENV_FILE}"
 }
 
-service_action() {
+compose_action() {
   local action="$1"
-  run_ssh sudo systemctl "$action" "$REMOTE_SERVICE_NAME"
+  run_remote_script "
+$(compose_env_exports)
+cd '${REMOTE_CURRENT_LINK}'
+case '${action}' in
+  start)
+    docker compose -f '${REMOTE_COMPOSE_FILE}' up -d origin
+    ;;
+  stop)
+    docker compose -f '${REMOTE_COMPOSE_FILE}' stop origin
+    ;;
+  restart)
+    docker compose -f '${REMOTE_COMPOSE_FILE}' restart origin
+    ;;
+esac
+"
 }
 
 case "${1:-help}" in
@@ -236,7 +242,7 @@ case "${1:-help}" in
     logs_remote "${1:-100}"
     ;;
   start|stop|restart)
-    service_action "$1"
+    compose_action "$1"
     ;;
   env-push)
     shift || true
@@ -250,8 +256,10 @@ REMOTE_RELEASES_DIR=${REMOTE_RELEASES_DIR}
 REMOTE_SHARED_DIR=${REMOTE_SHARED_DIR}
 REMOTE_CURRENT_LINK=${REMOTE_CURRENT_LINK}
 REMOTE_ENV_FILE=${REMOTE_ENV_FILE}
-REMOTE_SERVICE_NAME=${REMOTE_SERVICE_NAME}
+REMOTE_COMPOSE_PROJECT=${REMOTE_COMPOSE_PROJECT}
+REMOTE_COMPOSE_FILE=${REMOTE_COMPOSE_FILE}
 REMOTE_HEALTHCHECK_URL=${REMOTE_HEALTHCHECK_URL}
+ORIGIN_HOST_PORT=${ORIGIN_HOST_PORT}
 EOF_PATH
     ;;
   *)

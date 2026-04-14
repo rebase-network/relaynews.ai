@@ -17,6 +17,7 @@ The site is planned to provide:
 - Frontend: `React Router v7 + TypeScript + Tailwind + shadcn/ui`
 - Frontend runtime: `Cloudflare Workers`
 - Backend: `Node.js + Fastify + TypeScript`
+- Origin deployment runtime: `Docker Compose` on the remote server
 - Database: `PostgreSQL`
 - Query layer: `Kysely`
 - Validation: `Zod`
@@ -56,6 +57,7 @@ apps/
       migrations/
 e2e/
 ops/
+  docker-compose.origin.yml
 packages/
   shared/
 scripts/
@@ -99,4 +101,5 @@ Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
 - run type checks: `pnpm typecheck`
 - run Playwright acceptance tests: `pnpm test:e2e`
 - inspect remote origin deployment paths: `./ops/manage.sh path`
+- bootstrap the remote origin host: `./ops/manage.sh bootstrap`
 - deploy the remote origin service: `./ops/manage.sh deploy`

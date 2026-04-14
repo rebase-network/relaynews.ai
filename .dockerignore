@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+**/node_modules
+**/dist
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+coverage
+.wrangler
+.pnpm-store
+.DS_Store
+.idea
+.vscode

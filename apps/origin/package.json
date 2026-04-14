@@ -13,9 +13,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "echo 'origin tests are not implemented yet'",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:dist": "node dist/db/migrate.js",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:dist": "node dist/db/seed.js",
     "db:reset": "pnpm run db:migrate && pnpm run db:seed",
-    "refresh:public": "tsx src/scripts/refresh-public.ts"
+    "refresh:public": "tsx src/scripts/refresh-public.ts",
+    "refresh:public:dist": "node dist/scripts/refresh-public.js"
   },
   "dependencies": {
     "@fastify/cors": "11.2.0",

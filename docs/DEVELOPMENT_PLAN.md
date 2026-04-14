@@ -238,7 +238,7 @@ Goal:
 
 Work items:
 - deploy `apps/web` to Cloudflare Workers
-- deploy `apps/origin` to the remote server
+- deploy `apps/origin` to the remote server with Docker Compose
 - configure `relaynews.ai`, `api.relaynews.ai`, and `admin.relaynews.ai`
 - configure Cloudflare cache rules, WAF, and access control
 - finalize environment variable management

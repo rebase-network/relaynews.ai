@@ -26,6 +26,7 @@ The product should:
 - Frontend: React Router v7 + TypeScript + Tailwind + shadcn/ui
 - Frontend hosting/runtime: Cloudflare Workers
 - Backend: Node.js + Fastify + TypeScript
+- Origin deployment runtime: Docker Compose on the remote server
 - Database: PostgreSQL
 - Query layer: Kysely
 - Validation: Zod
@@ -102,6 +103,10 @@ It is responsible for:
 - aggregation and score generation
 - snapshot generation for leaderboard and overview pages
 - PostgreSQL read and write operations
+
+For the MVP, the service is packaged as a Docker image and managed through Docker
+Compose on the remote host. This keeps deployment repeatable without adding another
+process manager layer.
 
 ### PostgreSQL
 PostgreSQL is the source of truth for structured data.
