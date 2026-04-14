@@ -20,6 +20,8 @@ The following decisions are already in place and should be treated as the starti
 - public pages should read snapshots or aggregate tables, not raw probe rows
 - sponsor placement must remain separate from natural ranking
 - public probe work must follow `docs/PROBE_SECURITY.md`
+- testing should follow `docs/TESTING_STRATEGY.md`
+- default to Playwright-first acceptance coverage and keep non-E2E tests narrow
 - prefer shipping thin vertical slices over building all infrastructure up front
 
 ## Phase 1: Repository And Workspace Foundation
@@ -72,11 +74,13 @@ Work items:
   - relay incidents query
   - public probe request shape
 - export reusable payload fragments such as relay summary, score summary, and incident summary
+- add shared contract smoke tests for representative request and response payloads
 
 Exit criteria:
 - `packages/shared` exports both TypeScript types and runtime validation schemas
 - `apps/web` and `apps/origin` consume the same shared contract package
 - public API field names and validation rules are no longer implicit in implementation code
+- representative contract payloads parse successfully through shared runtime schemas
 
 ## Phase 3: Origin API Foundation
 
@@ -118,10 +122,12 @@ Work items:
   - homepage using `/public/home-summary`
   - leaderboard using `/public/leaderboard/:modelKey`
   - relay overview shell using `/public/relay/:slug/overview`
+- add Playwright smoke coverage for homepage, leaderboard, and relay overview
 
 Exit criteria:
 - public pages render with live API data
 - SSR and hydration boundaries match `docs/ROUTES.md`
+- critical public page flows pass browser-based smoke coverage
 
 ## Phase 5: Relay Detail Integration
 
@@ -143,12 +149,14 @@ Work items:
 - keep overview as the first-paint payload and load secondary modules after hydration
 - use seeded rows or fixture snapshot/aggregate data for relay history and incidents
   until Phase 6 live monitoring jobs are operating
+- add Playwright acceptance coverage for relay detail modules
 
 Exit criteria:
 - relay detail page covers all modules defined in `docs/ROUTES.md`
 - page reads come from documented sources in `docs/DATABASE_SCHEMA.md`
 - relay detail APIs and page modules are contract-complete even if some data is still
   fixture-backed for development
+- relay detail browser coverage validates the seeded or fixture-backed experience
 
 ## Phase 6: Monitoring, Aggregation, And Snapshots
 
@@ -186,6 +194,7 @@ Work items:
 - add secret redaction and bounded logging rules
 - add Cloudflare-side rate limiting and optional Turnstile gating
 - build `/probe` UI against the dedicated public-safe endpoint
+- add Playwright coverage for the main public probe page flows
 - add probe security tests for:
   - URL normalization and validation
   - DNS and IP blocking of disallowed ranges
@@ -197,6 +206,7 @@ Exit criteria:
 - public probe endpoint is isolated from internal probe paths
 - no user-supplied API key is persisted by default
 - endpoint behavior respects the documented SSRF and abuse controls
+- browser coverage validates the public probe UX for success and failure states
 - probe security tests pass for the controls required by `docs/PROBE_SECURITY.md`
 
 ## Phase 8: Admin, Submit, And Sponsor Operations
@@ -213,10 +223,12 @@ Work items:
 - implement submit flow for relay intake
 - ensure sponsor placement is rendered separately from natural ranking
 - treat `sponsors` as the public source of truth for paid placement windows
+- add Playwright acceptance coverage for critical admin operations
 
 Exit criteria:
 - operators can review submissions and maintain catalog data
 - sponsor workflow does not affect natural ranking logic
+- critical admin flows pass browser-based acceptance coverage
 
 ## Phase 9: Deployment And Launch Hardening
 
@@ -230,10 +242,12 @@ Work items:
 - configure Cloudflare cache rules, WAF, and access control
 - finalize environment variable management
 - add deployment and operational runbooks
+- run staging Playwright smoke coverage before launch
 
 Exit criteria:
 - the full stack is deployable end to end
 - public pages, API, and admin surfaces are accessible through the intended domains
+- staging validation covers the critical public, probe, and admin flows
 
 ## Milestones
 

@@ -10,6 +10,7 @@ Before making changes, review:
 - `docs/DATABASE_SCHEMA.md`
 - `docs/API_CONTRACT_V1.md`
 - `docs/DEVELOPMENT_PLAN.md`
+- `docs/TESTING_STRATEGY.md`
 - `docs/PROBE_SECURITY.md`
 - `docs/ROUTES.md`
 
@@ -39,6 +40,7 @@ Review `docs/OPEN_DESIGN_ISSUES.md` only when active unresolved design gaps exis
 - user-supplied probe keys should not be persisted by default
 - public pages should favor SSR or pre-render when they benefit SEO
 - admin and probe tooling can remain CSR
+- testing should default to Playwright-first acceptance coverage
 
 ## Code Change Guidance
 
@@ -47,6 +49,9 @@ Review `docs/OPEN_DESIGN_ISSUES.md` only when active unresolved design gaps exis
 - keep naming neutral and product-specific to `relaynews.ai`
 - avoid introducing new infrastructure without documenting why it is needed
 - when adding APIs, separate `public`, `internal`, and `admin` responsibilities
+- commit each completed functional slice or document change as an atomic change set
+- commit messages must follow `Conventional Commits 1.0.0`
+- prefer messages in the form `type(scope): description` when a scope adds clarity
 
 ## Near-Term Priorities
 

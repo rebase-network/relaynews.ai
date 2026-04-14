@@ -40,6 +40,7 @@ docs/
   DATABASE_SCHEMA.md
   API_CONTRACT_V1.md
   DEVELOPMENT_PLAN.md
+  TESTING_STRATEGY.md
   PROBE_SECURITY.md
   ROUTES.md
 apps/
@@ -55,6 +56,7 @@ apps/
 - Database schema: `docs/DATABASE_SCHEMA.md`
 - Public API contract: `docs/API_CONTRACT_V1.md`
 - Development plan: `docs/DEVELOPMENT_PLAN.md`
+- Testing strategy: `docs/TESTING_STRATEGY.md`
 - Public probe safety model: `docs/PROBE_SECURITY.md`
 - Route map and rendering strategy: `docs/ROUTES.md`
 - Issue tracker for unresolved design gaps: `docs/OPEN_DESIGN_ISSUES.md`
@@ -68,6 +70,7 @@ apps/
 - public pages read snapshots or aggregate tables, not raw probe tables
 - sponsor placement and natural ranking must remain separate
 - user-supplied API keys should not be persisted by default
+- testing should be Playwright-first, with only narrow non-E2E exceptions
 
 ## Execution Order
 
