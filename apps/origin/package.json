@@ -5,14 +5,32 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "prebuild": "pnpm --filter @relaynews/shared build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "echo 'origin tests are not implemented yet'"
+    "test": "echo 'origin tests are not implemented yet'",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:reset": "pnpm run db:migrate && pnpm run db:seed",
+    "refresh:public": "tsx src/scripts/refresh-public.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "11.2.0",
+    "@fastify/sensible": "6.0.4",
+    "@relaynews/shared": "workspace:*",
+    "dotenv": "17.2.3",
+    "fastify": "5.8.5",
+    "ipaddr.js": "2.2.0",
+    "kysely": "0.28.16",
+    "node-cron": "4.2.1",
+    "pg": "8.20.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "typescript": "6.0.2",
+    "@types/node": "25.6.0",
+    "@types/pg": "8.15.5",
     "tsx": "4.21.0",
-    "@types/node": "25.6.0"
+    "typescript": "6.0.2"
   }
 }
