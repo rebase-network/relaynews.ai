@@ -26,6 +26,20 @@ const BLOCKED_CIDRS = [
 
 const MAX_RESPONSE_BYTES = 256 * 1024;
 const REQUEST_TIMEOUT_MS = 8_000;
+const RETRIABLE_HTTP_STATUSES = new Set([400, 404, 405, 415]);
+
+type ProbeAttempt = {
+  method: "GET" | "POST";
+  url: URL;
+  body?: string;
+};
+
+type ProbeAttemptResult = {
+  response: Response;
+  latencyMs: number;
+  body: string;
+  contentType: string;
+};
 
 function sanitizeMessage(value: unknown) {
   if (value instanceof Error) {
@@ -110,6 +124,116 @@ function successHealthStatus(statusCode: number) {
   return "down" as const;
 }
 
+function joinPath(basePath: string, suffix: string) {
+  const normalizedBase = basePath === "/" ? "" : basePath.replace(/\/$/, "");
+  const normalizedSuffix = suffix.startsWith("/") ? suffix : `/${suffix}`;
+  return normalizedBase ? `${normalizedBase}${normalizedSuffix}` : normalizedSuffix;
+}
+
+function buildPathVariants(targetUrl: URL) {
+  const basePath = targetUrl.pathname === "/" ? "" : targetUrl.pathname.replace(/\/$/, "");
+  const variants = new Set<string>();
+
+  if (basePath.endsWith("/v1")) {
+    variants.add(basePath);
+    variants.add(basePath.slice(0, -3) || "");
+  } else {
+    variants.add(joinPath(basePath, "/v1"));
+    variants.add(basePath);
+  }
+
+  return [...variants];
+}
+
+function withPath(targetUrl: URL, pathname: string) {
+  const nextUrl = new URL(targetUrl.toString());
+  nextUrl.pathname = pathname || "/";
+  return nextUrl;
+}
+
+function buildProbeAttempts(targetUrl: URL, parsed: PublicProbeRequest): ProbeAttempt[] {
+  const responsesBody = JSON.stringify({
+    model: parsed.model,
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: "ping",
+          },
+        ],
+      },
+    ],
+    stream: true,
+    max_output_tokens: 1,
+  });
+
+  const chatCompletionsBody = JSON.stringify({
+    model: parsed.model,
+    messages: [
+      {
+        role: "user",
+        content: "ping",
+      },
+    ],
+    stream: true,
+    max_tokens: 1,
+  });
+
+  return buildPathVariants(targetUrl).flatMap((basePath) => [
+    {
+      method: "POST" as const,
+      url: withPath(targetUrl, joinPath(basePath, "/responses")),
+      body: responsesBody,
+    },
+    {
+      method: "POST" as const,
+      url: withPath(targetUrl, joinPath(basePath, "/chat/completions")),
+      body: chatCompletionsBody,
+    },
+    {
+      method: "GET" as const,
+      url: withPath(targetUrl, joinPath(basePath, "/models")),
+    },
+    {
+      method: "GET" as const,
+      url: withPath(targetUrl, basePath),
+    },
+  ]);
+}
+
+async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promise<ProbeAttemptResult> {
+  const startedAt = Date.now();
+  const requestInit: RequestInit = {
+    method: attempt.method,
+    redirect: "manual",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      accept: "text/event-stream,application/json,text/plain;q=0.9,*/*;q=0.8",
+      "content-type": "application/json",
+      "user-agent": "relaynews-public-probe/0.1",
+    },
+  };
+
+  if (attempt.body) {
+    requestInit.body = attempt.body;
+  }
+
+  const response = await fetch(attempt.url, requestInit);
+  const latencyMs = Date.now() - startedAt;
+  const body = await readLimitedText(response.body, MAX_RESPONSE_BYTES);
+  const contentType = response.headers.get("content-type") ?? "";
+
+  return {
+    response,
+    latencyMs,
+    body,
+    contentType,
+  };
+}
+
 export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicProbeResponse> {
   const parsed = publicProbeRequestSchema.parse(input);
   const measuredAt = new Date().toISOString();
@@ -117,56 +241,62 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
 
   try {
     await validateTarget(targetUrl);
-    const candidateUrls = [new URL(targetUrl.toString())];
-    const modelsUrl = new URL(targetUrl.toString().replace(/\/?$/, "/"));
-    modelsUrl.pathname = `${modelsUrl.pathname.replace(/\/$/, "")}/models`;
-    if (modelsUrl.toString() !== targetUrl.toString()) {
-      candidateUrls.unshift(modelsUrl);
-    }
+    let bestFailure: ProbeAttemptResult | null = null;
 
-    let response: Response | null = null;
-    let latencyMs = 0;
-    for (const candidate of candidateUrls) {
-      const startedAt = Date.now();
-      const nextResponse = await fetch(candidate, {
-        method: "GET",
-        redirect: "manual",
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        headers: {
-          authorization: `Bearer ${parsed.apiKey}`,
-          accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
-          "user-agent": "relaynews-public-probe/0.1",
-        },
-      });
-      latencyMs = Date.now() - startedAt;
-      response = nextResponse;
-      if (![404, 405].includes(nextResponse.status)) {
+    for (const attempt of buildProbeAttempts(targetUrl, parsed)) {
+      const result = await executeProbeAttempt(attempt, parsed.apiKey);
+      const protocolOk = result.response.ok && (result.body.length > 0 || result.contentType.length > 0);
+
+      if (result.response.ok && protocolOk) {
+        return publicProbeResponseSchema.parse({
+          ok: true,
+          targetHost: targetUrl.hostname,
+          model: parsed.model,
+          connectivity: {
+            ok: true,
+            latencyMs: result.latencyMs,
+          },
+          protocol: {
+            ok: true,
+            healthStatus: successHealthStatus(result.response.status),
+            httpStatus: result.response.status,
+          },
+          message: null,
+          measuredAt,
+        });
+      }
+
+      if (
+        !bestFailure
+        || (bestFailure.response.status === 404 && result.response.status !== 404)
+        || (bestFailure.response.status === 405 && ![404, 405].includes(result.response.status))
+      ) {
+        bestFailure = result;
+      }
+
+      if (!RETRIABLE_HTTP_STATUSES.has(result.response.status)) {
         break;
       }
     }
 
-    if (!response) {
+    if (!bestFailure) {
       throw new Error("Probe request did not produce a response");
     }
 
-    const body = await readLimitedText(response.body, MAX_RESPONSE_BYTES);
-    const contentType = response.headers.get("content-type") ?? "";
-    const protocolOk = response.ok && (body.length > 0 || contentType.length > 0);
-
     return publicProbeResponseSchema.parse({
-      ok: response.ok,
+      ok: false,
       targetHost: targetUrl.hostname,
       model: parsed.model,
       connectivity: {
-        ok: response.ok,
-        latencyMs,
+        ok: true,
+        latencyMs: bestFailure.latencyMs,
       },
       protocol: {
-        ok: protocolOk,
-        healthStatus: successHealthStatus(response.status),
-        httpStatus: response.status,
+        ok: false,
+        healthStatus: successHealthStatus(bestFailure.response.status),
+        httpStatus: bestFailure.response.status,
       },
-      message: response.ok ? null : `Upstream returned ${response.status}`,
+      message: `Upstream returned ${bestFailure.response.status}`,
       measuredAt,
     });
   } catch (error) {

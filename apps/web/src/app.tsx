@@ -162,13 +162,13 @@ function StatusDot({ status }: { status: string }) {
   return <span className={clsx("inline-block h-2.5 w-2.5", tone)} />;
 }
 
-function MetricGrid({ items }: { items: Array<{ label: string; value: string | number }> }) {
+function MetricGrid({ items }: { items: Array<{ label: string; value: string | number; testId?: string }> }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
         <div key={item.label} className="border border-black/10 bg-white/75 p-4">
           <p className="kicker">{item.label}</p>
-          <p className="mt-3 text-3xl tracking-[-0.04em]">{item.value}</p>
+          <p className="mt-3 text-3xl tracking-[-0.04em]" data-testid={item.testId}>{item.value}</p>
         </div>
       ))}
     </div>
@@ -608,10 +608,10 @@ function ProbePage() {
           <Panel title="Probe result" kicker="Diagnostic output">
             <MetricGrid
               items={[
-                { label: "Host", value: result.targetHost },
-                { label: "Connectivity", value: result.connectivity.ok ? "ok" : "failed" },
-                { label: "Protocol", value: result.protocol.ok ? result.protocol.healthStatus : "unknown" },
-                { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-" },
+                { label: "Host", value: result.targetHost, testId: "probe-host-value" },
+                { label: "Connectivity", value: result.connectivity.ok ? "ok" : "failed", testId: "probe-connectivity-value" },
+                { label: "Protocol", value: result.protocol.ok ? result.protocol.healthStatus : "unknown", testId: "probe-protocol-value" },
+                { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
               ]}
             />
             {result.message ? <p className="mt-4 text-sm text-black/70">{result.message}</p> : null}

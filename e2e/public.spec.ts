@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const isDeployedRun = process.env.E2E_DEPLOYED === "1";
+const probeUrl = process.env.API_URL ?? "";
+const probeKey = process.env.API_KEY ?? "";
+const probeConfigured = Boolean(probeUrl && probeKey && probeUrl !== "https://example.com");
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await page.goto("/");
@@ -44,8 +47,7 @@ test("submit flow works from the public site", async ({ page }) => {
 });
 
 test("public probe flow returns a diagnostic result", async ({ page }) => {
-  const probeUrl = process.env.API_URL ?? "https://example.com";
-  const probeKey = process.env.API_KEY ?? "sk-demo";
+  test.skip(!probeConfigured, "Probe E2E requires API_URL and API_KEY in .env.");
   const probeModel = process.env.LLM_MODEL ?? "openai-gpt-4.1";
 
   await page.goto("/probe");
@@ -55,5 +57,8 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   await page.getByRole("button", { name: "Run probe" }).click();
 
   await expect(page.getByText("Probe result")).toBeVisible();
-  await expect(page.getByText("Host")).toBeVisible();
+  await expect(page.getByTestId("probe-host-value")).toContainText(new URL(probeUrl).host);
+  await expect(page.getByTestId("probe-connectivity-value")).toHaveText("ok");
+  await expect(page.getByTestId("probe-protocol-value")).not.toHaveText("unknown");
+  await expect(page.getByText(/^Upstream returned /)).toHaveCount(0);
 });
