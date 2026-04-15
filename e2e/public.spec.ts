@@ -4,6 +4,13 @@ const isDeployedRun = process.env.E2E_DEPLOYED === "1";
 const probeUrl = process.env.API_URL ?? "";
 const probeKey = process.env.API_KEY ?? "";
 const probeConfigured = Boolean(probeUrl && probeKey && probeUrl !== "https://example.com");
+const manualCompatibilityMode = process.env.LLM_API_TYPE ?? "auto";
+
+const manualCompatibilityLabels: Record<string, string> = {
+  "openai-responses": "OpenAI Responses",
+  "openai-chat-completions": "OpenAI Chat Completions",
+  "anthropic-messages": "Anthropic Messages",
+};
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await page.goto("/");
@@ -59,6 +66,29 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   await expect(page.getByText("Probe result")).toBeVisible();
   await expect(page.getByTestId("probe-host-value")).toContainText(new URL(probeUrl).host);
   await expect(page.getByTestId("probe-connectivity-value")).toHaveText("ok");
-  await expect(page.getByTestId("probe-protocol-value")).not.toHaveText("unknown");
+  await expect(page.getByTestId("probe-protocol-value")).toHaveText("healthy");
+  await expect(page.getByTestId("probe-detection-value")).toHaveText("Automatic");
+  await expect(page.getByTestId("probe-mode-value")).not.toHaveText("Not detected");
+  await expect(page.getByText(/^Upstream returned /)).toHaveCount(0);
+});
+
+test("public probe supports manual compatibility override", async ({ page }) => {
+  test.skip(!probeConfigured, "Probe E2E requires API_URL and API_KEY in .env.");
+  test.skip(!manualCompatibilityLabels[manualCompatibilityMode], "Set LLM_API_TYPE to a supported manual compatibility mode.");
+  const probeModel = process.env.LLM_MODEL ?? "openai-gpt-4.1";
+
+  await page.goto("/probe");
+  await page.getByLabel("Base URL").fill(probeUrl);
+  await page.getByLabel("API key").fill(probeKey);
+  await page.getByLabel("Target model").fill(probeModel);
+  await page.locator("summary").filter({ hasText: "Advanced" }).click();
+  await page.getByLabel("Compatibility Mode").selectOption(manualCompatibilityMode);
+  await page.getByRole("button", { name: "Run probe" }).click();
+
+  await expect(page.getByText("Probe result")).toBeVisible();
+  await expect(page.getByTestId("probe-connectivity-value")).toHaveText("ok");
+  await expect(page.getByTestId("probe-protocol-value")).toHaveText("healthy");
+  await expect(page.getByTestId("probe-detection-value")).toHaveText("Manual override");
+  await expect(page.getByTestId("probe-mode-value")).toHaveText(manualCompatibilityLabels[manualCompatibilityMode]);
   await expect(page.getByText(/^Upstream returned /)).toHaveCount(0);
 });

@@ -3,6 +3,9 @@ import {
   type HomeSummaryResponse,
   type LeaderboardResponse,
   type MethodologyResponse,
+  type ProbeCompatibilityMode,
+  type ProbeDetectionMode,
+  type ProbeResolvedCompatibilityMode,
   type PublicProbeResponse,
   type RelayHistoryResponse,
   type RelayIncidentsResponse,
@@ -24,6 +27,31 @@ import {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
+
+const PROBE_COMPATIBILITY_OPTIONS: Array<{ value: ProbeCompatibilityMode; label: string }> = [
+  { value: "auto", label: "Auto detect (Recommended)" },
+  { value: "openai-responses", label: "OpenAI Responses" },
+  { value: "openai-chat-completions", label: "OpenAI Chat Completions" },
+  { value: "anthropic-messages", label: "Anthropic Messages" },
+];
+
+const PROBE_COMPATIBILITY_LABELS: Record<ProbeResolvedCompatibilityMode, string> = {
+  "openai-responses": "OpenAI Responses",
+  "openai-chat-completions": "OpenAI Chat Completions",
+  "anthropic-messages": "Anthropic Messages",
+};
+
+function formatProbeCompatibilityMode(mode: ProbeResolvedCompatibilityMode | null | undefined) {
+  return mode ? PROBE_COMPATIBILITY_LABELS[mode] : "Not detected";
+}
+
+function formatProbeDetectionMode(mode: ProbeDetectionMode | undefined) {
+  if (mode === "manual") {
+    return "Manual override";
+  }
+
+  return "Automatic";
+}
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -554,20 +582,31 @@ function SubmitPage() {
 }
 
 function ProbePage() {
-  const [state, setState] = useState({ baseUrl: "https://example.com", apiKey: "", model: "openai-gpt-4.1" });
+  const [state, setState] = useState<{
+    baseUrl: string;
+    apiKey: string;
+    model: string;
+    compatibilityMode: ProbeCompatibilityMode;
+  }>({
+    baseUrl: "https://example.com",
+    apiKey: "",
+    model: "openai-gpt-4.1",
+    compatibilityMode: "auto",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<PublicProbeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fields = [
     ["Base URL", "baseUrl"],
     ["API key", "apiKey"],
-    ["Model", "model"],
+    ["Target model", "model"],
   ] as const;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setResult(null);
     try {
       const response = await fetchJson<PublicProbeResponse>("/public/probe/check", {
         method: "POST",
@@ -587,6 +626,7 @@ function ProbePage() {
         <p className="kicker">Self-check probe</p>
         <h1 className="text-5xl leading-[0.92] tracking-[-0.06em]">Run a bounded connectivity check against a relay endpoint.</h1>
         <p className="mt-5 text-black/70">The public probe uses a tightly controlled server-side request path. It never echoes your API key back into the UI.</p>
+        <p className="mt-3 text-sm text-black/60">Most relays should work with automatic compatibility detection. Use the advanced override only when you already know the protocol shape.</p>
       </div>
       <div className="space-y-6">
         <form className="panel space-y-4" onSubmit={handleSubmit}>
@@ -602,6 +642,27 @@ function ProbePage() {
               />
             </label>
           ))}
+          <details className="border border-black/10 bg-white/70 p-4">
+            <summary className="cursor-pointer text-sm uppercase tracking-[0.16em] text-black/70">Advanced</summary>
+            <label className="mt-4 block text-sm uppercase tracking-[0.14em] text-black/65">
+              Compatibility Mode
+              <select
+                className="mt-2 w-full border border-black/15 bg-white px-4 py-3"
+                value={state.compatibilityMode}
+                onChange={(event) =>
+                  setState((current) => ({
+                    ...current,
+                    compatibilityMode: event.target.value as ProbeCompatibilityMode,
+                  }))
+                }
+              >
+                {PROBE_COMPATIBILITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <p className="mt-3 text-sm text-black/60">Automatic mode uses the target model to infer the best adapter order. Manual mode probes only the selected compatibility shape.</p>
+          </details>
           <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Checking..." : "Run probe"}</button>
         </form>
         {result ? (
@@ -612,9 +673,24 @@ function ProbePage() {
                 { label: "Connectivity", value: result.connectivity.ok ? "ok" : "failed", testId: "probe-connectivity-value" },
                 { label: "Protocol", value: result.protocol.ok ? result.protocol.healthStatus : "unknown", testId: "probe-protocol-value" },
                 { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
+                { label: "Compatibility", value: formatProbeCompatibilityMode(result.compatibilityMode), testId: "probe-mode-value" },
+                { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
               ]}
             />
+            {result.usedUrl ? (
+              <p className="mt-4 text-sm text-black/70">
+                Used endpoint: <span className="font-medium" data-testid="probe-used-url-value">{result.usedUrl}</span>
+              </p>
+            ) : null}
+            {result.attemptedModes.length > 0 ? (
+              <p className="mt-2 text-sm text-black/60">
+                Attempted modes: {result.attemptedModes.map((mode) => PROBE_COMPATIBILITY_LABELS[mode]).join(", ")}
+              </p>
+            ) : null}
             {result.message ? <p className="mt-4 text-sm text-black/70">{result.message}</p> : null}
+            {!result.ok && result.detectionMode === "auto" ? (
+              <p className="mt-2 text-sm text-[#a33a16]">If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.</p>
+            ) : null}
           </Panel>
         ) : null}
         {error ? <ErrorPanel message={error} /> : null}
