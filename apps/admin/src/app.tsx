@@ -8,7 +8,7 @@ import {
   type AdminSubmissionsResponse,
   type AdminSponsorsResponse,
 } from "@relaynews/shared";
-import { useEffect, useMemo, useState } from "react";
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Route, Routes } from "react-router-dom";
 
 const API_BASE_URL =
@@ -28,6 +28,27 @@ type MutationState = {
   error: string | null;
   success: string | null;
 };
+
+type RelayFormErrors = Partial<Record<"slug" | "name" | "baseUrl" | "providerName" | "websiteUrl" | "docsUrl", string>>;
+type SponsorFormState = {
+  relayId: string;
+  name: string;
+  placement: string;
+  status: "draft" | "active" | "paused" | "ended";
+  startAt: string;
+  endAt: string;
+};
+type SponsorFormErrors = Partial<Record<"name" | "placement" | "startAt" | "endAt", string>>;
+type PriceFormState = {
+  relayId: string;
+  modelId: string;
+  currency: string;
+  inputPricePer1M: string;
+  outputPricePer1M: string;
+  effectiveFrom: string;
+  source: AdminPriceCreate["source"];
+};
+type PriceFormErrors = Partial<Record<"relayId" | "modelId" | "inputPricePer1M" | "outputPricePer1M" | "effectiveFrom", string>>;
 
 type ApiErrorPayload = {
   message?: string | string[];
@@ -65,6 +86,167 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+function trimString(value: string | null | undefined) {
+  return value?.trim() ?? "";
+}
+
+function emptyToNull(value: string | null | undefined) {
+  const trimmed = trimString(value);
+  return trimmed ? trimmed : null;
+}
+
+function isValidHttpUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidTimestamp(value: string) {
+  return !Number.isNaN(new Date(value).getTime());
+}
+
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function withoutFieldError<T extends string>(current: Partial<Record<T, string>>, key: T) {
+  const next = { ...current };
+  delete next[key];
+  return next;
+}
+
+function validateRelayForm(form: AdminRelayUpsert) {
+  const payload: AdminRelayUpsert = {
+    slug: trimString(form.slug),
+    name: trimString(form.name),
+    baseUrl: trimString(form.baseUrl),
+    providerName: emptyToNull(form.providerName),
+    websiteUrl: emptyToNull(form.websiteUrl),
+    catalogStatus: form.catalogStatus,
+    isFeatured: form.isFeatured,
+    isSponsored: form.isSponsored,
+    description: emptyToNull(form.description),
+    docsUrl: emptyToNull(form.docsUrl),
+    notes: emptyToNull(form.notes),
+  };
+  const errors: RelayFormErrors = {};
+
+  if (!payload.slug) {
+    errors.slug = "Slug is required.";
+  }
+
+  if (!payload.name) {
+    errors.name = "Name is required.";
+  }
+
+  if (!payload.baseUrl) {
+    errors.baseUrl = "Base URL is required.";
+  } else if (!isValidHttpUrl(payload.baseUrl)) {
+    errors.baseUrl = "Enter a full base URL such as https://relay.example.ai/v1.";
+  }
+
+  if (payload.websiteUrl && !isValidHttpUrl(payload.websiteUrl)) {
+    errors.websiteUrl = "Enter a valid website URL such as https://relay.example.ai.";
+  }
+
+  if (payload.docsUrl && !isValidHttpUrl(payload.docsUrl)) {
+    errors.docsUrl = "Enter a valid docs URL such as https://relay.example.ai/docs.";
+  }
+
+  return { errors, payload };
+}
+
+function validateSponsorForm(form: SponsorFormState) {
+  const payload = {
+    relayId: form.relayId || null,
+    name: trimString(form.name),
+    placement: trimString(form.placement),
+    status: form.status,
+    startAt: trimString(form.startAt),
+    endAt: trimString(form.endAt),
+  };
+  const errors: SponsorFormErrors = {};
+
+  if (!payload.name) {
+    errors.name = "Sponsor name is required.";
+  }
+
+  if (!payload.placement) {
+    errors.placement = "Placement is required.";
+  }
+
+  if (!payload.startAt) {
+    errors.startAt = "Start time is required.";
+  } else if (!isValidTimestamp(payload.startAt)) {
+    errors.startAt = "Enter a valid ISO timestamp.";
+  }
+
+  if (!payload.endAt) {
+    errors.endAt = "End time is required.";
+  } else if (!isValidTimestamp(payload.endAt)) {
+    errors.endAt = "Enter a valid ISO timestamp.";
+  }
+
+  if (!errors.startAt && !errors.endAt && new Date(payload.endAt) <= new Date(payload.startAt)) {
+    errors.endAt = "End time must be later than the start time.";
+  }
+
+  return { errors, payload };
+}
+
+function validatePriceForm(form: PriceFormState) {
+  const parsedInputPricePer1M = parseOptionalNumber(form.inputPricePer1M);
+  const parsedOutputPricePer1M = parseOptionalNumber(form.outputPricePer1M);
+  const payload: AdminPriceCreate = {
+    relayId: form.relayId,
+    modelId: form.modelId,
+    currency: trimString(form.currency) || "USD",
+    inputPricePer1M: parsedInputPricePer1M,
+    outputPricePer1M: parsedOutputPricePer1M,
+    effectiveFrom: trimString(form.effectiveFrom),
+    source: form.source,
+  };
+  const errors: PriceFormErrors = {};
+
+  if (!payload.relayId) {
+    errors.relayId = "Select a relay.";
+  }
+
+  if (!payload.modelId) {
+    errors.modelId = "Select a model.";
+  }
+
+  if (parsedInputPricePer1M !== null && (Number.isNaN(parsedInputPricePer1M) || parsedInputPricePer1M < 0)) {
+    errors.inputPricePer1M = "Input price must be a non-negative number.";
+  }
+
+  if (parsedOutputPricePer1M !== null && (Number.isNaN(parsedOutputPricePer1M) || parsedOutputPricePer1M < 0)) {
+    errors.outputPricePer1M = "Output price must be a non-negative number.";
+  }
+
+  if (parsedInputPricePer1M === null && parsedOutputPricePer1M === null) {
+    errors.inputPricePer1M = "Provide at least one price field.";
+    errors.outputPricePer1M = "Provide at least one price field.";
+  }
+
+  if (!payload.effectiveFrom) {
+    errors.effectiveFrom = "Effective time is required.";
+  } else if (!isValidTimestamp(payload.effectiveFrom)) {
+    errors.effectiveFrom = "Enter a valid ISO timestamp.";
+  }
+
+  return { errors, payload };
+}
+
 function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,12 +282,12 @@ function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
   return { data, loading, error, reload: () => loader().then(setData) };
 }
 
-function useMutationState(): [MutationState, (next: MutationState) => void] {
+function useMutationState(): [MutationState, Dispatch<SetStateAction<MutationState>>] {
   const [state, setState] = useState<MutationState>({ pending: false, error: null, success: null });
   return [state, setState];
 }
 
-function AdminShell({ children }: { children: React.ReactNode }) {
+function AdminShell({ children }: { children: ReactNode }) {
   const items = [
     ["/", "Overview"],
     ["/relays", "Relays"],
@@ -142,7 +324,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Card({ title, kicker, children }: { title: string; kicker?: string; children: React.ReactNode }) {
+function Card({ title, kicker, children }: { title: string; kicker?: string; children: ReactNode }) {
   return (
     <section className="card">
       {kicker ? <p className="eyebrow">{kicker}</p> : null}
@@ -170,6 +352,14 @@ function ErrorCard({ message }: { message: string }) {
   return <div className="card border border-[#fa520f]/30 text-sm text-[#ffd0bd]">{message}</div>;
 }
 
+function FieldError({ message }: { message: string | undefined }) {
+  if (!message) {
+    return null;
+  }
+
+  return <span className="mt-2 block text-xs normal-case tracking-normal text-[#ffb59c]">{message}</span>;
+}
+
 function OverviewPage() {
   const { data, loading, error } = useLoadable<AdminOverviewResponse>(() => fetchJson("/admin/overview"), []);
   if (loading) return <LoadingCard />;
@@ -187,8 +377,7 @@ function OverviewPage() {
 }
 
 function RelaysPage() {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<AdminRelayUpsert>({
+  const emptyForm: AdminRelayUpsert = {
     slug: "",
     name: "",
     baseUrl: "",
@@ -200,21 +389,36 @@ function RelaysPage() {
     description: null,
     docsUrl: null,
     notes: null,
-  });
+  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<AdminRelayUpsert>(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<RelayFormErrors>({});
   const [mutation, setMutation] = useMutationState();
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
 
+  function resetForm() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setFieldErrors({});
+  }
+
   async function submit() {
+    const { errors, payload } = validateRelayForm(form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setMutation({ pending: false, error: "Please fix the highlighted relay fields before saving.", success: null });
+      return;
+    }
+
     setMutation({ pending: true, error: null, success: null });
     try {
       const path = editingId ? `/admin/relays/${editingId}` : "/admin/relays";
       await fetchJson(path, {
         method: editingId ? "PATCH" : "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       setMutation({ pending: false, error: null, success: editingId ? "Relay updated." : "Relay created." });
-      setEditingId(null);
-      setForm({ slug: "", name: "", baseUrl: "", providerName: null, websiteUrl: null, catalogStatus: "active", isFeatured: false, isSponsored: false, description: null, docsUrl: null, notes: null });
+      resetForm();
       await relays.reload();
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to save relay.", success: null });
@@ -247,6 +451,8 @@ function RelaysPage() {
                   docsUrl: null,
                   notes: null,
                 });
+                setFieldErrors({});
+                setMutation({ pending: false, error: null, success: null });
               }}
               type="button"
             >
@@ -267,15 +473,30 @@ function RelaysPage() {
       <Card title={editingId ? "Edit relay" : "Create relay"} kicker="Write path">
         <div className="grid gap-3">
           {([
-            ["Slug", "slug"],
-            ["Name", "name"],
-            ["Base URL", "baseUrl"],
-            ["Provider", "providerName"],
-            ["Website", "websiteUrl"],
-          ] as const).map(([label, key]) => (
+            { label: "Slug", key: "slug", placeholder: "northwind-relay", type: "text" },
+            { label: "Name", key: "name", placeholder: "Northwind Relay", type: "text" },
+            { label: "Base URL", key: "baseUrl", placeholder: "https://northwind.example.ai/v1", type: "url" },
+            { label: "Provider", key: "providerName", placeholder: "Northwind Labs", type: "text" },
+            { label: "Website", key: "websiteUrl", placeholder: "https://northwind.example.ai", type: "url" },
+          ] as const).map(({ label, key, placeholder, type }) => (
             <label key={key} className="field-label">
               {label}
-              <input className="field-input" value={form[key] ?? ""} onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value || null }))} />
+              <input
+                className="field-input"
+                type={type}
+                placeholder={placeholder}
+                value={form[key] ?? ""}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    [key]: key === "slug" || key === "name" || key === "baseUrl" ? nextValue : nextValue || null,
+                  }));
+                  setFieldErrors((current) => withoutFieldError(current, key));
+                  setMutation((current) => ({ ...current, error: null }));
+                }}
+              />
+              <FieldError message={fieldErrors[key]} />
             </label>
           ))}
           <label className="field-label">
@@ -292,7 +513,7 @@ function RelaysPage() {
           <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isSponsored} onChange={(event) => setForm((current) => ({ ...current, isSponsored: event.target.checked }))} /> Sponsor hint</label>
           <div className="flex gap-3">
             <button className="pill pill-active" disabled={mutation.pending} onClick={submit} type="button">{mutation.pending ? "Saving..." : editingId ? "Update" : "Create"}</button>
-            {editingId ? <button className="pill pill-idle" type="button" onClick={() => { setEditingId(null); setForm({ slug: "", name: "", baseUrl: "", providerName: null, websiteUrl: null, catalogStatus: "active", isFeatured: false, isSponsored: false, description: null, docsUrl: null, notes: null }); }}>Clear</button> : null}
+            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>Clear</button> : null}
           </div>
           <Notice state={mutation} />
         </div>
@@ -352,14 +573,30 @@ function SubmissionsPage() {
 function SponsorsPage() {
   const sponsors = useLoadable<AdminSponsorsResponse>(() => fetchJson("/admin/sponsors"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
-  const [form, setForm] = useState({ relayId: "", name: "", placement: "homepage-spotlight", status: "active", startAt: new Date().toISOString(), endAt: new Date(Date.now() + 30 * 86400000).toISOString() });
+  const [form, setForm] = useState<SponsorFormState>({
+    relayId: "",
+    name: "",
+    placement: "homepage-spotlight",
+    status: "active",
+    startAt: new Date().toISOString(),
+    endAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+  });
+  const [fieldErrors, setFieldErrors] = useState<SponsorFormErrors>({});
   const [mutation, setMutation] = useMutationState();
 
   async function createSponsor() {
+    const { errors, payload } = validateSponsorForm(form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setMutation({ pending: false, error: "Please fix the highlighted sponsor fields before saving.", success: null });
+      return;
+    }
+
     setMutation({ pending: true, error: null, success: null });
     try {
-      await fetchJson("/admin/sponsors", { method: "POST", body: JSON.stringify({ ...form, relayId: form.relayId || null }) });
+      await fetchJson("/admin/sponsors", { method: "POST", body: JSON.stringify(payload) });
       setMutation({ pending: false, error: null, success: "Sponsor placement created." });
+      setFieldErrors({});
       await sponsors.reload();
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create sponsor.", success: null });
@@ -389,12 +626,12 @@ function SponsorsPage() {
       </Card>
       <Card title="Create placement" kicker="Sales operations">
         <div className="grid gap-3">
-          <label className="field-label">Name<input className="field-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
-          <label className="field-label">Placement<input className="field-input" value={form.placement} onChange={(event) => setForm((current) => ({ ...current, placement: event.target.value }))} /></label>
+          <label className="field-label">Name<input className="field-input" placeholder="Homepage spotlight" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "name")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.name} /></label>
+          <label className="field-label">Placement<input className="field-input" placeholder="homepage-spotlight" value={form.placement} onChange={(event) => { setForm((current) => ({ ...current, placement: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "placement")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.placement} /></label>
           <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => setForm((current) => ({ ...current, relayId: event.target.value }))}><option value="">Unbound sponsor</option>{relays.data.rows.map((relay) => <option key={relay.id} value={relay.id}>{relay.name}</option>)}</select></label>
-          <label className="field-label">Status<select className="field-input" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}><option value="active">active</option><option value="draft">draft</option><option value="paused">paused</option><option value="ended">ended</option></select></label>
-          <label className="field-label">Start<input className="field-input" value={form.startAt} onChange={(event) => setForm((current) => ({ ...current, startAt: event.target.value }))} /></label>
-          <label className="field-label">End<input className="field-input" value={form.endAt} onChange={(event) => setForm((current) => ({ ...current, endAt: event.target.value }))} /></label>
+          <label className="field-label">Status<select className="field-input" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SponsorFormState["status"] }))}><option value="active">active</option><option value="draft">draft</option><option value="paused">paused</option><option value="ended">ended</option></select></label>
+          <label className="field-label">Start<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.startAt} onChange={(event) => { setForm((current) => ({ ...current, startAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "startAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.startAt} /></label>
+          <label className="field-label">End<input className="field-input" placeholder="2026-05-16T00:00:00.000Z" value={form.endAt} onChange={(event) => { setForm((current) => ({ ...current, endAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "endAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.endAt} /></label>
           <button className="pill pill-active" disabled={mutation.pending} onClick={createSponsor} type="button">{mutation.pending ? "Saving..." : "Create placement"}</button>
           <Notice state={mutation} />
         </div>
@@ -407,14 +644,31 @@ function PricesPage() {
   const prices = useLoadable<AdminPricesResponse>(() => fetchJson("/admin/prices"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const models = useLoadable<{ rows: AdminModelOption[] }>(() => fetchJson("/admin/models"), []);
-  const [form, setForm] = useState<AdminPriceCreate>({ relayId: "", modelId: "", currency: "USD", inputPricePer1M: 0.1, outputPricePer1M: 0.5, effectiveFrom: new Date().toISOString(), source: "manual" });
+  const [form, setForm] = useState<PriceFormState>({
+    relayId: "",
+    modelId: "",
+    currency: "USD",
+    inputPricePer1M: "0.1",
+    outputPricePer1M: "0.5",
+    effectiveFrom: new Date().toISOString(),
+    source: "manual",
+  });
+  const [fieldErrors, setFieldErrors] = useState<PriceFormErrors>({});
   const [mutation, setMutation] = useMutationState();
 
   async function createPrice() {
+    const { errors, payload } = validatePriceForm(form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setMutation({ pending: false, error: "Please fix the highlighted price fields before saving.", success: null });
+      return;
+    }
+
     setMutation({ pending: true, error: null, success: null });
     try {
-      await fetchJson("/admin/prices", { method: "POST", body: JSON.stringify(form) });
+      await fetchJson("/admin/prices", { method: "POST", body: JSON.stringify(payload) });
       setMutation({ pending: false, error: null, success: "Price record created." });
+      setFieldErrors({});
       await prices.reload();
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create price record.", success: null });
@@ -444,11 +698,11 @@ function PricesPage() {
       </Card>
       <Card title="Create price record" kicker="Pricing ops">
         <div className="grid gap-3">
-          <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => setForm((current) => ({ ...current, relayId: event.target.value }))}><option value="">Select relay</option>{relays.data.rows.map((relay) => <option key={relay.id} value={relay.id}>{relay.name}</option>)}</select></label>
-          <label className="field-label">Model<select className="field-input" value={form.modelId} onChange={(event) => setForm((current) => ({ ...current, modelId: event.target.value }))}><option value="">Select model</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select></label>
-          <label className="field-label">Input price<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M ?? 0} onChange={(event) => setForm((current) => ({ ...current, inputPricePer1M: Number(event.target.value) }))} /></label>
-          <label className="field-label">Output price<input className="field-input" type="number" min="0" step="0.01" value={form.outputPricePer1M ?? 0} onChange={(event) => setForm((current) => ({ ...current, outputPricePer1M: Number(event.target.value) }))} /></label>
-          <label className="field-label">Effective from<input className="field-input" value={form.effectiveFrom} onChange={(event) => setForm((current) => ({ ...current, effectiveFrom: event.target.value }))} /></label>
+          <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => { setForm((current) => ({ ...current, relayId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "relayId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select relay</option>{relays.data.rows.map((relay) => <option key={relay.id} value={relay.id}>{relay.name}</option>)}</select><FieldError message={fieldErrors.relayId} /></label>
+          <label className="field-label">Model<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select model</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
+          <label className="field-label">Input price<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, inputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "inputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.inputPricePer1M} /></label>
+          <label className="field-label">Output price<input className="field-input" type="number" min="0" step="0.01" value={form.outputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, outputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "outputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.outputPricePer1M} /></label>
+          <label className="field-label">Effective from<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.effectiveFrom} onChange={(event) => { setForm((current) => ({ ...current, effectiveFrom: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "effectiveFrom")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.effectiveFrom} /></label>
           <button className="pill pill-active" disabled={mutation.pending} onClick={createPrice} type="button">{mutation.pending ? "Saving..." : "Create price"}</button>
           <Notice state={mutation} />
         </div>

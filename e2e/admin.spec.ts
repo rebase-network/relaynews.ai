@@ -51,6 +51,20 @@ test("admin overview shows operating totals", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Price history", exact: true })).toBeVisible();
 });
 
+test("admin relay form validates malformed URLs before saving", async ({ page }) => {
+  await page.goto(`${adminBaseUrl}/relays`);
+  await page.getByLabel("Slug").fill("broken-relay");
+  await page.getByLabel("Name").fill("Broken Relay");
+  await page.getByLabel("Base URL").fill("relay.example.ai");
+  await page.getByLabel("Website").fill("not-a-url");
+  await page.getByRole("button", { name: "Create" }).click();
+
+  await expect(page.getByText("Please fix the highlighted relay fields before saving.")).toBeVisible();
+  await expect(page.getByText("Enter a full base URL such as https://relay.example.ai/v1.")).toBeVisible();
+  await expect(page.getByText("Enter a valid website URL such as https://relay.example.ai.")).toBeVisible();
+  await expect(page.getByText("Relay created.")).toHaveCount(0);
+});
+
 test("admin can create a relay", async ({ page }) => {
   test.skip(
     isDeployedRun && !allowDeployedWrites,
