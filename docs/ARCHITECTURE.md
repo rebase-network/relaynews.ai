@@ -50,9 +50,9 @@ Browser
         - built web app assets
         - SPA fallback routing
         - client-side data fetches
-        - calls public API
+        - calls public API at api.rebase.network/relaynews
 
-  -> api.relaynew.ai
+  -> api.rebase.network/relaynews
      -> Cloudflare Proxy / CDN / WAF
         -> Origin API (remote server)
            - public API
@@ -81,7 +81,7 @@ It is not responsible for:
 - replacing the origin API
 
 ### Cloudflare Proxy
-Cloudflare sits in front of `api.relaynew.ai` and handles:
+Cloudflare sits in front of `api.rebase.network/relaynews` and handles:
 - TLS
 - WAF
 - rate limiting
@@ -216,7 +216,7 @@ MVP assumption:
 ## Security Model
 
 - `relaynew.ai` serves the public site via Cloudflare Workers Static Assets
-- `api.relaynew.ai` sits behind Cloudflare Proxy
+- `api.rebase.network/relaynews` sits behind Cloudflare Proxy and the shared tunnel
 - `admin.relaynew.ai` can be used for administrative access
 - admin endpoints should be protected with Cloudflare Access or equivalent auth
 - the public probe flow must use a dedicated public-safe endpoint rather than any

@@ -5,7 +5,13 @@ services:
       dockerfile: apps/origin/Dockerfile
     env_file:
       - ${ORIGIN_ENV_FILE}
-    network_mode: host
+    ports:
+      - "127.0.0.1:${ORIGIN_HOST_PORT}:8787"
+    networks:
+      default:
+      tunnel:
+        aliases:
+          - relaynews-origin
     restart: unless-stopped
     healthcheck:
       test:
@@ -19,3 +25,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+networks:
+  tunnel:
+    external: true
+    name: rebase-production_default

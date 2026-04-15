@@ -27,7 +27,7 @@ The site is planned to provide:
 ## Domains
 
 - Public site: `relaynew.ai`
-- Public API: `api.relaynew.ai`
+- Current public API base: `https://api.rebase.network/relaynews`
 - Admin site: `admin.relaynew.ai`
 
 ## Repository Layout
@@ -105,5 +105,6 @@ Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
 - inspect remote origin deployment paths: `./ops/manage.sh path`
 - bootstrap the remote origin host: `./ops/manage.sh bootstrap`
 - deploy the remote origin service: `./ops/manage.sh deploy`
+- inspect or update the shared Cloudflare Tunnel rule: `./ops/manage-tunnel.sh status`
 - preview Cloudflare frontend deploys: `./ops/manage-edge.sh preview all`
 - deploy Cloudflare frontend apps: `./ops/manage-edge.sh deploy all`

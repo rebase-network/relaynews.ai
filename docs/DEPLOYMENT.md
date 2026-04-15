@@ -7,7 +7,7 @@ This document describes the current deployment shape for the MVP.
 - `apps/origin` runs on the remote server through Docker Compose
 - `apps/web` deploys to Cloudflare Workers Static Assets at `relaynew.ai`
 - `apps/admin` deploys to Cloudflare Workers Static Assets at `admin.relaynew.ai`
-- `api.relaynew.ai` continues to point at the remote origin through Cloudflare Proxy
+- the current public API base is `https://api.rebase.network/relaynews` through the existing Cloudflare Tunnel
 
 ## Required Tooling
 
@@ -38,16 +38,17 @@ The origin service reads its runtime values from the remote file:
 Start from `ops/origin.env.example` and fill in the production database URL and any
 other runtime values before the first deploy.
 
-The current origin deployment uses Docker host networking on the Linux server, so a
-PostgreSQL instance on the same machine can still be reached through `127.0.0.1`
-inside `DATABASE_URL`.
+The current origin deployment joins the shared `rebase-production_default` Docker
+network so Cloudflare Tunnel can reach it through the `relaynews-origin` network alias.
+`DATABASE_URL` should therefore target the shared PostgreSQL service at `postgres:5432`
+instead of a loopback host.
 
 ### Frontend Builds
 
 The frontend deploy flow expects these build-time variables:
 
 - `CF_ACCOUNT_ID` default: `5abb6d6f38eb7d3dabf8a5adf095c5f7`
-- `PUBLIC_API_BASE_URL` default: `https://api.relaynew.ai`
+- `PUBLIC_API_BASE_URL` default: `https://api.rebase.network/relaynews`
 - `PUBLIC_SITE_URL` default: `https://relaynew.ai`
 - `ADMIN_SITE_URL` default: `https://admin.relaynew.ai`
 
@@ -99,7 +100,12 @@ Before the first production deploy, make sure:
 
 - the `relaynew.ai` zone already exists in Cloudflare account `5abb6d6f38eb7d3dabf8a5adf095c5f7`
 - `relaynew.ai` and `admin.relaynew.ai` are intended to run behind Cloudflare proxy
-- `api.relaynew.ai` is planned as a proxied DNS record to the origin service
+- the shared `api.rebase.network` tunnel is available from the `Rebase Community` account
+- the relay monitoring ingress rule is present:
+
+  ```bash
+  ./ops/manage-tunnel.sh apply
+  ```
 
 1. Authenticate Wrangler if the local machine has not been set up yet:
 
@@ -133,4 +139,6 @@ Or deploy both together:
   Workers Static Assets with SPA fallback routing.
 - Public and admin builds intentionally use explicit absolute URLs so cross-domain
   links stay correct after deployment.
+- The branded API hostname is intentionally deferred because the frontend zone and the
+  existing tunnel live in different Cloudflare accounts today.
 - The origin service remains the only write-capable application runtime in the MVP.

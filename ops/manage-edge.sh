@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CF_ACCOUNT_ID="${CF_ACCOUNT_ID:-5abb6d6f38eb7d3dabf8a5adf095c5f7}"
 PUBLIC_SITE_URL="${PUBLIC_SITE_URL:-https://relaynew.ai}"
 ADMIN_SITE_URL="${ADMIN_SITE_URL:-https://admin.relaynew.ai}"
-PUBLIC_API_BASE_URL="${PUBLIC_API_BASE_URL:-https://api.relaynew.ai}"
+PUBLIC_API_BASE_URL="${PUBLIC_API_BASE_URL:-https://api.rebase.network/relaynews}"
 
 usage() {
   cat <<USAGE

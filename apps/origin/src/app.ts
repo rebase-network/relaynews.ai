@@ -1,6 +1,7 @@
 import fastify from "fastify";
 import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
+import type { FastifyInstance } from "fastify";
 import cron from "node-cron";
 import type { Kysely } from "kysely";
 
@@ -31,11 +32,27 @@ export async function buildApp() {
   });
   await app.register(sensible);
 
-  app.get("/health", async () => ({ ok: true }));
+  const healthHandler = async () => ({ ok: true });
+  app.get("/health", healthHandler);
+  if (config.API_BASE_PATH) {
+    app.get(`${config.API_BASE_PATH}/health`, healthHandler);
+  }
 
-  await registerPublicRoutes(app);
-  await registerProbeRoutes(app);
-  await registerAdminRoutes(app);
+  const registerApiRoutes = async (target: FastifyInstance) => {
+    await registerPublicRoutes(target);
+    await registerProbeRoutes(target);
+    await registerAdminRoutes(target);
+  };
+
+  if (config.API_BASE_PATH) {
+    await app.register(async (scopedApp) => {
+      await registerApiRoutes(scopedApp);
+    }, {
+      prefix: config.API_BASE_PATH,
+    });
+  } else {
+    await registerApiRoutes(app);
+  }
 
   if (config.ENABLE_SCHEDULER) {
     cron.schedule("*/5 * * * *", async () => {

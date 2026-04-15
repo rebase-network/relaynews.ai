@@ -106,7 +106,8 @@ if [ ! -f '${REMOTE_ENV_FILE}' ]; then
 NODE_ENV=production
 HOST=0.0.0.0
 PORT=8787
-DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/relaynews
+API_BASE_PATH=/relaynews
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/relaynews
 ENABLE_SCHEDULER=true
 PUBLIC_PROBE_ALLOW_PRIVATE_HOSTS=false
 EOF_ENV
@@ -141,6 +142,7 @@ ln -sfn '${release_dir}' '${REMOTE_CURRENT_LINK}'
 cd '${REMOTE_CURRENT_LINK}'
 docker compose -f '${REMOTE_COMPOSE_FILE}' build origin
 docker compose -f '${REMOTE_COMPOSE_FILE}' run --rm origin tsx apps/origin/src/db/migrate.ts
+docker compose -f '${REMOTE_COMPOSE_FILE}' rm -sf origin >/dev/null 2>&1 || true
 docker compose -f '${REMOTE_COMPOSE_FILE}' up -d origin
 sleep 3
 curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
@@ -193,6 +195,7 @@ fi
 ln -sfn \"\$target_dir\" '${REMOTE_CURRENT_LINK}'
 cd '${REMOTE_CURRENT_LINK}'
 docker compose -f '${REMOTE_COMPOSE_FILE}' build origin
+docker compose -f '${REMOTE_COMPOSE_FILE}' rm -sf origin >/dev/null 2>&1 || true
 docker compose -f '${REMOTE_COMPOSE_FILE}' up -d origin
 sleep 3
 curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
