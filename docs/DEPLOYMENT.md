@@ -17,7 +17,7 @@ This document describes the current deployment shape for the MVP.
 - `pnpm`
 - `Docker` for local validation and E2E
 - `wrangler` for Cloudflare deploys
-- SSH access to `rebase@rebase.network` for API operations
+- SSH access to `rebase@rebase.host` for API operations
 - Cloudflare account target: `5abb6d6f38eb7d3dabf8a5adf095c5f7`
 
 ### Remote API Host

@@ -5,7 +5,7 @@ service.
 
 ## Default Remote Target
 
-- SSH target: `rebase@rebase.network`
+- SSH target: `rebase@rebase.host`
 - Default app root: `/home/rebase/apps/relaynews-api`
 - Default Docker Compose project: `relaynews-api`
 - Default host port: `8787`

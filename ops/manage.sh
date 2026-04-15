@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-REMOTE_HOST="${REMOTE_HOST:-rebase@rebase.network}"
+REMOTE_HOST="${REMOTE_HOST:-rebase@rebase.host}"
 REMOTE_BASE_DIR="${REMOTE_BASE_DIR:-/home/rebase/apps/relaynews-api}"
 REMOTE_RELEASES_DIR="${REMOTE_RELEASES_DIR:-${REMOTE_BASE_DIR}/releases}"
 REMOTE_SHARED_DIR="${REMOTE_SHARED_DIR:-${REMOTE_BASE_DIR}/shared}"
