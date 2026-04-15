@@ -83,27 +83,27 @@ button {
 }
 
 .admin-header {
-  padding-top: 1rem;
+  padding-top: 0.7rem;
 }
 
 .admin-header-bar {
   display: grid;
-  gap: 1.4rem;
+  gap: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background:
     linear-gradient(135deg, rgba(49, 37, 18, 0.94), rgba(27, 24, 21, 0.98));
   box-shadow:
     rgba(0, 0, 0, 0.34) 0 30px 80px,
     rgba(255, 161, 16, 0.14) 0 1px 0 inset;
-  padding: 1.2rem;
+  padding: 1rem;
 }
 
 .admin-brand {
   display: flex;
   align-items: center;
-  gap: 0.95rem;
+  gap: 0.8rem;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(255, 249, 239, 0.64);
@@ -113,23 +113,23 @@ button {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.18rem;
-  width: 5rem;
+  width: 4.4rem;
 }
 
 .admin-brand-mark span {
-  height: 0.88rem;
+  height: 0.76rem;
   border-radius: 999px;
 }
 
 .admin-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.55rem;
 }
 
 .admin-main {
-  padding-top: 1.75rem;
-  padding-bottom: 5rem;
+  padding-top: 1.2rem;
+  padding-bottom: 4rem;
 }
 
 .card {
@@ -139,7 +139,7 @@ button {
   background:
     linear-gradient(180deg, rgba(49, 37, 18, 0.92), rgba(26, 24, 22, 0.96));
   box-shadow: var(--shadow);
-  padding: 1.4rem;
+  padding: 1.2rem;
 }
 
 .card::before {
@@ -167,9 +167,9 @@ button {
 }
 
 .eyebrow {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.68rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(255, 249, 239, 0.48);
@@ -181,9 +181,9 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.82rem 0.98rem;
+  padding: 0.72rem 0.86rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
@@ -218,7 +218,7 @@ button {
 .field-label {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   line-height: 1.5;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -228,11 +228,11 @@ button {
 .field-input {
   display: block;
   width: 100%;
-  margin-top: 0.7rem;
+  margin-top: 0.55rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.06);
   color: var(--ink);
-  padding: 0.95rem 1rem;
+  padding: 0.82rem 0.88rem;
   box-shadow: rgba(0, 0, 0, 0.18) 0 12px 24px;
 }
 
@@ -250,7 +250,7 @@ button {
 }
 
 .admin-list-card {
-  box-shadow: rgba(0, 0, 0, 0.22) 0 18px 34px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0 12px 26px;
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -265,7 +265,7 @@ button {
 @media (max-width: 767px) {
   .admin-header-bar,
   .card {
-    padding: 1.15rem;
+    padding: 0.95rem;
   }
 
   .admin-brand {
@@ -275,11 +275,11 @@ button {
 
 @media (min-width: 1024px) {
   .admin-header {
-    padding-top: 1.3rem;
+    padding-top: 1rem;
   }
 
   .admin-header-bar,
   .card {
-    padding: 1.7rem;
+    padding: 1.35rem;
   }
 }

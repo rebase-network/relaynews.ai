@@ -131,7 +131,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   const before = await readOverviewTotals(page);
 
   await page.goto(`${adminBaseUrl}/submissions`);
-  const submissionCard = page.locator("div.border.border-white\\/10.bg-white\\/5.p-4").filter({ hasText: relayName }).first();
+  const submissionCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(submissionCard).toBeVisible();
   await submissionCard.getByRole("button", { name: "Approve" }).click();
   await expect(page.getByText(/Submission approved\./)).toBeVisible();
@@ -143,7 +143,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await page.getByLabel("Relay").selectOption({ label: relayName });
   await page.getByRole("button", { name: "Create placement" }).click();
   await expect(page.getByText("Sponsor placement created.")).toBeVisible();
-  const sponsorCard = page.locator("div.border.border-white\\/10.bg-white\\/5.p-4").filter({ hasText: sponsorName }).first();
+  const sponsorCard = page.locator(".admin-list-card").filter({ hasText: sponsorName }).first();
   await expect(sponsorCard).toBeVisible();
   await expect(sponsorCard).toContainText(relayName);
 
@@ -154,7 +154,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await page.getByLabel("Output price").fill(outputPrice);
   await page.getByRole("button", { name: "Create price" }).click();
   await expect(page.getByText("Price record created.")).toBeVisible();
-  const priceCard = page.locator("div.border.border-white\\/10.bg-white\\/5.p-4").filter({ hasText: relayName }).first();
+  const priceCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(priceCard).toBeVisible();
   await expect(priceCard).toContainText("GPT-4.1");
   await expect(priceCard).toContainText(`${inputPrice} / ${outputPrice}`);

@@ -466,16 +466,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
           ) : null}
         </div>
       </header>
-      <main className="site-main mx-auto max-w-7xl px-6 lg:px-10">{children}</main>
-      <footer className="site-footer px-6 py-10 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-3">
+      <main className="site-main mx-auto max-w-7xl px-5 lg:px-10">{children}</main>
+      <footer className="site-footer px-5 py-8 lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-2">
             <p className="kicker !text-white/55">Relay intelligence</p>
-            <p className="max-w-xl text-2xl leading-tight tracking-[-0.04em] text-white">
+            <p className="max-w-xl text-xl leading-tight tracking-[-0.04em] text-white md:text-2xl">
               Relay monitoring, pricing, and ranking stay in one warm signal surface.
             </p>
           </div>
-          <div className="grid gap-3 text-sm uppercase tracking-[0.18em] text-white/78 md:grid-cols-2">
+          <div className="grid gap-2 text-sm uppercase tracking-[0.18em] text-white/78 md:grid-cols-2">
             <span>Public discovery and probe tooling.</span>
             <span>Natural ranking and sponsor placement stay separate.</span>
           </div>
@@ -489,9 +489,9 @@ function Panel({ title, kicker, children, className }: { title?: string; kicker?
   return (
     <section className={clsx("panel", className)}>
       {(kicker || title) && (
-        <header className="mb-5">
+        <header className="mb-4">
           {kicker ? <p className="kicker">{kicker}</p> : null}
-          {title ? <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-5xl">{title}</h2> : null}
+          {title ? <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">{title}</h2> : null}
         </header>
       )}
       {children}
@@ -562,36 +562,36 @@ function HomePage() {
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load homepage."} />;
 
   return (
-    <div className="space-y-8">
-      <section className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+    <div className="space-y-6">
+      <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
         <div className="panel hero-panel">
           <p className="kicker text-black/70">Relay intelligence</p>
-          <h1 className="max-w-4xl text-5xl leading-[0.9] tracking-[-0.07em] md:text-7xl xl:text-[5.3rem]">
+          <h1 className="max-w-4xl text-4xl leading-[0.9] tracking-[-0.07em] md:text-6xl xl:text-[4.75rem]">
             Watch relay health, latency, price pressure, and trust signals in one warm control tower.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-black/75">
+          <p className="mt-4 max-w-2xl text-base text-black/75 md:text-lg">
             Track operational quality, compare model-specific performance, and highlight the relays worth promoting.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap gap-2.5">
             <Link className="button-dark" to="/leaderboard/openai-gpt-4.1">Open leaderboard</Link>
             <Link className="button-cream" to="/probe">Run self-check probe</Link>
           </div>
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
-            <div className="surface-card p-4">
+          <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
+            <div className="surface-card p-3.5">
               <p className="kicker !text-black/52">Ranking lane</p>
               <p className="text-sm leading-6 text-black/72">Model-specific leaderboards keep quality and price pressure in the same frame.</p>
             </div>
-            <div className="surface-card p-4">
+            <div className="surface-card p-3.5">
               <p className="kicker !text-black/52">Probe lane</p>
               <p className="text-sm leading-6 text-black/72">Operators can reproduce the exact compatibility path that the public check selected.</p>
             </div>
-            <div className="surface-card p-4">
+            <div className="surface-card p-3.5">
               <p className="kicker !text-black/52">Promo lane</p>
               <p className="text-sm leading-6 text-black/72">Sponsored placements stay visible while remaining separate from natural ranking logic.</p>
             </div>
           </div>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Panel title="Current market pulse" kicker="Hero snapshot" className="panel-soft">
             <MetricGrid
               items={[
@@ -604,8 +604,8 @@ function HomePage() {
           </Panel>
           <div className="panel surface-card">
             <p className="kicker">Sponsor boundary</p>
-            <p className="text-3xl leading-[0.95] tracking-[-0.04em]">Promotion can be visible without contaminating natural board order.</p>
-            <p className="mt-4 text-sm leading-7 text-black/68">
+            <p className="text-2xl leading-[0.95] tracking-[-0.04em] md:text-3xl">Promotion can be visible without contaminating natural board order.</p>
+            <p className="mt-3 text-sm leading-6 text-black/68">
               The site keeps ranking inputs, public probe diagnostics, and sponsor intake in separate operating lanes so trust signals stay readable.
             </p>
           </div>
@@ -613,21 +613,21 @@ function HomePage() {
       </section>
 
       <Panel title="Featured leaderboards" kicker="Top model lanes">
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           {data.leaderboards.map((board) => (
-            <div key={board.modelKey} className="surface-card p-5">
+            <div key={board.modelKey} className="surface-card p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="kicker">{board.modelKey}</p>
-                  <h3 className="text-2xl tracking-[-0.04em]">{board.modelName}</h3>
+                  <h3 className="text-xl tracking-[-0.04em] md:text-2xl">{board.modelName}</h3>
                 </div>
                 <Link className="signal-chip" to={`/leaderboard/${board.modelKey}`}>
                   Full board
                 </Link>
               </div>
-              <div className="mt-5 space-y-3">
+              <div className="mt-4 space-y-2.5">
                 {board.rows.map((row) => (
-                  <Link key={row.relay.slug} to={`/relay/${row.relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-4">
+                  <Link key={row.relay.slug} to={`/relay/${row.relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-3">
                     <div>
                       <p className="text-xs uppercase tracking-[0.16em] text-black/55">#{row.rank}</p>
                       <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
@@ -644,11 +644,11 @@ function HomePage() {
         </div>
       </Panel>
 
-      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <Panel title="Relays to watch" kicker="Highlights">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {data.highlights.map((relay) => (
-              <Link key={relay.slug} to={`/relay/${relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-4">
+              <Link key={relay.slug} to={`/relay/${relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-3.5">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
                   <p className="mt-2"><span className="signal-chip">{relay.badge}</span></p>
@@ -659,12 +659,12 @@ function HomePage() {
           </div>
         </Panel>
         <Panel title="Latest incident flow" kicker="Recent disruptions">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {data.latestIncidents.length === 0 ? (
               <p className="text-sm text-black/65">No incidents recorded in the current snapshot.</p>
             ) : (
               data.latestIncidents.map((incident) => (
-                <div key={incident.id} className="surface-card p-4">
+                <div key={incident.id} className="surface-card p-3.5">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xl tracking-[-0.03em]">{incident.title}</p>
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.16em]"><StatusDot status={incident.severity} /> {incident.severity}</div>
@@ -694,13 +694,13 @@ function LeaderboardPage() {
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load leaderboard."} />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
         <p className="kicker">Leaderboard</p>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-5xl leading-[0.92] tracking-[-0.06em]">{data.model.name}</h1>
-            <p className="mt-3 text-sm uppercase tracking-[0.16em] text-black/60">Measured at {new Date(data.measuredAt).toLocaleString()}</p>
+            <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">{data.model.name}</h1>
+            <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/60">Measured at {new Date(data.measuredAt).toLocaleString()}</p>
           </div>
           <label className="form-field max-w-[9rem]">
             Rows
@@ -721,32 +721,32 @@ function LeaderboardPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-black/10">
-                <th className="pb-3">Rank</th>
-                <th className="pb-3">Relay</th>
-                <th className="pb-3">Health</th>
-                <th className="pb-3">Score</th>
-                <th className="pb-3">Avail 24h</th>
-                <th className="pb-3">Latency p50</th>
-                <th className="pb-3">Input</th>
-                <th className="pb-3">Output</th>
+                <th className="pb-2.5">Rank</th>
+                <th className="pb-2.5">Relay</th>
+                <th className="pb-2.5">Health</th>
+                <th className="pb-2.5">Score</th>
+                <th className="pb-2.5">Avail 24h</th>
+                <th className="pb-2.5">Latency p50</th>
+                <th className="pb-2.5">Input</th>
+                <th className="pb-2.5">Output</th>
               </tr>
             </thead>
             <tbody>
               {data.rows.map((row) => (
                 <tr key={row.relay.slug} className="align-top">
-                  <td className="py-4 text-2xl tracking-[-0.04em]">#{row.rank}</td>
-                  <td className="py-4">
+                  <td className="py-3.5 text-2xl tracking-[-0.04em]">#{row.rank}</td>
+                  <td className="py-3.5">
                     <Link to={`/relay/${row.relay.slug}`} className="text-xl tracking-[-0.03em] hover:underline">{row.relay.name}</Link>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/55">
                       {row.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
                     </div>
                   </td>
-                  <td className="py-4 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</span></td>
-                  <td className="py-4 text-xl tracking-[-0.03em]">{row.score.toFixed(1)}</td>
-                  <td className="py-4">{(row.availability24h * 100).toFixed(2)}%</td>
-                  <td className="py-4">{row.latencyP50Ms ?? "-"} ms</td>
-                  <td className="py-4">{row.inputPricePer1M ?? "-"}</td>
-                  <td className="py-4">{row.outputPricePer1M ?? "-"}</td>
+                  <td className="py-3.5 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</span></td>
+                  <td className="py-3.5 text-xl tracking-[-0.03em]">{row.score.toFixed(1)}</td>
+                  <td className="py-3.5">{(row.availability24h * 100).toFixed(2)}%</td>
+                  <td className="py-3.5">{row.latencyP50Ms ?? "-"} ms</td>
+                  <td className="py-3.5">{row.inputPricePer1M ?? "-"}</td>
+                  <td className="py-3.5">{row.outputPricePer1M ?? "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -780,15 +780,15 @@ function RelayPage() {
   if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Unable to load relay."} />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay detail</p>
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <div className="flex items-center gap-3 text-sm uppercase tracking-[0.16em]"><StatusDot status={overview.data.healthStatus} /> {overview.data.healthStatus}</div>
-            <h1 className="mt-4 text-5xl leading-[0.92] tracking-[-0.06em]">{overview.data.relay.name}</h1>
-            <p className="mt-4 max-w-2xl text-black/70">{overview.data.relay.baseUrl}</p>
-            <div className="mt-6 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/65">
+            <h1 className="mt-3 text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">{overview.data.relay.name}</h1>
+            <p className="mt-3 max-w-2xl text-black/70">{overview.data.relay.baseUrl}</p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/65">
               {overview.data.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
             </div>
           </div>
@@ -803,7 +803,7 @@ function RelayPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <Panel title="Score composition" kicker="Why the relay ranks here">
           <MetricGrid
             items={Object.entries(overview.data.scoreSummary).map(([label, value]) => ({ label, value: value.toFixed(1) }))}
@@ -814,12 +814,12 @@ function RelayPage() {
         </Panel>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-3">
         <Panel title="Supported models" kicker="Coverage">
           {models.loading || !models.data ? <p className="text-sm text-black/60">Loading models...</p> : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {models.data.rows.map((row) => (
-                <div key={row.modelKey} className="surface-card p-4">
+                <div key={row.modelKey} className="surface-card p-3.5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xl tracking-[-0.03em]">{row.modelName}</p>
                     <p className="text-xs uppercase tracking-[0.16em] text-black/55">{row.supportStatus}</p>
@@ -832,9 +832,9 @@ function RelayPage() {
         </Panel>
         <Panel title="Pricing history" kicker="Current economics">
           {pricing.loading || !pricing.data ? <p className="text-sm text-black/60">Loading pricing...</p> : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {pricing.data.rows.map((row) => (
-                <div key={`${row.modelKey}-${row.effectiveFrom}`} className="surface-card p-4 text-sm">
+                <div key={`${row.modelKey}-${row.effectiveFrom}`} className="surface-card p-3.5 text-sm">
                   <p className="text-lg tracking-[-0.03em]">{row.modelKey}</p>
                   <p className="mt-2">Input {row.inputPricePer1M ?? "-"} · Output {row.outputPricePer1M ?? "-"}</p>
                   <p className="mt-2 text-xs uppercase tracking-[0.14em] text-black/50">{row.source} · {new Date(row.effectiveFrom).toLocaleDateString()}</p>
@@ -845,9 +845,9 @@ function RelayPage() {
         </Panel>
         <Panel title="Incident timeline" kicker="Operator awareness">
           {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {incidents.data.rows.length === 0 ? <p className="text-sm text-black/60">No incidents in the selected window.</p> : incidents.data.rows.map((row) => (
-                <div key={row.id} className="surface-card p-4">
+                <div key={row.id} className="surface-card p-3.5">
                   <div className="flex items-center gap-2 text-sm uppercase tracking-[0.14em]"><StatusDot status={row.severity} /> {row.severity}</div>
                   <p className="mt-3 text-xl tracking-[-0.03em]">{row.title}</p>
                   <p className="mt-2 text-sm text-black/70">{row.summary}</p>
@@ -867,9 +867,9 @@ function MethodologyPage() {
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load methodology."} />;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <Panel title="Methodology" kicker="Ranking anatomy">
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-5">
           {Object.entries(data.weights).map(([label, value]) => (
             <div key={label} className="metric-card">
               <p className="kicker">{label}</p>
@@ -878,18 +878,18 @@ function MethodologyPage() {
           ))}
         </div>
       </Panel>
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-2">
         <Panel title="Health state language" kicker="Public taxonomy">
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {data.healthStatuses.map((status) => (
-              <div key={status} className="surface-card flex items-center gap-3 p-4 text-sm uppercase tracking-[0.14em]">
+              <div key={status} className="surface-card flex items-center gap-3 p-3.5 text-sm uppercase tracking-[0.14em]">
                 <StatusDot status={status} /> {status}
               </div>
             ))}
           </div>
         </Panel>
         <Panel title="Ranking notes" kicker="Interpretation">
-          <div className="space-y-3 text-sm text-black/70">
+          <div className="space-y-2.5 text-sm text-black/70">
             {data.notes.map((note) => <p key={note}>{note}</p>)}
           </div>
         </Panel>
@@ -963,21 +963,21 @@ function SubmitPage() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+    <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
       <div className="panel hero-panel min-h-0">
         <p className="kicker">Submit a relay</p>
-        <h1 className="text-5xl leading-[0.92] tracking-[-0.06em]">Nominate a relay for monitoring, ranking, or sponsor intake.</h1>
-        <p className="mt-5 max-w-xl text-black/70">Use the intake form to put a relay into review. Operational approval and sponsor placement are reviewed separately from natural ranking.</p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <div className="surface-card p-4">
+        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">Nominate a relay for monitoring, ranking, or sponsor intake.</h1>
+        <p className="mt-4 max-w-xl text-black/70">Use the intake form to put a relay into review. Operational approval and sponsor placement are reviewed separately from natural ranking.</p>
+        <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
+          <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Review first</p>
             <p className="text-sm leading-6 text-black/72">Every relay enters an operator review lane before it appears anywhere public.</p>
           </div>
-          <div className="surface-card p-4">
+          <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Natural board</p>
             <p className="text-sm leading-6 text-black/72">Ranking stays tied to observed quality, not to sponsor placement decisions.</p>
           </div>
-          <div className="surface-card p-4">
+          <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Fast intake</p>
             <p className="text-sm leading-6 text-black/72">URL and contact checks happen in-browser first so the write path stays clean.</p>
           </div>
@@ -1107,13 +1107,13 @@ function ProbePage() {
   }, [attemptTrace.length, result]);
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+    <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
       <div className="panel hero-panel min-h-0">
         <p className="kicker">Self-check probe</p>
-        <h1 className="text-5xl leading-[0.92] tracking-[-0.06em]">Run a bounded connectivity check against a relay endpoint.</h1>
-        <p className="mt-5 text-black/70">The public probe uses a tightly controlled server-side request path. It never echoes your API key back into the UI.</p>
+        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">Run a bounded connectivity check against a relay endpoint.</h1>
+        <p className="mt-4 text-black/70">The public probe uses a tightly controlled server-side request path. It never echoes your API key back into the UI.</p>
         <p className="mt-3 text-sm text-black/60">Most relays should work with automatic compatibility detection. Use the advanced override only when you already know the protocol shape.</p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
           <div className="surface-card p-3">
             <p className="kicker">Request scope</p>
             <p className="text-sm leading-6 text-black/75">Single bounded check with no persistent key storage.</p>

@@ -301,7 +301,7 @@ function AdminShell({ children }: { children: ReactNode }) {
       <header className="admin-header">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
           <div className="admin-header-bar">
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="admin-brand">
                 <div className="admin-brand-mark">
                   <span className="bg-[#ffd900]" />
@@ -313,12 +313,12 @@ function AdminShell({ children }: { children: ReactNode }) {
               </div>
               <div>
                 <h1 className="text-3xl tracking-[-0.05em] md:text-4xl">Operate the relay catalog, sponsorships, and pricing lanes.</h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60">
+                <p className="mt-2.5 max-w-2xl text-sm leading-6 text-white/60">
                   Review relay inventory, approve inbound submissions, and keep sponsor and pricing operations on a dedicated control deck.
                 </p>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="admin-nav">
                 {items.map(([to, label]) => (
                   <NavLink
@@ -336,7 +336,7 @@ function AdminShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="admin-main mx-auto max-w-7xl px-6 lg:px-10">{children}</main>
+      <main className="admin-main mx-auto max-w-7xl px-5 lg:px-10">{children}</main>
     </div>
   );
 }
@@ -345,8 +345,8 @@ function Card({ title, kicker, children }: { title: string; kicker?: string; chi
   return (
     <section className="card">
       {kicker ? <p className="eyebrow">{kicker}</p> : null}
-      <h2 className="text-3xl tracking-[-0.04em]">{title}</h2>
-      <div className="mt-5">{children}</div>
+      <h2 className="text-3xl tracking-[-0.04em] md:text-[2rem]">{title}</h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -383,7 +383,7 @@ function OverviewPage() {
   if (error || !data) return <ErrorCard message={error ?? "Unable to load admin overview."} />;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {Object.entries(data.totals).map(([label, value]) => (
         <Card key={label} title={String(value)} kicker={label.replace(/[A-Z]/g, (match) => ` ${match.toLowerCase()}`)}>
           <p className="text-sm text-white/60">Measured at {new Date(data.measuredAt).toLocaleTimeString()}</p>
@@ -446,13 +446,13 @@ function RelaysPage() {
   if (relays.error || !relays.data) return <ErrorCard message={relays.error ?? "Unable to load relays."} />;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <Card title="Relay catalog" kicker="Current rows">
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {relays.data.rows.map((relay) => (
             <button
               key={relay.id}
-              className="admin-list-card w-full border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/8"
+              className="admin-list-card w-full border border-white/10 bg-white/5 p-3.5 text-left transition hover:bg-white/8"
               onClick={() => {
                 setEditingId(relay.id);
                 setForm({
@@ -488,7 +488,7 @@ function RelaysPage() {
         </div>
       </Card>
       <Card title={editingId ? "Edit relay" : "Create relay"} kicker="Write path">
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {([
             { label: "Slug", key: "slug", placeholder: "northwind-relay", type: "text" },
             { label: "Name", key: "name", placeholder: "Northwind Relay", type: "text" },
@@ -528,7 +528,7 @@ function RelaysPage() {
           </label>
           <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isFeatured} onChange={(event) => setForm((current) => ({ ...current, isFeatured: event.target.checked }))} /> Featured</label>
           <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isSponsored} onChange={(event) => setForm((current) => ({ ...current, isSponsored: event.target.checked }))} /> Sponsor hint</label>
-          <div className="flex gap-3">
+          <div className="flex gap-2.5">
             <button className="pill pill-active" disabled={mutation.pending} onClick={submit} type="button">{mutation.pending ? "Saving..." : editingId ? "Update" : "Create"}</button>
             {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>Clear</button> : null}
           </div>
@@ -563,9 +563,9 @@ function SubmissionsPage() {
 
   return (
     <Card title="Submission queue" kicker="Review lane">
-      <div className="space-y-4">
+      <div className="space-y-3">
         {submissions.data.rows.map((row) => (
-          <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-4">
+          <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
@@ -578,7 +578,7 @@ function SubmissionsPage() {
                 <button className="pill pill-ghost" type="button" onClick={() => review(row.id, "archived")}>Archive</button>
               </div>
             </div>
-            <textarea className="field-input mt-4 min-h-28" placeholder="Review notes" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
+            <textarea className="field-input mt-3 min-h-24" placeholder="Review notes" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
           </div>
         ))}
       </div>
@@ -624,11 +624,11 @@ function SponsorsPage() {
   if (sponsors.error || !sponsors.data || relays.error || !relays.data) return <ErrorCard message={sponsors.error ?? relays.error ?? "Unable to load sponsors."} />;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
       <Card title="Sponsor placements" kicker="Active windows">
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {sponsors.data.rows.map((row) => (
-            <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-4">
+            <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.name}</p>
@@ -642,7 +642,7 @@ function SponsorsPage() {
         </div>
       </Card>
       <Card title="Create placement" kicker="Sales operations">
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           <label className="field-label">Name<input className="field-input" placeholder="Homepage spotlight" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "name")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.name} /></label>
           <label className="field-label">Placement<input className="field-input" placeholder="homepage-spotlight" value={form.placement} onChange={(event) => { setForm((current) => ({ ...current, placement: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "placement")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.placement} /></label>
           <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => setForm((current) => ({ ...current, relayId: event.target.value }))}><option value="">Unbound sponsor</option>{relays.data.rows.map((relay) => <option key={relay.id} value={relay.id}>{relay.name}</option>)}</select></label>
@@ -696,11 +696,11 @@ function PricesPage() {
   if (prices.error || relays.error || models.error || !prices.data || !relays.data || !models.data) return <ErrorCard message={prices.error ?? relays.error ?? models.error ?? "Unable to load prices."} />;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
       <Card title="Price history" kicker="Recorded schedules">
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {prices.data.rows.map((row) => (
-            <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-4">
+            <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
@@ -714,7 +714,7 @@ function PricesPage() {
         </div>
       </Card>
       <Card title="Create price record" kicker="Pricing ops">
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => { setForm((current) => ({ ...current, relayId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "relayId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select relay</option>{relays.data.rows.map((relay) => <option key={relay.id} value={relay.id}>{relay.name}</option>)}</select><FieldError message={fieldErrors.relayId} /></label>
           <label className="field-label">Model<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select model</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
           <label className="field-label">Input price<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, inputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "inputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.inputPricePer1M} /></label>

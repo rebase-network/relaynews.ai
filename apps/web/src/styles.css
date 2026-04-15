@@ -90,14 +90,14 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 30;
-  padding-top: 1rem;
+  padding-top: 0.7rem;
 }
 
 .site-header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.8rem;
   border: 1px solid rgba(31, 31, 31, 0.08);
   background:
     linear-gradient(135deg, rgba(255, 253, 247, 0.94), rgba(255, 240, 194, 0.86));
@@ -105,15 +105,15 @@ textarea {
     rgba(127, 99, 21, 0.1) 0 18px 50px,
     rgba(255, 255, 255, 0.5) 0 1px 0 inset;
   backdrop-filter: blur(16px);
-  padding: 1rem 1.05rem;
+  padding: 0.8rem 0.9rem;
 }
 
 .site-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.72rem;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   line-height: 1.3;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -124,17 +124,17 @@ textarea {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.16rem;
-  width: 5rem;
+  width: 4.4rem;
 }
 
 .site-brand-mark span {
-  height: 0.9rem;
+  height: 0.78rem;
   border-radius: 999px;
   box-shadow: rgba(255, 255, 255, 0.4) 0 1px 0 inset;
 }
 
 .site-nav {
-  gap: 0.65rem;
+  gap: 0.5rem;
 }
 
 .site-nav-link,
@@ -142,9 +142,9 @@ textarea {
   border: 1px solid rgba(31, 31, 31, 0.1);
   background: rgba(255, 255, 255, 0.55);
   color: rgba(31, 31, 31, 0.7);
-  padding: 0.8rem 0.95rem;
+  padding: 0.68rem 0.82rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
@@ -172,14 +172,14 @@ textarea {
 
 .site-mobile-nav {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
 }
 
 .site-main {
   position: relative;
   z-index: 1;
-  padding-top: 1.6rem;
-  padding-bottom: 6rem;
+  padding-top: 1.1rem;
+  padding-bottom: 4.5rem;
 }
 
 .site-footer {
@@ -198,7 +198,7 @@ textarea {
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 250, 235, 0.92)),
     var(--paper);
   box-shadow: var(--shadow);
-  padding: 1.4rem;
+  padding: 1.15rem;
 }
 
 .panel::before {
@@ -231,7 +231,7 @@ textarea {
 }
 
 .hero-panel {
-  min-height: 28rem;
+  min-height: 23rem;
   background:
     linear-gradient(140deg, rgba(255, 240, 194, 0.9), rgba(255, 184, 62, 0.64) 38%, rgba(250, 82, 15, 0.86));
   color: #1f1f1f;
@@ -252,9 +252,9 @@ textarea {
 }
 
 .kicker {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.65rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   line-height: 1.5;
   text-transform: uppercase;
   letter-spacing: 0.22em;
@@ -268,9 +268,9 @@ textarea {
   justify-content: center;
   gap: 0.55rem;
   border: 1px solid rgba(31, 31, 31, 0.08);
-  padding: 0.95rem 1.15rem;
+  padding: 0.82rem 1rem;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
@@ -306,12 +306,12 @@ textarea {
 
 .metric-card {
   position: relative;
-  min-height: 8.75rem;
+  min-height: 7.4rem;
   overflow: hidden;
   border: 1px solid rgba(31, 31, 31, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 250, 235, 0.9));
-  padding: 1rem;
+  padding: 0.85rem;
 }
 
 .metric-card::before {
@@ -360,9 +360,9 @@ textarea {
   gap: 0.35rem;
   border: 1px solid rgba(31, 31, 31, 0.08);
   background: rgba(255, 255, 255, 0.65);
-  padding: 0.45rem 0.65rem;
+  padding: 0.34rem 0.55rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -374,20 +374,20 @@ textarea {
 
 .form-shell {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .form-note {
   border: 1px solid rgba(31, 31, 31, 0.09);
   background: rgba(255, 255, 255, 0.6);
-  padding: 0.95rem 1rem;
+  padding: 0.8rem 0.9rem;
   color: rgba(31, 31, 31, 0.68);
 }
 
 .form-field {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   line-height: 1.5;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -398,7 +398,7 @@ textarea {
   width: 100%;
   border: 1px solid rgba(31, 31, 31, 0.14);
   background: rgba(255, 255, 255, 0.76);
-  padding: 0.95rem 1rem;
+  padding: 0.82rem 0.9rem;
   color: var(--ink);
 }
 
@@ -417,9 +417,9 @@ textarea {
 
 .input-helper {
   display: block;
-  margin-top: 0.6rem;
-  font-size: 0.76rem;
-  line-height: 1.7;
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  line-height: 1.6;
   color: rgba(31, 31, 31, 0.56);
   text-transform: none;
   letter-spacing: normal;
@@ -428,8 +428,8 @@ textarea {
 
 .field-error {
   display: block;
-  margin-top: 0.6rem;
-  font-size: 0.78rem;
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
   line-height: 1.6;
   color: #a33a16;
   text-transform: none;
@@ -474,9 +474,9 @@ textarea {
 .copy-button {
   border: 1px solid rgba(31, 31, 31, 0.12);
   background: rgba(255, 240, 194, 0.86);
-  padding: 0.75rem 0.85rem;
+  padding: 0.65rem 0.78rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   transition: background-color 160ms ease;
@@ -498,30 +498,30 @@ textarea {
   }
 
   .site-brand-mark {
-    width: 4.2rem;
+    width: 3.8rem;
   }
 
   .panel,
   .hero-panel {
-    padding: 1.2rem;
+    padding: 1rem;
   }
 }
 
 @media (min-width: 1024px) {
   .site-header {
-    padding-top: 1.4rem;
+    padding-top: 1rem;
   }
 
   .site-header-bar {
-    padding: 1.15rem 1.25rem;
+    padding: 0.9rem 1.05rem;
   }
 
   .site-main {
-    padding-top: 2rem;
+    padding-top: 1.35rem;
   }
 
   .panel,
   .hero-panel {
-    padding: 1.8rem;
+    padding: 1.45rem;
   }
 }
