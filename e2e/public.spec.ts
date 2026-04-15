@@ -87,7 +87,7 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   await page.goto("/probe");
   await page.getByLabel("Base URL").fill(probeUrl);
   await page.getByLabel("API key").fill(probeKey);
-  await page.getByLabel("Target model").fill(probeModel);
+  await page.getByLabel("Model").fill(probeModel);
   await page.getByRole("button", { name: "Run probe" }).click();
 
   await expect(page.getByText("Probe result")).toBeVisible();
@@ -113,7 +113,7 @@ test("public probe supports manual compatibility override", async ({ page }) => 
   await page.goto("/probe");
   await page.getByLabel("Base URL").fill(probeUrl);
   await page.getByLabel("API key").fill(probeKey);
-  await page.getByLabel("Target model").fill(probeModel);
+  await page.getByLabel("Model").fill(probeModel);
   await page.locator("summary").filter({ hasText: "Advanced" }).click();
   await page.getByLabel("Compatibility Mode").selectOption(manualCompatibilityMode);
   await page.getByRole("button", { name: "Run probe" }).click();

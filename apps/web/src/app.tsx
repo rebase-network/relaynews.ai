@@ -576,7 +576,7 @@ function ProbeFormFields({
   const fields = [
     ["Base URL", "baseUrl"],
     ["API key", "apiKey"],
-    ["Target model", "model"],
+    ["Model", "model"],
   ] as const;
 
   return (
@@ -1624,7 +1624,7 @@ function ProbePage() {
             <p className="kicker">Before you run</p>
             <div className="space-y-3 text-sm leading-6 text-black/68">
               <p>Paste the relay root or provider prefix you use in production. The probe can add protocol-specific suffixes automatically.</p>
-              <p>Target model names help automatic mode decide whether OpenAI Responses, Chat Completions, or Anthropic Messages should be checked first.</p>
+              <p>Model names help automatic mode decide whether OpenAI Responses, Chat Completions, or Anthropic Messages should be checked first.</p>
               <p>If the automatic result looks wrong, rerun with a manual compatibility override in the advanced section.</p>
             </div>
           </div>
@@ -1816,7 +1816,7 @@ function ProbePage() {
               columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
               items={[
                 {
-                  label: "Target model",
+                  label: "Model",
                   value: result.model,
                   testId: "probe-model-value",
                   valueClassName: "text-[1.35rem] leading-[1.05] break-words",
