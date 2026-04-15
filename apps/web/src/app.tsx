@@ -71,6 +71,54 @@ function formatProbeHttpStatus(value: number | null | undefined) {
   return value ? String(value) : "n/a";
 }
 
+function getProbeResultTone(result: PublicProbeResponse) {
+  if (!result.connectivity.ok) {
+    return {
+      label: "Connectivity failed",
+      description: "The relay did not complete the basic network check. Review the upstream URL, auth, and network path.",
+      className: "border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]",
+    };
+  }
+
+  if (!result.protocol.ok || result.protocol.healthStatus === "down") {
+    return {
+      label: "Protocol failed",
+      description: "The endpoint answered, but the compatibility probe did not see a valid healthy protocol response.",
+      className: "border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]",
+    };
+  }
+
+  if (result.protocol.healthStatus === "degraded" || !result.ok) {
+    return {
+      label: "Protocol degraded",
+      description: "The relay is reachable, but the probe detected a degraded upstream state for this compatibility shape.",
+      className: "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
+    };
+  }
+
+  return {
+    label: "Probe healthy",
+    description: "Connectivity, protocol validation, and compatibility resolution all completed successfully for the selected model.",
+    className: "border-[#027a48]/20 bg-[#edfdf3] text-[#066649]",
+  };
+}
+
+function getConnectivityCardTone(ok: boolean) {
+  return ok ? "border-emerald-700/12 bg-emerald-50/70" : "border-[#b42318]/15 bg-[#fff2ef]";
+}
+
+function getProtocolCardTone(status: PublicProbeResponse["protocol"]["healthStatus"], ok: boolean) {
+  if (!ok || status === "down") {
+    return "border-[#b42318]/15 bg-[#fff2ef]";
+  }
+
+  if (status === "degraded") {
+    return "border-[#b54708]/15 bg-[#fff7e8]";
+  }
+
+  return "border-emerald-700/12 bg-emerald-50/70";
+}
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -251,6 +299,7 @@ function MetricGrid({
     label: string;
     value: string | number;
     testId?: string;
+    cardClassName?: string;
     valueClassName?: string;
     valueTitle?: string;
   }>;
@@ -259,7 +308,10 @@ function MetricGrid({
   return (
     <div className={clsx("grid gap-4", columnsClassName)}>
       {items.map((item) => (
-        <div key={item.label} className="border border-black/10 bg-white/75 p-4">
+        <div
+          key={item.label}
+          className={clsx("border border-black/10 bg-white/75 p-4 transition-colors", item.cardClassName)}
+        >
           <p className="kicker">{item.label}</p>
           <p
             className={clsx("mt-3 tracking-[-0.04em]", item.valueClassName ?? "text-3xl")}
@@ -667,6 +719,7 @@ function ProbePage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<PublicProbeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const fields = [
     ["Base URL", "baseUrl"],
     ["API key", "apiKey"],
@@ -678,6 +731,7 @@ function ProbePage() {
     setSubmitting(true);
     setError(null);
     setResult(null);
+    setCopyState("idle");
     try {
       const response = await fetchJson<PublicProbeResponse>("/public/probe/check", {
         method: "POST",
@@ -690,6 +744,42 @@ function ProbePage() {
       setSubmitting(false);
     }
   }
+
+  async function handleCopyUsedUrl() {
+    if (!result?.usedUrl) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(result.usedUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = result.usedUrl;
+        textarea.setAttribute("readonly", "true");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+
+  useEffect(() => {
+    if (copyState === "idle") {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setCopyState("idle"), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
+
+  const resultTone = useMemo(() => (result ? getProbeResultTone(result) : null), [result]);
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
@@ -752,6 +842,11 @@ function ProbePage() {
         </form>
         {result ? (
           <Panel title="Probe result" kicker="Diagnostic output">
+            <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
+              <p className="kicker !mb-2 !text-current/70">Result state</p>
+              <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
+              <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
+            </div>
             <MetricGrid
               columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
               items={[
@@ -762,8 +857,18 @@ function ProbePage() {
                   valueClassName: "text-[1.75rem] leading-[0.92] break-words",
                   valueTitle: result.targetHost,
                 },
-                { label: "Connectivity", value: result.connectivity.ok ? "ok" : "failed", testId: "probe-connectivity-value" },
-                { label: "Protocol", value: result.protocol.ok ? result.protocol.healthStatus : "unknown", testId: "probe-protocol-value" },
+                {
+                  label: "Connectivity",
+                  value: result.connectivity.ok ? "ok" : "failed",
+                  testId: "probe-connectivity-value",
+                  cardClassName: getConnectivityCardTone(result.connectivity.ok),
+                },
+                {
+                  label: "Protocol",
+                  value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
+                  testId: "probe-protocol-value",
+                  cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
+                },
                 { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
                 {
                   label: "Compatibility",
@@ -778,7 +883,17 @@ function ProbePage() {
               <div className="space-y-4">
                 {result.usedUrl ? (
                   <div className="border border-black/10 bg-white/75 p-4">
-                    <p className="kicker">Used endpoint</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="kicker">Used endpoint</p>
+                      <button
+                        className="border border-black/10 bg-[var(--surface)] px-3 py-2 text-[0.7rem] uppercase tracking-[0.16em] transition-colors hover:bg-[var(--surface-strong)]"
+                        data-testid="probe-copy-endpoint-button"
+                        onClick={handleCopyUsedUrl}
+                        type="button"
+                      >
+                        {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+                      </button>
+                    </div>
                     <p
                       className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
                       data-testid="probe-used-url-value"
@@ -804,7 +919,19 @@ function ProbePage() {
                   </div>
                 ) : null}
                 {result.message ? (
-                  <div className="border border-black/10 bg-[#fff4da] p-4 text-sm leading-6 text-black/72">{result.message}</div>
+                  <div
+                    className={clsx(
+                      "border p-4 text-sm leading-6",
+                      result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
+                    )}
+                  >
+                    {result.message}
+                  </div>
+                ) : null}
+                {!result.ok && result.detectionMode === "auto" ? (
+                  <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
+                    If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
+                  </div>
                 ) : null}
               </div>
               <MetricGrid
@@ -833,12 +960,18 @@ function ProbePage() {
                 ]}
               />
             </div>
-            {!result.ok && result.detectionMode === "auto" ? (
-              <p className="mt-2 text-sm text-[#a33a16]">If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.</p>
-            ) : null}
           </Panel>
         ) : null}
-        {error ? <ErrorPanel message={error} /> : null}
+        {error ? (
+          <div className="panel border border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]" role="alert">
+            <p className="kicker !text-current/70">Probe request failed</p>
+            <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
+            <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
+            <p className="mt-2 text-sm leading-6 text-current/80">
+              Recheck the base URL, key, compatibility mode, and upstream route, then try again.
+            </p>
+          </div>
+        ) : null}
       </div>
     </section>
   );

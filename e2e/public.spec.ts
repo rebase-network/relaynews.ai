@@ -57,13 +57,15 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   test.skip(!probeConfigured, "Probe E2E requires API_URL and API_KEY in .env.");
   const probeModel = process.env.LLM_MODEL ?? "openai-gpt-4.1";
 
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/probe");
   await page.getByLabel("Base URL").fill(probeUrl);
   await page.getByLabel("API key").fill(probeKey);
-  await page.getByLabel("Model").fill(probeModel);
+  await page.getByLabel("Target model").fill(probeModel);
   await page.getByRole("button", { name: "Run probe" }).click();
 
   await expect(page.getByText("Probe result")).toBeVisible();
+  await expect(page.getByText("Probe healthy")).toBeVisible();
   await expect(page.getByTestId("probe-host-value")).toContainText(new URL(probeUrl).host);
   await expect(page.getByTestId("probe-connectivity-value")).toHaveText("ok");
   await expect(page.getByTestId("probe-protocol-value")).toHaveText("healthy");
@@ -72,6 +74,8 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   await expect(page.getByTestId("probe-model-value")).toHaveText(probeModel);
   await expect(page.getByTestId("probe-http-status-value")).toHaveText("200");
   await expect(page.getByTestId("probe-measured-at-value")).toHaveText(/\S+/);
+  await page.getByTestId("probe-copy-endpoint-button").click();
+  await expect(page.getByTestId("probe-copy-endpoint-button")).toHaveText("Copied");
   await expect(page.getByText(/^Upstream returned /)).toHaveCount(0);
 });
 
@@ -80,6 +84,7 @@ test("public probe supports manual compatibility override", async ({ page }) => 
   test.skip(!manualCompatibilityLabels[manualCompatibilityMode], "Set LLM_API_TYPE to a supported manual compatibility mode.");
   const probeModel = process.env.LLM_MODEL ?? "openai-gpt-4.1";
 
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/probe");
   await page.getByLabel("Base URL").fill(probeUrl);
   await page.getByLabel("API key").fill(probeKey);
@@ -89,6 +94,7 @@ test("public probe supports manual compatibility override", async ({ page }) => 
   await page.getByRole("button", { name: "Run probe" }).click();
 
   await expect(page.getByText("Probe result")).toBeVisible();
+  await expect(page.getByText("Probe healthy")).toBeVisible();
   await expect(page.getByTestId("probe-connectivity-value")).toHaveText("ok");
   await expect(page.getByTestId("probe-protocol-value")).toHaveText("healthy");
   await expect(page.getByTestId("probe-detection-value")).toHaveText("Manual override");
