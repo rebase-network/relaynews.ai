@@ -77,6 +77,13 @@ fi
 EOF_EXPORTS
 }
 
+build_ref_export() {
+  local build_ref="$1"
+  cat <<EOF_BUILD_REF
+export RELAYNEWS_BUILD_REF='${build_ref}'
+EOF_BUILD_REF
+}
+
 wait_for_postgres_script() {
   cat <<EOF_WAIT
 for _ in \$(seq 1 30); do
@@ -154,9 +161,12 @@ deploy_remote() {
 
   local release_dir
   release_dir="$(sync_release)"
+  local release_id
+  release_id="$(basename "$release_dir")"
 
   run_remote_script "
 $(compose_env_exports)
+$(build_ref_export "$release_id")
 if [ ! -f '${REMOTE_ENV_FILE}' ]; then
   echo 'Missing remote env file: ${REMOTE_ENV_FILE}' >&2
   exit 1
@@ -167,8 +177,7 @@ docker compose -f '${REMOTE_COMPOSE_FILE}' up -d postgres
 $(wait_for_postgres_script)
 docker compose -f '${REMOTE_COMPOSE_FILE}' build api
 docker compose -f '${REMOTE_COMPOSE_FILE}' run --rm api tsx apps/api/src/db/migrate.ts
-docker compose -f '${REMOTE_COMPOSE_FILE}' rm -sf api cloudflared >/dev/null 2>&1 || true
-docker compose -f '${REMOTE_COMPOSE_FILE}' up -d api cloudflared
+docker compose -f '${REMOTE_COMPOSE_FILE}' up -d --force-recreate api cloudflared
 sleep 3
 curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
 docker image prune -f >/dev/null 2>&1 || true
@@ -218,12 +227,12 @@ if [ ! -d \"\$target_dir\" ]; then
 fi
 
 ln -sfn \"\$target_dir\" '${REMOTE_CURRENT_LINK}'
+export RELAYNEWS_BUILD_REF=\"\$target_release\"
 cd '${REMOTE_CURRENT_LINK}'
 docker compose -f '${REMOTE_COMPOSE_FILE}' up -d postgres
 $(wait_for_postgres_script)
 docker compose -f '${REMOTE_COMPOSE_FILE}' build api
-docker compose -f '${REMOTE_COMPOSE_FILE}' rm -sf api cloudflared >/dev/null 2>&1 || true
-docker compose -f '${REMOTE_COMPOSE_FILE}' up -d api cloudflared
+docker compose -f '${REMOTE_COMPOSE_FILE}' up -d --force-recreate api cloudflared
 sleep 3
 curl --fail --silent --show-error '${REMOTE_HEALTHCHECK_URL}' >/dev/null
 echo \"Rolled back to \$target_release\"
@@ -243,6 +252,12 @@ echo
 if [ -e '${REMOTE_CURRENT_LINK}/${REMOTE_COMPOSE_FILE}' ]; then
   cd '${REMOTE_CURRENT_LINK}'
   docker compose -f '${REMOTE_COMPOSE_FILE}' ps || true
+  api_container_id=\$(docker compose -f '${REMOTE_COMPOSE_FILE}' ps -q api)
+  if [ -n \"\$api_container_id\" ]; then
+    echo
+    echo 'api_build_ref:'
+    docker inspect --format '{{ index .Config.Labels "ai.relaynews.build_ref" }}' \"\$api_container_id\" || true
+  fi
 else
   echo 'compose file is not available in current release yet'
 fi

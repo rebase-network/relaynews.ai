@@ -39,6 +39,9 @@ service.
 
 - `deploy` is focused on `apps/api` only. It does not publish `web`, `api-edge`,
   or `admin` to Cloudflare.
+- `deploy` and `rollback` stamp the API image/container with the release id and
+  force-recreate the running API service so `./ops/manage.sh status` can confirm
+  which release is actually live
 - `ops/manage-api-edge.sh` is only for `relaynews-api-edge`; do not use ops scripts
   to deploy `web` or `admin`
 - The remote stack includes its own `postgres` container and named Docker volume,

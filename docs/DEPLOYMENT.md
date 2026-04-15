@@ -81,6 +81,10 @@ mapping stays in the repository build scripts and GitHub-connected Workers Build
    ./ops/manage.sh deploy
    ```
 
+   This flow now stamps the API image/container with the release id and
+   force-recreates the running API service so the remote host cannot stay on an
+   older backend image by mistake.
+
 4. Inspect the running service if needed:
 
    ```bash

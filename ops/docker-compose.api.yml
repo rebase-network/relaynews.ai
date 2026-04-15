@@ -23,8 +23,12 @@ services:
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
+      args:
+        RELAYNEWS_BUILD_REF: ${RELAYNEWS_BUILD_REF:-dev}
     env_file:
       - ${API_ENV_FILE}
+    labels:
+      ai.relaynews.build_ref: ${RELAYNEWS_BUILD_REF:-dev}
     depends_on:
       postgres:
         condition: service_healthy

@@ -21,6 +21,9 @@ FROM node:22-bookworm-slim AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
+ARG RELAYNEWS_BUILD_REF=dev
+ENV RELAYNEWS_BUILD_REF=${RELAYNEWS_BUILD_REF}
+LABEL ai.relaynews.build_ref="${RELAYNEWS_BUILD_REF}"
 
 COPY --from=build /app /app
 RUN ln -sf "$(find /app/node_modules/.pnpm -path '*/node_modules/tsx/dist/cli.mjs' | head -n 1)" /usr/local/bin/tsx
