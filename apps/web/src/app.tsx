@@ -446,25 +446,6 @@ function getProbeStateFromSearchParams(searchParams: URLSearchParams): ProbeForm
   };
 }
 
-function buildProbeDetailsHref(state: Pick<ProbeFormState, "baseUrl" | "model" | "compatibilityMode">) {
-  const params = new URLSearchParams();
-
-  if (state.baseUrl.trim()) {
-    params.set("baseUrl", state.baseUrl.trim());
-  }
-
-  if (state.model.trim()) {
-    params.set("model", state.model.trim());
-  }
-
-  if (state.compatibilityMode !== "auto") {
-    params.set("compatibilityMode", state.compatibilityMode);
-  }
-
-  const query = params.toString();
-  return query ? `/probe?${query}` : "/probe";
-}
-
 function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_STATE) {
   const [state, setState] = useState<ProbeFormState>(() => ({ ...initialState }));
   const [submitting, setSubmitting] = useState(false);
@@ -614,107 +595,39 @@ function ProbeFormFields({
   );
 }
 
-function CompactProbeSummary({
-  state,
+function InlineProbeSummary({
   result,
   error,
-  requestSummary,
   resultTone,
 }: {
-  state: ProbeFormState;
   result: PublicProbeResponse | null;
   error: string | null;
-  requestSummary: string | null;
   resultTone: ReturnType<typeof getProbeResultTone> | null;
 }) {
   if (error) {
     return (
-      <div className="quick-probe-card quick-probe-summary" role="alert">
-        <div className="quick-probe-summary-header border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]">
-          <div>
-            <p className="kicker !mb-1 !text-current/70">Quick result</p>
-            <p className="text-base tracking-[-0.03em]">Probe did not complete.</p>
-          </div>
-          <Link className="quick-probe-link !text-current/72" to={buildProbeDetailsHref(state)}>
-            Full diagnostics
-          </Link>
-        </div>
-        <p className="quick-probe-note text-[#8d2d17]">{error}</p>
-      </div>
+      <p className="quick-probe-inline-summary quick-probe-inline-summary-error" role="alert">
+        Probe failed. {error}
+      </p>
     );
   }
 
   if (!result || !resultTone) {
     return (
-      <div className="quick-probe-card quick-probe-summary">
-        <div className="quick-probe-summary-header border-black/10 bg-white/72 text-black/84">
-          <div>
-            <p className="kicker !mb-1">Quick result</p>
-            <p className="text-base tracking-[-0.03em]">Run a probe to see status instantly.</p>
-          </div>
-          <Link className="quick-probe-link" to={buildProbeDetailsHref(state)}>
-            Full diagnostics
-          </Link>
-        </div>
-        <div className="quick-probe-summary-grid">
-          <div className="quick-probe-stat">
-            <p className="quick-probe-stat-label">Status</p>
-            <p className="quick-probe-stat-value">-</p>
-          </div>
-          <div className="quick-probe-stat">
-            <p className="quick-probe-stat-label">Latency</p>
-            <p className="quick-probe-stat-value">-</p>
-          </div>
-          <div className="quick-probe-stat">
-            <p className="quick-probe-stat-label">HTTP</p>
-            <p className="quick-probe-stat-value">-</p>
-          </div>
-          <div className="quick-probe-stat">
-            <p className="quick-probe-stat-label">API type</p>
-            <p className="quick-probe-stat-value">-</p>
-          </div>
-        </div>
-        <p className="quick-probe-note">Status, latency, HTTP code, and API type appear here. Full trace stays on `/probe`.</p>
-      </div>
+      <p className="quick-probe-inline-summary">
+        Status, latency, HTTP, and API type appear here after a probe.
+      </p>
     );
   }
 
+  const latencyText = result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "latency n/a";
+  const httpText = `HTTP ${formatProbeHttpStatus(result.protocol.httpStatus)}`;
+  const compatibilityText = formatProbeCompatibilityMode(result.compatibilityMode);
+
   return (
-    <div className="quick-probe-card quick-probe-summary">
-      <div className={clsx("quick-probe-summary-header", resultTone.className)}>
-        <div>
-          <p className="kicker !mb-1 !text-current/70">Quick result</p>
-          <p className="text-base tracking-[-0.03em]">{resultTone.label}</p>
-        </div>
-        <Link className="quick-probe-link !text-current/72" to={buildProbeDetailsHref(state)}>
-          Full diagnostics
-        </Link>
-      </div>
-      <div className="quick-probe-summary-grid">
-        <div className="quick-probe-stat">
-          <p className="quick-probe-stat-label">Status</p>
-          <p className="quick-probe-stat-value">{result.protocol.ok ? result.protocol.healthStatus : "failed"}</p>
-        </div>
-        <div className="quick-probe-stat">
-          <p className="quick-probe-stat-label">Latency</p>
-          <p className="quick-probe-stat-value">{result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-"}</p>
-        </div>
-        <div className="quick-probe-stat">
-          <p className="quick-probe-stat-label">HTTP</p>
-          <p className="quick-probe-stat-value">{formatProbeHttpStatus(result.protocol.httpStatus)}</p>
-        </div>
-        <div className="quick-probe-stat">
-          <p className="quick-probe-stat-label">API type</p>
-          <p className="quick-probe-stat-value quick-probe-stat-value-wide">{formatProbeCompatibilityMode(result.compatibilityMode)}</p>
-        </div>
-      </div>
-      <p className="quick-probe-host">
-        {result.targetHost}
-      </p>
-      <p className="quick-probe-note">
-        {result.message ?? requestSummary ?? resultTone.description}
-      </p>
-    </div>
+    <p className={clsx("quick-probe-inline-summary", resultTone.className)}>
+      {resultTone.label} · {latencyText} · {httpText} · {compatibilityText}
+    </p>
   );
 }
 
@@ -975,17 +888,17 @@ function HomePage() {
                 showHelpers={false}
                 state={quickProbe.state}
               />
-              <button className="button-dark quick-probe-action" disabled={quickProbe.submitting} type="submit">
-                {quickProbe.submitting ? "Checking..." : "Run probe"}
-              </button>
+              <div className="quick-probe-footer">
+                <InlineProbeSummary
+                  error={quickProbe.error}
+                  result={quickProbe.result}
+                  resultTone={quickProbe.resultTone}
+                />
+                <button className="button-dark quick-probe-action" disabled={quickProbe.submitting} type="submit">
+                  {quickProbe.submitting ? "Checking..." : "Run probe"}
+                </button>
+              </div>
             </form>
-            <CompactProbeSummary
-              error={quickProbe.error}
-              requestSummary={quickProbe.requestSummary}
-              result={quickProbe.result}
-              resultTone={quickProbe.resultTone}
-              state={quickProbe.state}
-            />
           </div>
         </div>
       </section>
