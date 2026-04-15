@@ -42,6 +42,13 @@ Review `docs/OPEN_DESIGN_ISSUES.md` only when active unresolved design gaps exis
 - admin and probe tooling can remain CSR
 - testing should default to Playwright-first acceptance coverage
 
+## Deployment Rules
+
+- `relaynew.ai` and `admin.relaynew.ai` must deploy only through GitHub-triggered Cloudflare Workers Builds after code is committed and pushed
+- do not run `./ops/manage-edge.sh deploy web`, `./ops/manage-edge.sh deploy admin`, or `./ops/manage-edge.sh deploy all`
+- `api.relaynew.ai` is deployed manually with `./ops/manage-edge.sh deploy api`
+- the remote backend API is deployed manually with `./ops/manage.sh deploy`
+
 ## Code Change Guidance
 
 - prefer small, explicit changes

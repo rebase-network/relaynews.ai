@@ -53,7 +53,8 @@ repository build scripts:
 That means the normal GitHub -> Cloudflare Workers Builds path does not need
 dashboard-level `VITE_*` production URL variables.
 
-For manual deploys or one-off overrides, `./ops/manage-edge.sh` still accepts:
+For local build or preview checks, plus manual `api-edge` deploys,
+`./ops/manage-edge.sh` still accepts:
 
 - `CF_ACCOUNT_ID` default: `5abb6d6f38eb7d3dabf8a5adf095c5f7`
 - `PUBLIC_API_BASE_URL` default: `https://api.relaynew.ai`
@@ -61,7 +62,8 @@ For manual deploys or one-off overrides, `./ops/manage-edge.sh` still accepts:
 - `ADMIN_SITE_URL` default: `https://admin.relaynew.ai`
 
 The helper exports those values into `VITE_API_BASE_URL`,
-`VITE_PUBLIC_SITE_URL`, and `VITE_ADMIN_SITE_URL` only for the manual build path.
+`VITE_PUBLIC_SITE_URL`, and `VITE_ADMIN_SITE_URL` only for the local build,
+preview, and `api-edge` deploy path.
 
 ## API Service Deploy Flow
 
@@ -137,22 +139,11 @@ Before the first production deploy, make sure:
    ./ops/manage-edge.sh deploy api
    ```
 
-5. Use manual frontend deploys only for first-time bootstrap, fallback, or emergency
-   publish flows:
+5. Deploy `relaynews-web` and `relaynews-admin` only by pushing committed changes
+   to GitHub so Cloudflare Workers Builds runs automatically.
 
-   ```bash
-   ./ops/manage-edge.sh deploy web
-   ./ops/manage-edge.sh deploy admin
-   ```
-
-Or deploy all Cloudflare apps together as a manual fallback:
-
-```bash
-./ops/manage-edge.sh deploy all
-```
-
-Day-to-day production pushes should auto-deploy `relaynews-web` and
-`relaynews-admin` from GitHub, while `relaynews-api-edge` remains a manual deploy.
+Do not run `./ops/manage-edge.sh deploy web`, `./ops/manage-edge.sh deploy admin`,
+or `./ops/manage-edge.sh deploy all` in normal production flow.
 
 ## Cloudflare Worker Inventory
 

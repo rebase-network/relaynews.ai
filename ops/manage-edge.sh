@@ -17,7 +17,7 @@ Commands:
   help                     Show this help message
   build <web|admin|api|all>    Build Cloudflare edge apps
   preview <web|admin|api|all>  Build and validate Wrangler config with dry-run deploy
-  deploy <web|admin|api|all>   Build and deploy Cloudflare edge apps
+  deploy <api>                  Build and deploy the API edge app
   whoami                   Show the active Wrangler account
 
 Overrides:
@@ -129,6 +129,15 @@ deploy_target() {
   run_wrangle "$app" deploy
 }
 
+reject_frontend_deploy() {
+  cat >&2 <<EOF
+Direct Cloudflare deploys for web/admin are disabled.
+Commit and push to GitHub so Workers Builds deploy relaynews-web and relaynews-admin.
+Use ./ops/manage-edge.sh deploy api only for the API edge Worker.
+EOF
+  exit 1
+}
+
 main() {
   require_cmd pnpm
 
@@ -146,7 +155,19 @@ main() {
       for_each_target "$target" preview_target
       ;;
     deploy)
-      for_each_target "$target" deploy_target
+      case "$target" in
+        api)
+          deploy_target "api"
+          ;;
+        web|admin|all)
+          reject_frontend_deploy
+          ;;
+        *)
+          echo "Unknown target: ${target}" >&2
+          usage
+          exit 1
+          ;;
+      esac
       ;;
     whoami)
       (

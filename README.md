@@ -115,4 +115,5 @@ Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
 - deploy the remote API service: `./ops/manage.sh deploy`
 - inspect or update the dedicated Cloudflare Tunnel rule: `./ops/manage-tunnel.sh status`
 - preview Cloudflare edge deploys manually: `./ops/manage-edge.sh preview all`
-- manually deploy Cloudflare apps as a fallback: `./ops/manage-edge.sh deploy all`
+- deploy the API edge Worker manually: `./ops/manage-edge.sh deploy api`
+- deploy `relaynew.ai` and `admin.relaynew.ai` by pushing committed changes to GitHub

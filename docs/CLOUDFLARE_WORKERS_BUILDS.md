@@ -164,8 +164,8 @@ build:admin:prod
 
 ## Recommended Operating Model
 
-- `relaynews-web` -> GitHub auto-deploy enabled, manual fallback `./ops/manage-edge.sh deploy web`
-- `relaynews-admin` -> GitHub auto-deploy enabled, manual fallback `./ops/manage-edge.sh deploy admin`
+- `relaynews-web` -> GitHub auto-deploy enabled; do not deploy it manually from `ops/manage-edge.sh`
+- `relaynews-admin` -> GitHub auto-deploy enabled; do not deploy it manually from `ops/manage-edge.sh`
 - `relaynews-api-edge` -> manual deploy `./ops/manage-edge.sh deploy api`
 - `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
 
