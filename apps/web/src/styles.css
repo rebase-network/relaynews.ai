@@ -477,16 +477,27 @@ textarea {
 }
 
 .quick-probe-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.2rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.62rem;
+  border: 1px solid rgba(31, 31, 31, 0.12);
+  background: rgba(31, 31, 31, 0.88);
   font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   text-decoration: none;
-  color: rgba(31, 31, 31, 0.56);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: rgba(31, 31, 31, 0.14) 0 12px 24px;
 }
 
 .quick-probe-link:hover {
-  color: rgba(31, 31, 31, 0.9);
+  background: #1f1f1f;
+  color: white;
+  transform: translateY(-1px);
 }
 
 .quick-probe-field {
@@ -508,7 +519,7 @@ textarea {
 }
 
 .quick-probe-action {
-  min-width: 10.5rem;
+  min-width: 8.2rem;
   justify-self: end;
 }
 

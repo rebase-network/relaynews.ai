@@ -878,8 +878,13 @@ function HomePage() {
             <form className="quick-probe-card quick-probe-form" onSubmit={quickProbe.handleSubmit}>
               <div className="quick-probe-header">
                 <p className="kicker !mb-0">Quick probe</p>
-                <Link className="quick-probe-link" to="/probe">
-                  Full page
+                <Link
+                  aria-label="Open the Pro probe page"
+                  className="quick-probe-link"
+                  title="Open the Pro probe page for full diagnostics"
+                  to="/probe"
+                >
+                  Pro
                 </Link>
               </div>
               <ProbeFormFields
@@ -895,7 +900,7 @@ function HomePage() {
                   resultTone={quickProbe.resultTone}
                 />
                 <button className="button-dark quick-probe-action" disabled={quickProbe.submitting} type="submit">
-                  {quickProbe.submitting ? "Checking..." : "Run probe"}
+                  {quickProbe.submitting ? "Checking..." : "Probe"}
                 </button>
               </div>
             </form>
