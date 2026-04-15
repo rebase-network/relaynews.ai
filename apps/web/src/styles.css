@@ -183,47 +183,145 @@ textarea {
 }
 
 .site-footer {
+  position: relative;
   border-top: 1px solid rgba(31, 31, 31, 0.1);
   background:
-    linear-gradient(180deg, rgba(255, 161, 16, 0.18), rgba(31, 31, 31, 0.98)),
+    radial-gradient(circle at top right, rgba(255, 161, 16, 0.28), transparent 20rem),
+    linear-gradient(180deg, rgba(68, 53, 16, 0.96), rgba(31, 31, 31, 0.99)),
     #1f1f1f;
   color: white;
 }
 
+.site-footer-shell {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.site-footer-primary {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.site-footer-brand-block {
+  max-width: 32rem;
+}
+
+.site-footer-brand-mark,
+.site-footer-group-label,
+.site-footer-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.site-footer-brand-mark {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.site-footer-slogan {
+  margin-top: 0.65rem;
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.site-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 2rem;
+  align-items: flex-start;
+}
+
+.site-footer-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.site-footer-group-label {
+  color: rgba(255, 255, 255, 0.44);
+}
+
+.site-footer-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.1rem;
+}
+
 .site-footer-link,
-.footer-icon-link {
+.site-footer-github {
   transition:
     color 160ms ease,
     transform 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease;
+    opacity 160ms ease;
 }
 
 .site-footer-link {
+  position: relative;
+  width: fit-content;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.site-footer-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.2rem;
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.24);
+  transform: scaleX(0.4);
+  transform-origin: left;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
 }
 
 .site-footer-link:hover {
   color: white;
-  transform: translateX(2px);
+  transform: translateY(-1px);
 }
 
-.footer-icon-link {
+.site-footer-link:hover::after {
+  background: rgba(255, 161, 16, 0.9);
+  transform: scaleX(1);
+}
+
+.site-footer-github {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 2.8rem;
-  height: 2.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: white;
+  gap: 0.55rem;
+  width: fit-content;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
 }
 
-.footer-icon-link:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
+.site-footer-github:hover {
+  color: white;
   transform: translateY(-1px);
+}
+
+.site-footer-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04));
+}
+
+.site-footer-meta {
+  color: rgba(255, 255, 255, 0.54);
+}
+
+@media (min-width: 768px) {
+  .site-footer-primary {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .site-footer-nav {
+    justify-content: flex-end;
+  }
 }
 
 .panel {

@@ -668,6 +668,7 @@ function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const currentYear = new Date().getFullYear();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navItems = [
     ["/", "Home"],
@@ -748,32 +749,46 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="site-main mx-auto max-w-7xl px-5 lg:px-10">{children}</main>
       <footer className="site-footer px-5 py-8 lg:px-10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <p className="max-w-2xl text-sm uppercase tracking-[0.16em] text-white/72">
-            Neutral relay rankings, operator probe tooling, and clear sponsor disclosure.
-          </p>
-          <div className="flex flex-wrap items-center gap-4 text-sm uppercase tracking-[0.16em] text-white/72">
-            {FOOTER_FRIEND_LINKS.map((item) => (
-              <a
-                key={item.href}
-                className="site-footer-link"
-                href={item.href}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {item.label}
-              </a>
-            ))}
-            <a
-              aria-label="GitHub repository"
-              className="footer-icon-link"
-              href={GITHUB_REPOSITORY_URL}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <GitHubIcon className="h-5 w-5" />
-            </a>
+        <div className="site-footer-shell mx-auto max-w-7xl">
+          <div className="site-footer-primary">
+            <div className="site-footer-brand-block">
+              <p className="site-footer-brand-mark">relaynew.ai</p>
+              <p className="site-footer-slogan">Neutral relay rankings, operator probe tooling</p>
+            </div>
+            <div className="site-footer-nav">
+              <div className="site-footer-group">
+                <p className="site-footer-group-label">Friend links</p>
+                <div className="site-footer-link-list">
+                  {FOOTER_FRIEND_LINKS.map((item) => (
+                    <a
+                      key={item.href}
+                      className="site-footer-link"
+                      href={item.href}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="site-footer-group">
+                <p className="site-footer-group-label">Source</p>
+                <a
+                  aria-label="GitHub repository"
+                  className="site-footer-github"
+                  href={GITHUB_REPOSITORY_URL}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <GitHubIcon className="h-[18px] w-[18px]" />
+                  <span>GitHub</span>
+                </a>
+              </div>
+            </div>
           </div>
+          <div className="site-footer-divider" />
+          <p className="site-footer-meta">© {currentYear} relaynew.ai</p>
         </div>
       </footer>
     </div>
