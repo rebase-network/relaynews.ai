@@ -11,7 +11,7 @@ PUBLIC_API_BASE_URL="${PUBLIC_API_BASE_URL:-${API_SITE_URL}}"
 
 usage() {
   cat <<USAGE
-Usage: ./ops/manage-edge.sh <command> [target]
+Usage: ./ops/manage-api-edge.sh <command> [target]
 
 Commands:
   help                     Show this help message
@@ -133,7 +133,7 @@ reject_frontend_deploy() {
   cat >&2 <<EOF
 Direct Cloudflare deploys for web/admin are disabled.
 Commit and push to GitHub so Workers Builds deploy relaynews-web and relaynews-admin.
-Use ./ops/manage-edge.sh deploy api only for the API edge Worker.
+Use ./ops/manage-api-edge.sh deploy api only for the API edge Worker.
 EOF
   exit 1
 }
