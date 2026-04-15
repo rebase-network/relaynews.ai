@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   buildProbeAttempts,
   getAutoProbeModes,
+  inferProbeFamilyFromPath,
+  inferProbeModeFromPath,
   inferProbeModelFamily,
   probeAdapterRegistry,
   type ProbeAttempt,
@@ -28,6 +30,31 @@ test("anthropic-family models prefer messages first", () => {
   ]);
 });
 
+test("chat-oriented non-openai model names prefer chat completions first", () => {
+  assert.equal(inferProbeModelFamily("qwen-plus"), "chat-first");
+  assert.deepEqual(getAutoProbeModes("qwen-plus"), [
+    "openai-chat-completions",
+    "openai-responses",
+    "anthropic-messages",
+  ]);
+});
+
+test("path hints can override model-family ordering during auto detection", () => {
+  assert.equal(inferProbeFamilyFromPath("/openai"), "openai");
+  assert.equal(inferProbeFamilyFromPath("/v1/chat/completions"), "chat-first");
+  assert.equal(inferProbeModeFromPath("/v1/chat/completions"), "openai-chat-completions");
+  assert.deepEqual(getAutoProbeModes("claude-sonnet-4-5", new URL("https://relay.example.ai/openai")), [
+    "openai-responses",
+    "openai-chat-completions",
+    "anthropic-messages",
+  ]);
+  assert.deepEqual(getAutoProbeModes("gpt-5.3-codex", new URL("https://relay.example.ai/v1/chat/completions")), [
+    "openai-chat-completions",
+    "openai-responses",
+    "anthropic-messages",
+  ]);
+});
+
 test("manual compatibility mode only builds attempts for the requested adapter", () => {
   const attempts = buildProbeAttempts(new URL("https://relay.example.ai/openai"), {
     baseUrl: "https://relay.example.ai/openai",
@@ -38,6 +65,23 @@ test("manual compatibility mode only builds attempts for the requested adapter",
 
   assert.ok(attempts.length > 0);
   assert.ok(attempts.every((attempt) => attempt.mode === "openai-chat-completions"));
+});
+
+test("exact endpoint base URLs are normalized back to protocol roots before building attempts", () => {
+  const attempts = buildProbeAttempts(new URL("https://relay.example.ai/openai/v1/responses"), {
+    baseUrl: "https://relay.example.ai/openai/v1/responses",
+    apiKey: "sk-live",
+    model: "gpt-5.1",
+    compatibilityMode: "openai-responses",
+  });
+
+  assert.deepEqual(
+    attempts.map((attempt) => attempt.url.toString()),
+    [
+      "https://relay.example.ai/openai/v1/responses",
+      "https://relay.example.ai/openai/responses",
+    ],
+  );
 });
 
 function firstAttempt(result: ProbeAttempt[]) {
