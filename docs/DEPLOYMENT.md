@@ -135,6 +135,132 @@ Or deploy all Cloudflare apps together:
 ./ops/manage-edge.sh deploy all
 ```
 
+## Cloudflare Git Auto-Deploy For `web` And `admin`
+
+The public site and admin site can be connected directly to GitHub through Workers
+Builds so pushes to the production branch deploy automatically.
+
+### Recommended Worker Mapping
+
+- `relaynews-web` -> `apps/web/wrangler.jsonc` -> `relaynew.ai`
+- `relaynews-admin` -> `apps/admin/wrangler.jsonc` -> `admin.relaynew.ai`
+
+Cloudflare requires the Worker name in the dashboard to match the `name` in the
+Wrangler configuration file found in the configured root directory.
+
+### Root Directory
+
+For each Worker, connect the same GitHub repository and set:
+
+- `relaynews-web` root directory: `apps/web`
+- `relaynews-admin` root directory: `apps/admin`
+
+### Build Commands
+
+Set these commands in the Cloudflare dashboard under `Settings -> Builds`.
+
+For `relaynews-web`:
+
+- Build command:
+
+```bash
+pnpm run cf:build
+```
+
+- Deploy command:
+
+```bash
+pnpm run cf:deploy
+```
+
+- Non-production branch deploy command:
+
+```bash
+pnpm run cf:preview
+```
+
+For `relaynews-admin`:
+
+- Build command:
+
+```bash
+pnpm run cf:build
+```
+
+- Deploy command:
+
+```bash
+pnpm run cf:deploy
+```
+
+- Non-production branch deploy command:
+
+```bash
+pnpm run cf:preview
+```
+
+These commands are backed by:
+
+- root scripts in `package.json` for Cloudflare Builds
+- wrapper scripts in `apps/web/package.json`
+- wrapper scripts in `apps/admin/package.json`
+
+### Build Variables
+
+Recommended build variables for both Workers:
+
+```txt
+SKIP_DEPENDENCY_INSTALL=1
+NODE_VERSION=22.16.0
+PNPM_VERSION=10.33.0
+VITE_API_BASE_URL=https://api.relaynew.ai
+VITE_PUBLIC_SITE_URL=https://relaynew.ai
+VITE_ADMIN_SITE_URL=https://admin.relaynew.ai
+```
+
+Notes:
+
+- `SKIP_DEPENDENCY_INSTALL=1` keeps Workers Builds from doing a default dependency
+  install inside the app subdirectory before our monorepo-aware build command runs
+- `VITE_*` values are build-time values for the static frontends, not runtime secrets
+- Cloudflare can create and manage a build API token automatically, so a custom
+  `CLOUDFLARE_API_TOKEN` is optional unless you want to manage it yourself
+
+### Build Watch Paths
+
+Recommended include paths for `relaynews-web`:
+
+```txt
+apps/web/*
+packages/shared/*
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.base.json
+```
+
+Recommended include paths for `relaynews-admin`:
+
+```txt
+apps/admin/*
+packages/shared/*
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.base.json
+```
+
+This keeps a change in `apps/web` from rebuilding `admin`, and vice versa, while
+still rebuilding both apps when shared contracts or workspace metadata change.
+
+### Recommended Branch Behavior
+
+- production branch: deploy automatically with `pnpm run cf:deploy`
+- non-production branches: upload preview versions with `pnpm run cf:preview`
+
+This gives preview builds for feature branches without promoting them to the active
+production deployment.
+
 ## Notes
 
 - The frontend deploy path currently ships static Vite builds through Cloudflare

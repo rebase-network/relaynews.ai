@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "cf:build": "cd ../.. && pnpm run cf:build:web",
+    "cf:deploy": "cd ../.. && pnpm run cf:deploy:web",
+    "cf:preview": "cd ../.. && pnpm run cf:preview:web",
     "predev": "pnpm --filter @relaynews/shared build",
     "dev": "vite",
     "prebuild": "pnpm --filter @relaynews/shared build",
