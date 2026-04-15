@@ -6,8 +6,10 @@ for each route, and the primary data source that should back it.
 ## Rendering Rules
 
 - use CSR for the current MVP frontend deployed through Cloudflare Workers Static Assets
+- keep the public site on `relaynew.ai` and the admin app on `admin.relaynew.ai`
 - keep public route data boundaries clean so SSR or pre-render can be added later if needed
 - keep page data reads on snapshots or aggregate tables when possible
+- do not expose an admin entry in the public site navigation
 
 ## Public Routes
 
@@ -24,10 +26,19 @@ for each route, and the primary data source that should back it.
 | Route | Purpose | Render | Primary Data Source |
 |---|---|---|---|
 | `/probe` | User self-check probe flow | CSR | `POST /public/probe/check` |
-| `/admin` | Admin dashboard landing page | CSR | admin APIs |
-| `/admin/relays` | Relay review and metadata management | CSR | `GET /admin/relays` |
-| `/admin/submissions` | Submission review queue | CSR | `GET /admin/submissions` |
-| `/admin/sponsors` | Sponsor placement management | CSR | `GET /admin/sponsors` |
+
+## Admin Routes (`admin.relaynew.ai`)
+
+These routes live on the dedicated admin hostname. They are not mirrored under
+`relaynew.ai/admin`.
+
+| Route | Purpose | Render | Primary Data Source |
+|---|---|---|---|
+| `/` | Admin dashboard landing page | CSR in admin SPA | `GET /admin/overview` |
+| `/relays` | Relay review and metadata management | CSR in admin SPA | `GET /admin/relays` |
+| `/submissions` | Submission review queue | CSR in admin SPA | `GET /admin/submissions` |
+| `/sponsors` | Sponsor placement management | CSR in admin SPA | `GET /admin/sponsors` |
+| `/prices` | Price record management | CSR in admin SPA | `GET /admin/prices` |
 
 ## Homepage Modules
 
@@ -87,4 +98,4 @@ Hydration or secondary loads:
 - `/public/relay/:slug/pricing-history` should return price change points or chart-ready buckets
 - `/public/relay/:slug/incidents` should return timeline-ready incident records
 - `/probe` must only call the public-safe probe endpoint described in `docs/PROBE_SECURITY.md`
-- admin routes should never rely on CDN-cached responses
+- admin routes on `admin.relaynew.ai` should never rely on CDN-cached responses

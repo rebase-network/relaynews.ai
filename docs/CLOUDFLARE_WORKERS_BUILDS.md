@@ -38,7 +38,7 @@ Do this once for `relaynews-web`, then repeat for `relaynews-admin`.
 
 - click `Connect repository`
 - choose `GitHub`
-- select the `relaynews` repository
+- select the `relaynews.ai` repository
 - choose the production branch, usually `main`
 
 ### Step 3: Fill The Build Settings
@@ -72,6 +72,10 @@ This is the more aggressive monorepo setup:
 - the deploy command directly targets the app-specific Wrangler config
 - no app-level Cloudflare wrapper scripts are needed
 
+Do not add production `VITE_*` URL variables in the Cloudflare dashboard for these
+two frontend Workers. The root repository scripts already bake the production host
+mapping into the build output.
+
 ## Build Variables
 
 Add these build variables to both Workers:
@@ -92,9 +96,20 @@ Notes:
   - `pnpm run build:web:prod`
   - `pnpm run build:admin:prod`
 - this keeps `relaynew.ai`, `admin.relaynew.ai`, and `api.relaynew.ai` out of the
-  Cloudflare dashboard configuration for normal production deploys
+  Cloudflare dashboard build variables for normal production deploys
 - if you later want a staging frontend domain, add separate staging build scripts
   instead of editing the production ones in the dashboard
+
+## Variables To Avoid
+
+For the normal production path, leave these unset in the Cloudflare dashboard:
+
+- `VITE_API_BASE_URL`
+- `VITE_PUBLIC_SITE_URL`
+- `VITE_ADMIN_SITE_URL`
+
+If you later need a one-off staging or preview hostname override, change the build
+command or add a dedicated staging script instead of mutating the production Worker.
 
 ## Build Watch Paths
 
@@ -149,9 +164,9 @@ build:admin:prod
 
 ## Recommended Operating Model
 
-- `relaynews-web` -> GitHub auto-deploy enabled
-- `relaynews-admin` -> GitHub auto-deploy enabled
-- `relaynews-api-edge` -> manual deploy for now
+- `relaynews-web` -> GitHub auto-deploy enabled, manual fallback `./ops/manage-edge.sh deploy web`
+- `relaynews-admin` -> GitHub auto-deploy enabled, manual fallback `./ops/manage-edge.sh deploy admin`
+- `relaynews-api-edge` -> manual deploy `./ops/manage-edge.sh deploy api`
 - `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
 
 This keeps the public and admin frontends fast to ship while preserving tighter

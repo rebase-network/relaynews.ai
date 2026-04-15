@@ -53,6 +53,13 @@ Browser
         - client-side data fetches
         - calls public API at api.relaynew.ai
 
+  -> admin.relaynew.ai
+     -> Cloudflare Workers Static Assets
+        - built admin app assets
+        - SPA fallback routing
+        - client-side admin data fetches
+        - calls admin APIs at api.relaynew.ai
+
   -> api.relaynew.ai
      -> Cloudflare Worker custom domain
         - product-owned hostname
@@ -150,8 +157,9 @@ The MVP currently uses a client-rendered SPA deployed on Cloudflare Workers Stat
 Assets.
 
 ### Current Route Model
-- public routes render through the SPA shell and fetch data from the backend API
-- admin routes render through the admin SPA shell
+- public routes render through the public SPA shell on `relaynew.ai` and fetch data
+  from the backend API
+- admin routes render through a separate admin SPA shell on `admin.relaynew.ai`
 - probe flows and chart modules stay client-rendered
 
 ### Forward Compatibility
@@ -226,7 +234,8 @@ MVP assumption:
 
 - `relaynew.ai` serves the public site via Cloudflare Workers Static Assets
 - `api.relaynew.ai` sits behind a product-owned Cloudflare Worker and dedicated tunnel
-- `admin.relaynew.ai` can be used for administrative access
+- `admin.relaynew.ai` is the dedicated administrative entry point
+- the public site should not expose an admin navigation entry
 - admin endpoints should be protected with Cloudflare Access or equivalent auth
 - the public probe flow must use a dedicated public-safe endpoint rather than any
   generic internal probe surface

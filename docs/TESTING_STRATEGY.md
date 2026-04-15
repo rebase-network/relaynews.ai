@@ -62,6 +62,17 @@ acceptance suite before release.
 The staging dataset should stay representative but controlled, so leaderboard and
 probe assertions remain stable.
 
+### Deployed Smoke
+
+The repository also supports a deployed smoke mode for `relaynew.ai` and
+`admin.relaynew.ai`:
+
+- run `pnpm test:e2e:deployed` against the live frontends
+- keep this suite read-mostly and skip write-path checks that would mutate deployed
+  data
+- source probe credentials from `.env` so the browser can exercise the real public
+  probe flow without hardcoding secrets in the repo
+
 ## Data Strategy
 
 - maintain a small seed dataset with representative relays, models, sponsor records,
@@ -113,6 +124,10 @@ These tests help catch contract regressions earlier than full browser failures.
 - Playwright is configured from `playwright.config.ts`
 - `pnpm test:e2e` starts an isolated PostgreSQL test container, seeds the API
   database, boots `api`, `web`, and `admin`, and then runs the browser suite
+- `pnpm test:e2e:deployed` reuses the same Playwright specs against
+  `https://relaynew.ai` and `https://admin.relaynew.ai`
+- deployed runs intentionally skip relay creation, submission review, sponsor
+  creation, and price creation so production data is not mutated during smoke tests
 
 ## Non-Goals For The MVP
 

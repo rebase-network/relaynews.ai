@@ -44,18 +44,24 @@ PostgreSQL service on the same machine while preserving data across restarts.
 
 ### Frontend Builds
 
-The frontend deploy flow expects these build-time variables:
+The primary production frontend flow now bakes the product URLs directly into the
+repository build scripts:
+
+- `pnpm run build:web:prod` -> `relaynew.ai` + `api.relaynew.ai`
+- `pnpm run build:admin:prod` -> `admin.relaynew.ai` + `relaynew.ai` + `api.relaynew.ai`
+
+That means the normal GitHub -> Cloudflare Workers Builds path does not need
+dashboard-level `VITE_*` production URL variables.
+
+For manual deploys or one-off overrides, `./ops/manage-edge.sh` still accepts:
 
 - `CF_ACCOUNT_ID` default: `5abb6d6f38eb7d3dabf8a5adf095c5f7`
 - `PUBLIC_API_BASE_URL` default: `https://api.relaynew.ai`
 - `PUBLIC_SITE_URL` default: `https://relaynew.ai`
 - `ADMIN_SITE_URL` default: `https://admin.relaynew.ai`
 
-These values are injected into the Vite builds as:
-
-- `VITE_API_BASE_URL`
-- `VITE_PUBLIC_SITE_URL`
-- `VITE_ADMIN_SITE_URL`
+The helper exports those values into `VITE_API_BASE_URL`,
+`VITE_PUBLIC_SITE_URL`, and `VITE_ADMIN_SITE_URL` only for the manual build path.
 
 ## API Service Deploy Flow
 
@@ -113,27 +119,40 @@ Before the first production deploy, make sure:
    pnpm exec wrangler login
    ```
 
-2. Validate the Cloudflare deploy config without publishing:
+2. Connect `relaynews-web` and `relaynews-admin` to GitHub through Workers Builds.
+   Use the exact dashboard values documented in `docs/CLOUDFLARE_WORKERS_BUILDS.md`.
+
+3. Validate the Cloudflare deploy config without publishing when you want a manual
+   preflight check:
 
    ```bash
    ./ops/manage-edge.sh preview web
-   ./ops/manage-edge.sh preview api
    ./ops/manage-edge.sh preview admin
+   ./ops/manage-edge.sh preview api
    ```
 
-3. Deploy the public site, API edge, and admin site:
+4. Deploy the API edge Worker manually:
+
+   ```bash
+   ./ops/manage-edge.sh deploy api
+   ```
+
+5. Use manual frontend deploys only for first-time bootstrap, fallback, or emergency
+   publish flows:
 
    ```bash
    ./ops/manage-edge.sh deploy web
-   ./ops/manage-edge.sh deploy api
    ./ops/manage-edge.sh deploy admin
    ```
 
-Or deploy all Cloudflare apps together:
+Or deploy all Cloudflare apps together as a manual fallback:
 
 ```bash
 ./ops/manage-edge.sh deploy all
 ```
+
+Day-to-day production pushes should auto-deploy `relaynews-web` and
+`relaynews-admin` from GitHub, while `relaynews-api-edge` remains a manual deploy.
 
 ## Cloudflare Worker Inventory
 
@@ -261,10 +280,19 @@ Notes:
   dashboard variables:
   - `pnpm run build:web:prod`
   - `pnpm run build:admin:prod`
+- keep `VITE_API_BASE_URL`, `VITE_PUBLIC_SITE_URL`, and `VITE_ADMIN_SITE_URL`
+  unset in the Cloudflare dashboard for the normal production path
 - this reduces dashboard drift and avoids rebuilding the public or admin frontend
   against `127.0.0.1` by mistake
 - Cloudflare can create and manage a build API token automatically, so a custom
   `CLOUDFLARE_API_TOKEN` is optional unless you want to manage it yourself
+
+### Recommended Operating Model
+
+- `relaynews-web` -> GitHub auto-deploy enabled
+- `relaynews-admin` -> GitHub auto-deploy enabled
+- `relaynews-api-edge` -> manual deploy through `./ops/manage-edge.sh deploy api`
+- `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
 
 ### Build Watch Paths
 

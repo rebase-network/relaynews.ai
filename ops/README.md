@@ -27,16 +27,22 @@ service.
    Cloudflare knows how to forward API traffic.
 4. Run `./ops/manage.sh deploy` to sync the repo, build the API image, apply
    migrations, and restart the API stack plus `cloudflared`.
-5. Run `./ops/manage-edge.sh deploy all` to publish `web`, `api-edge`, and `admin`.
-6. Use `./ops/manage.sh status`, `./ops/manage.sh logs`, and
+5. Run `./ops/manage-edge.sh deploy api` to publish the API edge Worker.
+6. Let `relaynews-web` and `relaynews-admin` auto-deploy from GitHub-connected
+   Workers Builds. Use `./ops/manage-edge.sh deploy web` or
+   `./ops/manage-edge.sh deploy admin` only for bootstrap or manual fallback.
+7. Use `./ops/manage.sh status`, `./ops/manage.sh logs`, and
    `./ops/manage.sh health` for ongoing operations.
-7. Use `./ops/manage.sh releases` and `./ops/manage.sh rollback` when a release
+8. Use `./ops/manage.sh releases` and `./ops/manage.sh rollback` when a release
    needs to be inspected or reverted.
 
 ## Notes
 
 - `deploy` is focused on `apps/api` only. It does not publish `web`, `api-edge`,
   or `admin` to Cloudflare.
+- `ops/manage-edge.sh deploy all` still exists as a manual fallback, but the normal
+  production path is GitHub auto-deploy for `web` and `admin` plus a manual
+  `api-edge` publish.
 - The remote stack includes its own `postgres` container and named Docker volume,
   so it does not depend on or interfere with another PostgreSQL service on the same host.
 - `HOST=0.0.0.0` is required in the production env file so the container can accept

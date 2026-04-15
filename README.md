@@ -16,6 +16,7 @@ The site is planned to provide:
 
 - Frontend: `React Router v7 + TypeScript + Tailwind + shadcn/ui`
 - Frontend runtime: `Cloudflare Workers Static Assets`
+- Frontend production deploys: GitHub-connected Cloudflare Workers Builds from the repository root
 - API edge runtime: `Cloudflare Worker`
 - Backend: `Node.js + Fastify + TypeScript`
 - API deployment runtime: `Docker Compose` on the remote server
@@ -104,11 +105,14 @@ Use `docs/DEVELOPMENT_PLAN.md` as the canonical phased build order.
 - start the public app: `pnpm dev:web`
 - start the admin app: `pnpm dev:admin`
 - start the backend API: `pnpm dev:api`
+- build the public production bundle: `pnpm run build:web:prod`
+- build the admin production bundle: `pnpm run build:admin:prod`
 - run type checks: `pnpm typecheck`
 - run Playwright acceptance tests: `pnpm test:e2e`
+- run deployed smoke tests against `relaynew.ai`: `pnpm test:e2e:deployed`
 - inspect remote API deployment paths: `./ops/manage.sh path`
 - bootstrap the remote API host: `./ops/manage.sh bootstrap`
 - deploy the remote API service: `./ops/manage.sh deploy`
 - inspect or update the dedicated Cloudflare Tunnel rule: `./ops/manage-tunnel.sh status`
-- preview Cloudflare frontend deploys: `./ops/manage-edge.sh preview all`
-- deploy Cloudflare frontend apps: `./ops/manage-edge.sh deploy all`
+- preview Cloudflare edge deploys manually: `./ops/manage-edge.sh preview all`
+- manually deploy Cloudflare apps as a fallback: `./ops/manage-edge.sh deploy all`
