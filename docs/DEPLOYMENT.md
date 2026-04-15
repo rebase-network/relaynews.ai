@@ -192,8 +192,8 @@ Wrangler configuration file found in the configured root directory.
 
 For each Worker, connect the same GitHub repository and set:
 
-- `relaynews-web` root directory: `apps/web`
-- `relaynews-admin` root directory: `apps/admin`
+- `relaynews-web` root directory: repository root
+- `relaynews-admin` root directory: repository root
 
 ### Build Commands
 
@@ -204,19 +204,19 @@ For `relaynews-web`:
 - Build command:
 
 ```bash
-pnpm run cf:build
+pnpm install --frozen-lockfile && pnpm run build:web:prod
 ```
 
 - Deploy command:
 
 ```bash
-pnpm run cf:deploy
+pnpm exec wrangler deploy --config apps/web/wrangler.jsonc
 ```
 
 - Non-production branch deploy command:
 
 ```bash
-pnpm run cf:preview
+pnpm exec wrangler versions upload --config apps/web/wrangler.jsonc
 ```
 
 For `relaynews-admin`:
@@ -224,26 +224,24 @@ For `relaynews-admin`:
 - Build command:
 
 ```bash
-pnpm run cf:build
+pnpm install --frozen-lockfile && pnpm run build:admin:prod
 ```
 
 - Deploy command:
 
 ```bash
-pnpm run cf:deploy
+pnpm exec wrangler deploy --config apps/admin/wrangler.jsonc
 ```
 
 - Non-production branch deploy command:
 
 ```bash
-pnpm run cf:preview
+pnpm exec wrangler versions upload --config apps/admin/wrangler.jsonc
 ```
 
-These commands are backed by:
-
-- root scripts in `package.json` for Cloudflare Builds
-- wrapper scripts in `apps/web/package.json`
-- wrapper scripts in `apps/admin/package.json`
+This setup removes the extra Cloudflare wrapper layer from `apps/web/package.json`
+and `apps/admin/package.json`. Cloudflare builds now run directly from the
+repository root against the target app config.
 
 ### Build Variables
 
@@ -297,8 +295,10 @@ still rebuilding both apps when shared contracts or workspace metadata change.
 
 ### Recommended Branch Behavior
 
-- production branch: deploy automatically with `pnpm run cf:deploy`
-- non-production branches: upload preview versions with `pnpm run cf:preview`
+- production branch: deploy automatically with the app-specific `wrangler deploy`
+  command shown above
+- non-production branches: upload preview versions with the app-specific
+  `wrangler versions upload` command shown above
 
 This gives preview builds for feature branches without promoting them to the active
 production deployment.

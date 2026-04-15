@@ -48,10 +48,10 @@ Do this once for `relaynews-web`, then repeat for `relaynews-admin`.
 Use these values:
 
 ```txt
-Root directory: apps/web
-Build command: pnpm run cf:build
-Deploy command: pnpm run cf:deploy
-Non-production branch deploy command: pnpm run cf:preview
+Root directory: repository root
+Build command: pnpm install --frozen-lockfile && pnpm run build:web:prod
+Deploy command: pnpm exec wrangler deploy --config apps/web/wrangler.jsonc
+Non-production branch deploy command: pnpm exec wrangler versions upload --config apps/web/wrangler.jsonc
 ```
 
 #### `relaynews-admin`
@@ -59,17 +59,18 @@ Non-production branch deploy command: pnpm run cf:preview
 Use these values:
 
 ```txt
-Root directory: apps/admin
-Build command: pnpm run cf:build
-Deploy command: pnpm run cf:deploy
-Non-production branch deploy command: pnpm run cf:preview
+Root directory: repository root
+Build command: pnpm install --frozen-lockfile && pnpm run build:admin:prod
+Deploy command: pnpm exec wrangler deploy --config apps/admin/wrangler.jsonc
+Non-production branch deploy command: pnpm exec wrangler versions upload --config apps/admin/wrangler.jsonc
 ```
 
-These commands work because:
+This is the more aggressive monorepo setup:
 
-- each app has a local wrapper script in its own `package.json`
-- the wrapper script jumps back to the workspace root
-- the root scripts install dependencies and run the correct Wrangler command
+- Cloudflare runs from the repository root
+- the build command directly calls the root production build script
+- the deploy command directly targets the app-specific Wrangler config
+- no app-level Cloudflare wrapper scripts are needed
 
 ## Build Variables
 
@@ -142,21 +143,8 @@ These are the scripts Cloudflare will call.
 ### Root `package.json`
 
 ```txt
-cf:build:web
-cf:deploy:web
-cf:preview:web
 build:web:prod
-cf:build:admin
-cf:deploy:admin
-cf:preview:admin
 build:admin:prod
-```
-
-### App-Level Wrappers
-
-```txt
-apps/web/package.json -> cf:build / cf:deploy / cf:preview
-apps/admin/package.json -> cf:build / cf:deploy / cf:preview
 ```
 
 ## Recommended Operating Model
