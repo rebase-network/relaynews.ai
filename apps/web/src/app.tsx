@@ -66,8 +66,72 @@ const PROBE_COMPATIBILITY_LABELS: Record<ProbeResolvedCompatibilityMode, string>
   "anthropic-messages": "Anthropic Messages",
 };
 
+const GITHUB_REPOSITORY_URL = "https://github.com/rebase-network/relaynews.ai";
+
+const FOOTER_FRIEND_LINKS = [
+  { label: "Rebase Network", href: "https://rebase.network" },
+] as const;
+
+const HEALTH_STATUS_COPY: Record<string, string> = {
+  healthy: "Consistent responses and stable measurements across the recent observation window.",
+  degraded: "The relay is reachable, but latency, errors, or protocol behavior show material weakness.",
+  down: "The relay is not serving the tested route in a usable way for the selected model family.",
+  paused: "The relay is intentionally not ranked while the operator or catalog team reviews its state.",
+  unknown: "There is not enough recent evidence to make a strong public status claim yet.",
+};
+
+const BADGE_COPY: Record<string, string> = {
+  "low-latency": "Repeated low-latency performance for the measured model lane.",
+  "high-stability": "Low variance and strong continuity over the observation window.",
+  "high-value": "Competitive price-to-quality balance relative to peers in the same lane.",
+  "sample-size-low": "The relay is still building evidence, so confidence should be interpreted carefully.",
+  "under-observation": "The relay is visible, but current evidence is still being accumulated or reviewed.",
+};
+
+const POLICY_PILLARS = [
+  {
+    title: "Neutral inclusion",
+    body: "Relays enter the catalog through operator submission and review. Listing does not guarantee a strong ranking position.",
+  },
+  {
+    title: "Observable evidence",
+    body: "Natural ranking is driven by measured availability, latency, stability, and value signals for each model lane.",
+  },
+  {
+    title: "Sponsor separation",
+    body: "Sponsored promotion stays visually distinct and never rewrites the measured order of the natural leaderboard.",
+  },
+  {
+    title: "Operator recourse",
+    body: "If a relay is misclassified, the operator can submit corrections, updated endpoints, or dispute evidence for review.",
+  },
+] as const;
+
+const PROBE_OUTPUT_CARDS = [
+  {
+    title: "Connectivity",
+    body: "Basic reachability plus a bounded latency measurement to the tested relay host.",
+  },
+  {
+    title: "Protocol health",
+    body: "The selected API family is checked for a valid response shape, status code, and health state.",
+  },
+  {
+    title: "Trace detail",
+    body: "You can inspect the exact endpoint path and request attempts the public probe used.",
+  },
+] as const;
+
 function formatProbeCompatibilityMode(mode: ProbeResolvedCompatibilityMode | null | undefined) {
   return mode ? PROBE_COMPATIBILITY_LABELS[mode] : "Not detected";
+}
+
+function GitHubIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" {...props}>
+      <path d="M12 .5C5.65.5.5 5.66.5 12.02c0 5.09 3.29 9.4 7.85 10.92.57.1.78-.25.78-.56 0-.27-.01-1.17-.02-2.13-3.19.7-3.86-1.35-3.86-1.35-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.71 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18A10.94 10.94 0 0 1 12 6.34c.97 0 1.95.13 2.86.39 2.18-1.49 3.14-1.18 3.14-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.44-2.69 5.41-5.26 5.7.41.35.78 1.03.78 2.08 0 1.5-.01 2.7-.01 3.06 0 .31.2.67.79.56a11.52 11.52 0 0 0 7.84-10.92C23.5 5.66 18.35.5 12 .5Z" />
+    </svg>
+  );
 }
 
 function formatProbeDetectionMode(mode: ProbeDetectionMode | undefined) {
@@ -351,6 +415,276 @@ function validateSubmitForm(state: SubmitFormState) {
   };
 }
 
+type ProbeFormState = {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  compatibilityMode: ProbeCompatibilityMode;
+};
+
+const DEFAULT_PROBE_STATE: ProbeFormState = {
+  baseUrl: "",
+  apiKey: "",
+  model: "openai-gpt-4.1",
+  compatibilityMode: "auto",
+};
+
+function isProbeCompatibilityMode(value: string | null): value is ProbeCompatibilityMode {
+  return PROBE_COMPATIBILITY_OPTIONS.some((option) => option.value === value);
+}
+
+function getProbeStateFromSearchParams(searchParams: URLSearchParams): ProbeFormState {
+  const compatibilityMode = searchParams.get("compatibilityMode");
+
+  return {
+    baseUrl: searchParams.get("baseUrl") ?? DEFAULT_PROBE_STATE.baseUrl,
+    apiKey: "",
+    model: searchParams.get("model") ?? DEFAULT_PROBE_STATE.model,
+    compatibilityMode: isProbeCompatibilityMode(compatibilityMode)
+      ? compatibilityMode
+      : DEFAULT_PROBE_STATE.compatibilityMode,
+  };
+}
+
+function buildProbeDetailsHref(state: Pick<ProbeFormState, "baseUrl" | "model" | "compatibilityMode">) {
+  const params = new URLSearchParams();
+
+  if (state.baseUrl.trim()) {
+    params.set("baseUrl", state.baseUrl.trim());
+  }
+
+  if (state.model.trim()) {
+    params.set("model", state.model.trim());
+  }
+
+  if (state.compatibilityMode !== "auto") {
+    params.set("compatibilityMode", state.compatibilityMode);
+  }
+
+  const query = params.toString();
+  return query ? `/probe?${query}` : "/probe";
+}
+
+function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_STATE) {
+  const [state, setState] = useState<ProbeFormState>(() => ({ ...initialState }));
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<PublicProbeResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setResult(null);
+    setCopyState("idle");
+    try {
+      const response = await fetchJson<PublicProbeResponse>("/public/probe/check", {
+        method: "POST",
+        body: JSON.stringify(state),
+      });
+      setResult(response);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Probe failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCopyUsedUrl() {
+    if (!result?.usedUrl) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(result.usedUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = result.usedUrl;
+        textarea.setAttribute("readonly", "true");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+
+  useEffect(() => {
+    if (copyState === "idle") {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setCopyState("idle"), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
+
+  const resultTone = useMemo(() => (result ? getProbeResultTone(result) : null), [result]);
+  const failureGuidance = useMemo(() => (result ? getProbeFailureGuidance(result) : null), [result]);
+  const attemptTrace = result?.attemptTrace ?? [];
+  const usedEndpointPath = useMemo(() => getProbeEndpointPath(result?.usedUrl), [result?.usedUrl]);
+  const requestSummary = useMemo(() => {
+    if (!result) {
+      return null;
+    }
+
+    if (result.ok) {
+      return attemptTrace.length <= 1
+        ? "Matched on the first request"
+        : `Matched after ${formatProbeRequestCount(attemptTrace.length)}`;
+    }
+
+    return attemptTrace.length > 0
+      ? `Checked ${formatProbeRequestCount(attemptTrace.length)}`
+      : "Probe did not reach the upstream route";
+  }, [attemptTrace.length, result]);
+
+  return {
+    attemptTrace,
+    copyState,
+    error,
+    failureGuidance,
+    handleCopyUsedUrl,
+    handleSubmit,
+    requestSummary,
+    result,
+    resultTone,
+    setState,
+    state,
+    submitting,
+    usedEndpointPath,
+  };
+}
+
+function ProbeFormFields({
+  state,
+  setState,
+  compact = false,
+  showHelpers = true,
+}: {
+  state: ProbeFormState;
+  setState: React.Dispatch<React.SetStateAction<ProbeFormState>>;
+  compact?: boolean;
+  showHelpers?: boolean;
+}) {
+  const fields = [
+    ["Base URL", "baseUrl"],
+    ["API key", "apiKey"],
+    ["Target model", "model"],
+  ] as const;
+
+  return (
+    <>
+      {fields.map(([label, key]) => (
+        <label
+          key={key}
+          className={clsx(
+            "form-field",
+            compact ? "grid grid-cols-[6.8rem_minmax(0,1fr)] items-center gap-2" : "block",
+          )}
+        >
+          <span className={clsx(compact && "leading-5")}>{label}</span>
+          <div>
+            <input
+              className={clsx("input-shell", compact ? "py-3" : "mt-2")}
+              type={key === "apiKey" ? "password" : "text"}
+              placeholder={PROBE_FIELD_META[key].placeholder}
+              value={state[key]}
+              onChange={(event) => setState((current) => ({ ...current, [key]: event.target.value }))}
+              autoComplete={PROBE_FIELD_META[key].autoComplete}
+              inputMode={PROBE_FIELD_META[key].inputMode}
+              spellCheck={false}
+              required
+            />
+          {showHelpers ? (
+            <span className="input-helper">
+              {PROBE_FIELD_META[key].helper}
+            </span>
+          ) : null}
+          </div>
+        </label>
+      ))}
+    </>
+  );
+}
+
+function CompactProbeSummary({
+  state,
+  result,
+  error,
+  requestSummary,
+  resultTone,
+}: {
+  state: ProbeFormState;
+  result: PublicProbeResponse | null;
+  error: string | null;
+  requestSummary: string | null;
+  resultTone: ReturnType<typeof getProbeResultTone> | null;
+}) {
+  if (error) {
+    return (
+      <div className="surface-card border-[#b42318]/20 bg-[#fff2ef] p-4 text-[#8d2d17]" role="alert">
+        <p className="kicker !text-current/70">Quick probe failed</p>
+        <p className="text-base tracking-[-0.03em]">The relay check did not complete.</p>
+        <p className="mt-2 text-sm leading-6 text-current/85">{error}</p>
+        <Link className="mt-3 inline-flex text-xs uppercase tracking-[0.16em] underline" to={buildProbeDetailsHref(state)}>
+          Full diagnostics
+        </Link>
+      </div>
+    );
+  }
+
+  if (!result || !resultTone) {
+    return (
+      <div className="surface-card p-4">
+        <p className="kicker">Quick result</p>
+        <p className="text-base tracking-[-0.03em]">Run a bounded check from the homepage.</p>
+        <p className="mt-2 text-sm leading-6 text-black/68">You will get status, latency, HTTP code, and API type here. Full trace stays on `/probe`.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="surface-card p-4">
+      <div className={clsx("flex items-start justify-between gap-3 border px-3 py-3", resultTone.className)}>
+        <div>
+          <p className="kicker !mb-2 !text-current/70">Quick result</p>
+          <p className="text-lg tracking-[-0.04em]">{resultTone.label}</p>
+        </div>
+        <Link className="text-[0.7rem] uppercase tracking-[0.16em] underline" to={buildProbeDetailsHref(state)}>
+          Full diagnostics
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="border border-black/10 bg-white/75 p-2.5">
+          <p className="kicker">Latency</p>
+          <p className="text-base tracking-[-0.03em]">{result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-"}</p>
+        </div>
+        <div className="border border-black/10 bg-white/75 p-2.5">
+          <p className="kicker">HTTP</p>
+          <p className="text-base tracking-[-0.03em]">{formatProbeHttpStatus(result.protocol.httpStatus)}</p>
+        </div>
+        <div className="border border-black/10 bg-white/75 p-2.5">
+          <p className="kicker">API type</p>
+          <p className="text-sm leading-5">{formatProbeCompatibilityMode(result.compatibilityMode)}</p>
+        </div>
+      </div>
+      <p className="mt-3 break-all text-[0.72rem] uppercase tracking-[0.14em] text-black/45">
+        {result.targetHost}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-black/68">
+        {result.message ?? requestSummary ?? resultTone.description}
+      </p>
+    </div>
+  );
+}
+
 function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -391,7 +725,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navItems = [
     ["/", "Home"],
-    ["/leaderboard/openai-gpt-4.1", "Leaderboard"],
+    ["/leaderboard", "Leaderboard"],
     ["/methodology", "Methodology"],
     ["/submit", "Submit"],
     ["/probe", "Probe"],
@@ -468,16 +802,31 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="site-main mx-auto max-w-7xl px-5 lg:px-10">{children}</main>
       <footer className="site-footer px-5 py-8 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-2">
-            <p className="kicker !text-white/55">Relay intelligence</p>
-            <p className="max-w-xl text-xl leading-tight tracking-[-0.04em] text-white md:text-2xl">
-              Relay monitoring, pricing, and ranking stay in one warm signal surface.
-            </p>
-          </div>
-          <div className="grid gap-2 text-sm uppercase tracking-[0.18em] text-white/78 md:grid-cols-2">
-            <span>Public discovery and probe tooling.</span>
-            <span>Natural ranking and sponsor placement stay separate.</span>
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <p className="max-w-2xl text-sm uppercase tracking-[0.16em] text-white/72">
+            Neutral relay rankings, operator probe tooling, and clear sponsor disclosure.
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm uppercase tracking-[0.16em] text-white/72">
+            {FOOTER_FRIEND_LINKS.map((item) => (
+              <a
+                key={item.href}
+                className="site-footer-link"
+                href={item.href}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {item.label}
+              </a>
+            ))}
+            <a
+              aria-label="GitHub repository"
+              className="footer-icon-link"
+              href={GITHUB_REPOSITORY_URL}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <GitHubIcon className="h-5 w-5" />
+            </a>
           </div>
         </div>
       </footer>
@@ -557,95 +906,112 @@ function MetricGrid({
 
 function HomePage() {
   const { data, loading, error } = useLoadable<HomeSummaryResponse>(() => fetchJson("/public/home-summary"), []);
+  const quickProbe = useProbeController(DEFAULT_PROBE_STATE);
 
   if (loading) return <LoadingPanel />;
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load homepage."} />;
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="panel hero-panel">
-          <p className="kicker text-black/70">Relay intelligence</p>
-          <h1 className="max-w-4xl text-4xl leading-[0.9] tracking-[-0.07em] md:text-6xl xl:text-[4.75rem]">
-            Watch relay health, latency, price pressure, and trust signals in one warm control tower.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base text-black/75 md:text-lg">
-            Track operational quality, compare model-specific performance, and highlight the relays worth promoting.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            <Link className="button-dark" to="/leaderboard/openai-gpt-4.1">Open leaderboard</Link>
-            <Link className="button-cream" to="/probe">Run self-check probe</Link>
-          </div>
-          <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
-            <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">Ranking lane</p>
-              <p className="text-sm leading-6 text-black/72">Model-specific leaderboards keep quality and price pressure in the same frame.</p>
-            </div>
-            <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">Probe lane</p>
-              <p className="text-sm leading-6 text-black/72">Operators can reproduce the exact compatibility path that the public check selected.</p>
-            </div>
-            <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">Promo lane</p>
-              <p className="text-sm leading-6 text-black/72">Sponsored placements stay visible while remaining separate from natural ranking logic.</p>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <Panel title="Current market pulse" kicker="Hero snapshot" className="panel-soft">
-            <MetricGrid
-              items={[
-                { label: "Total relays", value: data.hero.totalRelays },
-                { label: "Healthy", value: data.hero.healthyRelays },
-                { label: "Degraded", value: data.hero.degradedRelays },
-                { label: "Measured", value: new Date(data.hero.measuredAt).toLocaleTimeString() },
-              ]}
-            />
-          </Panel>
-          <div className="panel surface-card">
-            <p className="kicker">Sponsor boundary</p>
-            <p className="text-2xl leading-[0.95] tracking-[-0.04em] md:text-3xl">Promotion can be visible without contaminating natural board order.</p>
-            <p className="mt-3 text-sm leading-6 text-black/68">
-              The site keeps ranking inputs, public probe diagnostics, and sponsor intake in separate operating lanes so trust signals stay readable.
+    <div className="space-y-5">
+      <section className="panel hero-panel min-h-0">
+        <div className="grid gap-5 xl:grid-cols-[1fr_0.98fr] xl:items-start">
+          <div>
+            <p className="kicker text-black/70">Relay intelligence</p>
+            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
+              Find strong relays fast, test your own endpoint, and submit for inclusion.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-black/75">
+              Browse model-specific boards, inspect neutral ranking signals, and use the public probe before you list or promote a relay.
             </p>
+            <div className="mt-6 flex flex-wrap gap-2.5">
+              <Link className="button-dark" to="/leaderboard">Browse leaderboards</Link>
+              <Link className="button-cream" to="/submit">Submit relay</Link>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <form className="surface-card form-shell p-4" onSubmit={quickProbe.handleSubmit}>
+              <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-3">
+                <p className="kicker !mb-0">Quick probe</p>
+                <Link className="text-[0.7rem] uppercase tracking-[0.16em] text-black/58 underline" to="/probe">
+                  Full page
+                </Link>
+              </div>
+              <ProbeFormFields
+                compact
+                setState={quickProbe.setState}
+                showHelpers={false}
+                state={quickProbe.state}
+              />
+              <button className="button-dark sm:justify-self-end" disabled={quickProbe.submitting} type="submit">
+                {quickProbe.submitting ? "Checking..." : "Run probe"}
+              </button>
+            </form>
+            <CompactProbeSummary
+              error={quickProbe.error}
+              requestSummary={quickProbe.requestSummary}
+              result={quickProbe.result}
+              resultTone={quickProbe.resultTone}
+              state={quickProbe.state}
+            />
           </div>
         </div>
       </section>
 
-      <Panel title="Featured leaderboards" kicker="Top model lanes">
-        <div className="grid gap-4 lg:grid-cols-2">
+      <Panel title="Leaderboard directory" kicker="Featured leaderboards">
+        <div className="space-y-3">
           {data.leaderboards.map((board) => (
-            <div key={board.modelKey} className="surface-card p-4">
-              <div className="flex items-center justify-between gap-4">
+            <div key={board.modelKey} className="surface-card p-3.5">
+              <div className="grid gap-3 lg:grid-cols-[0.85fr_1.15fr_auto] lg:items-center">
                 <div>
                   <p className="kicker">{board.modelKey}</p>
                   <h3 className="text-xl tracking-[-0.04em] md:text-2xl">{board.modelName}</h3>
+                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-black/48">
+                    Snapshot {new Date(board.measuredAt).toLocaleTimeString()}
+                  </p>
                 </div>
-                <Link className="signal-chip" to={`/leaderboard/${board.modelKey}`}>
-                  Full board
-                </Link>
-              </div>
-              <div className="mt-4 space-y-2.5">
-                {board.rows.map((row) => (
-                  <Link key={row.relay.slug} to={`/relay/${row.relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-black/55">#{row.rank}</p>
-                      <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="flex items-center justify-end gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</div>
-                      <p>{row.score.toFixed(1)} score</p>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  {board.rows.slice(0, 3).map((row) => (
+                    <Link
+                      key={row.relay.slug}
+                      className="inline-flex items-center gap-2 border border-black/10 bg-white/70 px-3 py-2 text-sm tracking-[-0.02em] transition hover:border-[#fa520f]/25 hover:bg-white"
+                      to={`/relay/${row.relay.slug}`}
+                    >
+                      <span className="font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/50">#{row.rank}</span>
+                      <span>{row.relay.name}</span>
+                    </Link>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 lg:justify-self-end">
+                  <div className="flex items-center gap-2 text-sm uppercase tracking-[0.12em] text-black/62">
+                    <StatusDot status={board.rows[0]?.healthStatus ?? "unknown"} />
+                    {board.rows[0]?.healthStatus ?? "unknown"}
+                  </div>
+                  <Link className="signal-chip" to={`/leaderboard/${board.modelKey}`}>
+                    Open board
                   </Link>
-                ))}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </Panel>
 
-      <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <Panel title="Relays to watch" kicker="Highlights">
+      <section className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-stretch">
+        <div className="surface-card flex items-center p-4">
+          <p className="text-sm uppercase tracking-[0.16em] text-black/64">
+            Natural ranking, operator intake, and sponsor promotion stay separated by design.
+          </p>
+        </div>
+        <Link className="surface-link flex items-center justify-center px-4 py-4 text-sm uppercase tracking-[0.16em]" to="/methodology">
+          Methodology
+        </Link>
+        <Link className="surface-link flex items-center justify-center px-4 py-4 text-sm uppercase tracking-[0.16em]" to="/policy">
+          Policy
+        </Link>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Panel title="Watchlist" kicker="Relays to watch">
           <div className="space-y-3">
             {data.highlights.map((relay) => (
               <Link key={relay.slug} to={`/relay/${relay.slug}`} className="surface-link flex items-center justify-between gap-4 p-3.5">
@@ -658,7 +1024,7 @@ function HomePage() {
             ))}
           </div>
         </Panel>
-        <Panel title="Latest incident flow" kicker="Recent disruptions">
+        <Panel title="Incidents" kicker="Recent disruptions">
           <div className="space-y-3">
             {data.latestIncidents.length === 0 ? (
               <p className="text-sm text-black/65">No incidents recorded in the current snapshot.</p>
@@ -677,6 +1043,74 @@ function HomePage() {
           </div>
         </Panel>
       </section>
+    </div>
+  );
+}
+
+function LeaderboardIndexPage() {
+  const { data, loading, error } = useLoadable<HomeSummaryResponse>(() => fetchJson("/public/home-summary"), []);
+
+  if (loading) return <LoadingPanel />;
+  if (error || !data) return <ErrorPanel message={error ?? "Unable to load leaderboard directory."} />;
+
+  return (
+    <div className="space-y-6">
+      <section className="panel bg-[#fff0c2]">
+        <p className="kicker">Leaderboard directory</p>
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr] xl:items-end">
+          <div>
+            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
+              Browse every model lane before drilling into a single board.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
+              The directory groups relays by model. Open any model board to inspect the full ranked table, health state, latency, and pricing context for that lane.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5 xl:justify-end">
+            <Link className="button-dark" to="/probe">Run probe</Link>
+            <Link className="button-cream" to="/methodology">Read methodology</Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {data.leaderboards.map((board) => (
+          <section key={board.modelKey} className="panel">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="kicker">{board.modelKey}</p>
+                <h2 className="text-3xl leading-[0.94] tracking-[-0.05em]">{board.modelName}</h2>
+                <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/50">
+                  Snapshot {new Date(board.measuredAt).toLocaleString()}
+                </p>
+              </div>
+              <Link className="signal-chip" to={`/leaderboard/${board.modelKey}`}>
+                Open full board
+              </Link>
+            </div>
+            <div className="mt-5 space-y-2.5">
+              {board.rows.map((row) => (
+                <Link
+                  key={row.relay.slug}
+                  className="surface-link flex items-center justify-between gap-4 p-3.5"
+                  to={`/relay/${row.relay.slug}`}
+                >
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.16em] text-black/55">#{row.rank}</p>
+                    <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
+                  </div>
+                  <div className="text-right text-sm">
+                    <div className="flex items-center justify-end gap-2 uppercase tracking-[0.12em]">
+                      <StatusDot status={row.healthStatus} /> {row.healthStatus}
+                    </div>
+                    <p>{row.score.toFixed(1)} score</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
@@ -868,29 +1302,168 @@ function MethodologyPage() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Methodology" kicker="Ranking anatomy">
-        <div className="grid gap-3 md:grid-cols-5">
-          {Object.entries(data.weights).map(([label, value]) => (
-            <div key={label} className="metric-card">
-              <p className="kicker">{label}</p>
-              <p className="mt-3 text-4xl tracking-[-0.05em]">{value}</p>
+      <section className="panel bg-[#fff0c2]">
+        <p className="kicker">Methodology</p>
+        <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+          <div>
+            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
+              How we test and score relay performance.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
+              Natural ranking blends five public signals: availability, latency, consistency, value, and stability.
+              Sponsor placement is handled outside this score so measured order remains readable.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <Link className="button-dark" to="/policy">Read evaluation policy</Link>
+              <Link className="button-cream" to="/probe">Run a probe</Link>
             </div>
-          ))}
+            <p className="mt-4 text-xs uppercase tracking-[0.16em] text-black/50">
+              Snapshot measured at {new Date(data.measuredAt).toLocaleString()}
+            </p>
+          </div>
+          <div className="surface-card p-4">
+            <p className="kicker">Current scoring mix</p>
+            <div className="mt-4 space-y-3">
+              {Object.entries(data.weights).map(([label, value]) => (
+                <div key={label}>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm uppercase tracking-[0.16em] text-black/62">{label}</p>
+                    <p className="font-mono text-sm text-black/74">{value}%</p>
+                  </div>
+                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/55">
+                    <div
+                      className="h-full rounded-full bg-[linear-gradient(90deg,#ffd900,#fa520f)]"
+                      style={{ width: `${value}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </Panel>
-      <section className="grid gap-4 lg:grid-cols-2">
+      </section>
+      <section className="grid gap-4 lg:grid-cols-[0.96fr_1.04fr]">
         <Panel title="Health state language" kicker="Public taxonomy">
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {data.healthStatuses.map((status) => (
-              <div key={status} className="surface-card flex items-center gap-3 p-3.5 text-sm uppercase tracking-[0.14em]">
-                <StatusDot status={status} /> {status}
+              <div key={status} className="surface-card p-3.5">
+                <div className="flex items-center gap-3 text-sm uppercase tracking-[0.14em] text-black/72">
+                  <StatusDot status={status} /> {status}
+                </div>
+                <p className="mt-3 text-sm leading-6 text-black/68">
+                  {HEALTH_STATUS_COPY[status] ?? "Public status language is based on recent measured evidence."}
+                </p>
               </div>
             ))}
           </div>
         </Panel>
-        <Panel title="Ranking notes" kicker="Interpretation">
-          <div className="space-y-2.5 text-sm text-black/70">
-            {data.notes.map((note) => <p key={note}>{note}</p>)}
+        <div className="space-y-4">
+          <Panel title="Badge cues" kicker="Confidence hints">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {data.badges.map((badge) => (
+                <div key={badge} className="surface-card p-3.5">
+                  <span className="signal-chip">{badge}</span>
+                  <p className="mt-3 text-sm leading-6 text-black/68">
+                    {BADGE_COPY[badge] ?? "This badge helps explain confidence, value, or current operational posture."}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Panel>
+          <Panel title="Interpretation notes" kicker="Reading the board">
+            <div className="space-y-3 text-sm leading-6 text-black/72">
+              {data.notes.map((note) => (
+                <div key={note} className="surface-card p-3.5">
+                  {note}
+                </div>
+              ))}
+              <div className="surface-card p-3.5">
+                For listing rules, sponsor separation, and dispute handling, continue to the public policy page.
+                {" "}
+                <Link className="underline" to="/policy">Read policy</Link>
+              </div>
+            </div>
+          </Panel>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PolicyPage() {
+  return (
+    <div className="space-y-6">
+      <section className="panel bg-[#fff0c2]">
+        <p className="kicker">Evaluation policy</p>
+        <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+          <div>
+            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
+              The catalog stays neutral, observable, and operator-reviewable.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
+              This page explains which decisions are measurement-driven, which are editorial or operational, and how operators can correct a listing.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <Link className="button-dark" to="/submit">Submit a relay</Link>
+              <Link className="button-cream" to="/methodology">Read methodology</Link>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {POLICY_PILLARS.map((pillar) => (
+              <div key={pillar.title} className="surface-card p-4">
+                <p className="kicker">{pillar.title}</p>
+                <p className="text-sm leading-6 text-black/68">{pillar.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <Panel title="What affects leaderboard order" kicker="Measured inputs">
+          <div className="space-y-3 text-sm leading-6 text-black/72">
+            <div className="surface-card p-3.5">Observed availability and successful request continuity.</div>
+            <div className="surface-card p-3.5">Latency distribution and recent consistency for the specific model lane.</div>
+            <div className="surface-card p-3.5">Price efficiency relative to measured peers in the same category.</div>
+            <div className="surface-card p-3.5">Stability signals, incident recency, and confidence level from sample size.</div>
+          </div>
+        </Panel>
+        <Panel title="What does not change natural rank" kicker="Boundaries">
+          <div className="space-y-3 text-sm leading-6 text-black/72">
+            <div className="surface-card p-3.5">Sponsor packages, partner visibility, or promotional placement.</div>
+            <div className="surface-card p-3.5">Direct operator requests to move a row without supporting measurement changes.</div>
+            <div className="surface-card p-3.5">One-off anecdotes that are not backed by reproducible tests or fresh evidence.</div>
+            <div className="surface-card p-3.5">Probe success alone; public probe helps diagnose connectivity but does not define rank on its own.</div>
+          </div>
+        </Panel>
+      </section>
+      <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <Panel title="Operator review path" kicker="Corrections and disputes">
+          <div className="space-y-3 text-sm leading-6 text-black/72">
+            <p className="surface-card p-3.5">
+              If your relay endpoint, supported models, or public metadata changed, submit an updated relay entry with the latest base URL and operator contact.
+            </p>
+            <p className="surface-card p-3.5">
+              If you believe a public status is inaccurate, provide reproducible probe data, affected models, and the time window that should be rechecked.
+            </p>
+            <p className="surface-card p-3.5">
+              Listings can be paused or marked under observation while evidence is refreshed, but sponsor separation remains intact during review.
+            </p>
+          </div>
+        </Panel>
+        <Panel title="Recommended operator workflow" kicker="Practical sequence">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="surface-card p-3.5">
+              <p className="kicker !text-black/52">1. Probe</p>
+              <p className="text-sm leading-6 text-black/68">Verify the public route, API family, and model behavior with the bounded probe.</p>
+            </div>
+            <div className="surface-card p-3.5">
+              <p className="kicker !text-black/52">2. Submit</p>
+              <p className="text-sm leading-6 text-black/68">Send clean URLs and operator contact info so the relay enters the review lane with context.</p>
+            </div>
+            <div className="surface-card p-3.5">
+              <p className="kicker !text-black/52">3. Monitor</p>
+              <p className="text-sm leading-6 text-black/68">Watch the public leaderboard, incidents, and notes as the observation window fills in.</p>
+            </div>
           </div>
         </Panel>
       </section>
@@ -1012,148 +1585,60 @@ function SubmitPage() {
 }
 
 function ProbePage() {
-  const [state, setState] = useState<{
-    baseUrl: string;
-    apiKey: string;
-    model: string;
-    compatibilityMode: ProbeCompatibilityMode;
-  }>({
-    baseUrl: "https://example.com",
-    apiKey: "",
-    model: "openai-gpt-4.1",
-    compatibilityMode: "auto",
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<PublicProbeResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const fields = [
-    ["Base URL", "baseUrl"],
-    ["API key", "apiKey"],
-    ["Target model", "model"],
-  ] as const;
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    setResult(null);
-    setCopyState("idle");
-    try {
-      const response = await fetchJson<PublicProbeResponse>("/public/probe/check", {
-        method: "POST",
-        body: JSON.stringify(state),
-      });
-      setResult(response);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Probe failed.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleCopyUsedUrl() {
-    if (!result?.usedUrl) {
-      return;
-    }
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(result.usedUrl);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = result.usedUrl;
-        textarea.setAttribute("readonly", "true");
-        textarea.style.position = "absolute";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-      setCopyState("copied");
-    } catch {
-      setCopyState("failed");
-    }
-  }
-
-  useEffect(() => {
-    if (copyState === "idle") {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setCopyState("idle"), 1800);
-    return () => window.clearTimeout(timer);
-  }, [copyState]);
-
-  const resultTone = useMemo(() => (result ? getProbeResultTone(result) : null), [result]);
-  const failureGuidance = useMemo(() => (result ? getProbeFailureGuidance(result) : null), [result]);
-  const attemptTrace = result?.attemptTrace ?? [];
-  const usedEndpointPath = useMemo(() => getProbeEndpointPath(result?.usedUrl), [result?.usedUrl]);
-  const requestSummary = useMemo(() => {
-    if (!result) {
-      return null;
-    }
-
-    if (result.ok) {
-      return attemptTrace.length <= 1
-        ? "Matched on the first request"
-        : `Matched after ${formatProbeRequestCount(attemptTrace.length)}`;
-    }
-
-    return attemptTrace.length > 0
-      ? `Checked ${formatProbeRequestCount(attemptTrace.length)}`
-      : "Probe did not reach the upstream route";
-  }, [attemptTrace.length, result]);
+  const [searchParams] = useSearchParams();
+  const {
+    attemptTrace,
+    copyState,
+    error,
+    failureGuidance,
+    handleCopyUsedUrl,
+    handleSubmit,
+    requestSummary,
+    result,
+    resultTone,
+    setState,
+    state,
+    submitting,
+    usedEndpointPath,
+  } = useProbeController(getProbeStateFromSearchParams(searchParams));
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-      <div className="panel hero-panel min-h-0">
+    <div className="space-y-6">
+      <section className="panel bg-[#fff0c2]">
         <p className="kicker">Self-check probe</p>
-        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">Run a bounded connectivity check against a relay endpoint.</h1>
-        <p className="mt-4 text-black/70">The public probe uses a tightly controlled server-side request path. It never echoes your API key back into the UI.</p>
-        <p className="mt-3 text-sm text-black/60">Most relays should work with automatic compatibility detection. Use the advanced override only when you already know the protocol shape.</p>
-        <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
-          <div className="surface-card p-3">
-            <p className="kicker">Request scope</p>
-            <p className="text-sm leading-6 text-black/75">Single bounded check with no persistent key storage.</p>
+        <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
+          <div>
+            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
+              Check the exact relay route your operators rely on.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
+              Run a bounded server-side probe for connectivity, compatibility detection, and endpoint resolution. Start with automatic mode unless you already know the required API family.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="signal-chip">No persistent key storage</span>
+              <span className="signal-chip">Auto detect first</span>
+              <span className="signal-chip">Copy resolved endpoint</span>
+            </div>
           </div>
-          <div className="surface-card p-3">
-            <p className="kicker">Best default</p>
-            <p className="text-sm leading-6 text-black/75">Start with auto detection, then override only when needed.</p>
-          </div>
-          <div className="surface-card p-3">
-            <p className="kicker">What you get</p>
-            <p className="text-sm leading-6 text-black/75">Latency, protocol health, resolved endpoint, and adapter trace.</p>
+          <div className="surface-card p-4">
+            <p className="kicker">Before you run</p>
+            <div className="space-y-3 text-sm leading-6 text-black/68">
+              <p>Paste the relay root or provider prefix you use in production. The probe can add protocol-specific suffixes automatically.</p>
+              <p>Target model names help automatic mode decide whether OpenAI Responses, Chat Completions, or Anthropic Messages should be checked first.</p>
+              <p>If the automatic result looks wrong, rerun with a manual compatibility override in the advanced section.</p>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="space-y-6">
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
         <form className="panel form-shell" onSubmit={handleSubmit}>
           <div className="form-note text-sm leading-6">
-            Paste the same relay endpoint, key, and model you use in production. Start with auto detection unless you already know the upstream protocol family.
+            Use the same base URL, key, and model that your application sends in production. The result panel below will show the resolved route and request trace.
           </div>
-          {fields.map(([label, key]) => (
-            <label key={key} className="form-field">
-              {label}
-              <input
-                className="input-shell mt-2"
-                type={key === "apiKey" ? "password" : "text"}
-                placeholder={PROBE_FIELD_META[key].placeholder}
-                value={state[key]}
-                onChange={(event) => setState((current) => ({ ...current, [key]: event.target.value }))}
-                autoComplete={PROBE_FIELD_META[key].autoComplete}
-                inputMode={PROBE_FIELD_META[key].inputMode}
-                spellCheck={false}
-                required
-              />
-              <span className="input-helper">
-                {PROBE_FIELD_META[key].helper}
-              </span>
-            </label>
-          ))}
+          <ProbeFormFields setState={setState} state={state} />
           <details className="surface-card p-4">
-            <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">Advanced</summary>
+            <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">Advanced / API type</summary>
             <label className="form-field mt-4">
               Compatibility Mode
               <select
@@ -1171,187 +1656,201 @@ function ProbePage() {
                 ))}
               </select>
             </label>
-            <p className="mt-3 text-sm text-black/60">Automatic mode uses the target model to infer the best adapter order. Manual mode probes only the selected compatibility shape.</p>
+            <p className="mt-3 text-sm leading-6 text-black/60">
+              Automatic mode infers the adapter order from the model. Manual mode locks the probe to a single compatibility shape.
+            </p>
           </details>
           <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Checking..." : "Run probe"}</button>
         </form>
-        {result ? (
-          <Panel title="Probe result" kicker="Diagnostic output">
-            <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
-              <p className="kicker !mb-2 !text-current/70">Result state</p>
-              <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
-              <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
+
+        <Panel title="What the result includes" kicker="Output preview" className="panel-soft">
+          <div className="space-y-3">
+            {PROBE_OUTPUT_CARDS.map((item) => (
+              <div key={item.title} className="surface-card p-3.5">
+                <p className="kicker !text-black/52">{item.title}</p>
+                <p className="text-sm leading-6 text-black/68">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </section>
+
+      {result ? (
+        <Panel title="Probe result" kicker="Diagnostic output">
+          <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
+            <p className="kicker !mb-2 !text-current/70">Result state</p>
+            <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
+            <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
+          </div>
+          <div className="mb-5 flex flex-wrap gap-2">
+            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+              {requestSummary}
             </div>
-            <div className="mb-5 flex flex-wrap gap-2">
+            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+              {formatProbeCompatibilityMode(result.compatibilityMode)}
+            </div>
+            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+              HTTP {formatProbeHttpStatus(result.protocol.httpStatus)}
+            </div>
+            {usedEndpointPath ? (
               <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                {requestSummary}
+                {usedEndpointPath}
               </div>
-              <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                {formatProbeCompatibilityMode(result.compatibilityMode)}
-              </div>
-              <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                HTTP {formatProbeHttpStatus(result.protocol.httpStatus)}
-              </div>
-              {usedEndpointPath ? (
-                <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                  {usedEndpointPath}
+            ) : null}
+          </div>
+          <MetricGrid
+            columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
+            items={[
+              {
+                label: "Host",
+                value: result.targetHost,
+                testId: "probe-host-value",
+                valueClassName: "font-mono text-[1.12rem] leading-6 break-all",
+                valueTitle: result.targetHost,
+              },
+              {
+                label: "Connectivity",
+                value: result.connectivity.ok ? "ok" : "failed",
+                testId: "probe-connectivity-value",
+                cardClassName: getConnectivityCardTone(result.connectivity.ok),
+              },
+              {
+                label: "Protocol",
+                value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
+                testId: "probe-protocol-value",
+                cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
+              },
+              { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
+              {
+                label: "Compatibility",
+                value: formatProbeCompatibilityMode(result.compatibilityMode),
+                testId: "probe-mode-value",
+                valueClassName: "text-[1.7rem] leading-[0.94]",
+              },
+              { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
+            ]}
+          />
+          <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+            <div className="space-y-4">
+              {result.usedUrl ? (
+                <div className="surface-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="kicker">Used endpoint</p>
+                    <button
+                      className="copy-button"
+                      data-testid="probe-copy-endpoint-button"
+                      onClick={handleCopyUsedUrl}
+                      type="button"
+                    >
+                      {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+                    </button>
+                  </div>
+                  <p
+                    className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
+                    data-testid="probe-used-url-value"
+                    title={result.usedUrl}
+                  >
+                    {result.usedUrl}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
+                    {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
+                    <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
+                  </div>
+                </div>
+              ) : null}
+              {attemptTrace.length > 0 ? (
+                <div className="surface-card p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="kicker">Execution trace</p>
+                    <p className="text-[0.7rem] uppercase tracking-[0.16em] text-black/45">
+                      {attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {attemptTrace.map((attempt, index) => (
+                      <div
+                        className={clsx("trace-card border px-3 py-3", getTraceCardTone(attempt.httpStatus, attempt.matched))}
+                        key={`${attempt.url}-${index}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs uppercase tracking-[0.16em]">
+                            #{index + 1} {attempt.label}
+                          </p>
+                          <p className="text-xs uppercase tracking-[0.16em]">
+                            {attempt.matched ? "Matched" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "No response"}
+                          </p>
+                        </div>
+                        <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {result.message ? (
+                <div
+                  className={clsx(
+                    "border p-4 text-sm leading-6",
+                    result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
+                  )}
+                >
+                  {result.message}
+                </div>
+              ) : null}
+              {failureGuidance ? (
+                <div className="surface-card p-4">
+                  <p className="kicker">Failure interpretation</p>
+                  <div className="space-y-3 text-sm leading-6 text-black/72">
+                    <p><span className="font-medium text-black/90">Source:</span> {failureGuidance.source}</p>
+                    <p><span className="font-medium text-black/90">Meaning:</span> {failureGuidance.meaning}</p>
+                    <p><span className="font-medium text-black/90">Next step:</span> {failureGuidance.nextStep}</p>
+                  </div>
+                </div>
+              ) : null}
+              {!result.ok && result.detectionMode === "auto" ? (
+                <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
+                  If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
                 </div>
               ) : null}
             </div>
             <MetricGrid
-              columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
+              columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
               items={[
                 {
-                  label: "Host",
-                  value: result.targetHost,
-                  testId: "probe-host-value",
-                  valueClassName: "font-mono text-[1.12rem] leading-6 break-all",
-                  valueTitle: result.targetHost,
+                  label: "Target model",
+                  value: result.model,
+                  testId: "probe-model-value",
+                  valueClassName: "text-[1.35rem] leading-[1.05] break-words",
+                  valueTitle: result.model,
                 },
                 {
-                  label: "Connectivity",
-                  value: result.connectivity.ok ? "ok" : "failed",
-                  testId: "probe-connectivity-value",
-                  cardClassName: getConnectivityCardTone(result.connectivity.ok),
+                  label: "HTTP status",
+                  value: formatProbeHttpStatus(result.protocol.httpStatus),
+                  testId: "probe-http-status-value",
+                  valueClassName: "text-[1.8rem] leading-[0.95]",
                 },
                 {
-                  label: "Protocol",
-                  value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
-                  testId: "probe-protocol-value",
-                  cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
+                  label: "Measured at",
+                  value: formatProbeMeasuredAt(result.measuredAt),
+                  testId: "probe-measured-at-value",
+                  valueClassName: "text-lg leading-7",
+                  valueTitle: result.measuredAt,
                 },
-                { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
-                {
-                  label: "Compatibility",
-                  value: formatProbeCompatibilityMode(result.compatibilityMode),
-                  testId: "probe-mode-value",
-                  valueClassName: "text-[1.7rem] leading-[0.94]",
-                },
-                { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
               ]}
             />
-            <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-              <div className="space-y-4">
-                {result.usedUrl ? (
-                  <div className="surface-card p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="kicker">Used endpoint</p>
-                      <button
-                        className="copy-button"
-                        data-testid="probe-copy-endpoint-button"
-                        onClick={handleCopyUsedUrl}
-                        type="button"
-                      >
-                        {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
-                      </button>
-                    </div>
-                    <p
-                      className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
-                      data-testid="probe-used-url-value"
-                      title={result.usedUrl}
-                    >
-                      {result.usedUrl}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
-                      {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
-                      <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
-                    </div>
-                  </div>
-                ) : null}
-                {attemptTrace.length > 0 ? (
-                  <div className="surface-card p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="kicker">Execution trace</p>
-                      <p className="text-[0.7rem] uppercase tracking-[0.16em] text-black/45">
-                        {attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      {attemptTrace.map((attempt, index) => (
-                        <div
-                          className={clsx("trace-card border px-3 py-3", getTraceCardTone(attempt.httpStatus, attempt.matched))}
-                          key={`${attempt.url}-${index}`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-xs uppercase tracking-[0.16em]">
-                              #{index + 1} {attempt.label}
-                            </p>
-                            <p className="text-xs uppercase tracking-[0.16em]">
-                              {attempt.matched ? "Matched" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "No response"}
-                            </p>
-                          </div>
-                          <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                {result.message ? (
-                  <div
-                    className={clsx(
-                      "border p-4 text-sm leading-6",
-                      result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
-                    )}
-                  >
-                    {result.message}
-                  </div>
-                ) : null}
-                {failureGuidance ? (
-                  <div className="surface-card p-4">
-                    <p className="kicker">Failure interpretation</p>
-                    <div className="space-y-3 text-sm leading-6 text-black/72">
-                      <p><span className="font-medium text-black/90">Source:</span> {failureGuidance.source}</p>
-                      <p><span className="font-medium text-black/90">Meaning:</span> {failureGuidance.meaning}</p>
-                      <p><span className="font-medium text-black/90">Next step:</span> {failureGuidance.nextStep}</p>
-                    </div>
-                  </div>
-                ) : null}
-                {!result.ok && result.detectionMode === "auto" ? (
-                  <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
-                    If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
-                  </div>
-                ) : null}
-              </div>
-              <MetricGrid
-                columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
-                items={[
-                  {
-                    label: "Target model",
-                    value: result.model,
-                    testId: "probe-model-value",
-                    valueClassName: "text-[1.35rem] leading-[1.05] break-words",
-                    valueTitle: result.model,
-                  },
-                  {
-                    label: "HTTP status",
-                    value: formatProbeHttpStatus(result.protocol.httpStatus),
-                    testId: "probe-http-status-value",
-                    valueClassName: "text-[1.8rem] leading-[0.95]",
-                  },
-                  {
-                    label: "Measured at",
-                    value: formatProbeMeasuredAt(result.measuredAt),
-                    testId: "probe-measured-at-value",
-                    valueClassName: "text-lg leading-7",
-                    valueTitle: result.measuredAt,
-                  },
-                ]}
-              />
-            </div>
-          </Panel>
-        ) : null}
-        {error ? (
-          <div className="panel border border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]" role="alert">
-            <p className="kicker !text-current/70">Probe request failed</p>
-            <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
-            <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
-            <p className="mt-2 text-sm leading-6 text-current/80">
-              Recheck the base URL, key, compatibility mode, and upstream route, then try again.
-            </p>
           </div>
-        ) : null}
-      </div>
-    </section>
+        </Panel>
+      ) : null}
+      {error ? (
+        <div className="panel border border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]" role="alert">
+          <p className="kicker !text-current/70">Probe request failed</p>
+          <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
+          <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
+          <p className="mt-2 text-sm leading-6 text-current/80">
+            Recheck the base URL, key, compatibility mode, and upstream route, then try again.
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1369,9 +1868,11 @@ export function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/leaderboard" element={<LeaderboardIndexPage />} />
         <Route path="/leaderboard/:modelKey" element={<LeaderboardPage />} />
         <Route path="/relay/:slug" element={<RelayPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />
+        <Route path="/policy" element={<PolicyPage />} />
         <Route path="/submit" element={<SubmitPage />} />
         <Route path="/probe" element={<ProbePage />} />
         <Route path="*" element={<NotFoundPage />} />

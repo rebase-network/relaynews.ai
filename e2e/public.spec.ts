@@ -15,10 +15,14 @@ const manualCompatibilityLabels: Record<string, string> = {
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Watch relay health, latency, price pressure, and trust signals")).toBeVisible();
+  await expect(page.getByText("Find strong relays fast, test your own endpoint, and submit for inclusion.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
 
   if (isDeployedRun) {
+    await page.getByRole("link", { name: "Leaderboard" }).click();
+    await expect(page).toHaveURL(/\/leaderboard$/);
+    await expect(page.getByText("Leaderboard directory")).toBeVisible();
+
     await page.getByRole("link", { name: "Methodology" }).click();
     await expect(page).toHaveURL(/\/methodology$/);
     await expect(page.getByText("Methodology")).toBeVisible();
@@ -30,7 +34,11 @@ test("public site renders the main discovery flow", async ({ page }) => {
   }
 
   await expect(page.getByText("Featured leaderboards")).toBeVisible();
-  await page.getByRole("link", { name: "Open leaderboard" }).click();
+  await page.getByRole("link", { name: "Browse leaderboards" }).click();
+  await expect(page).toHaveURL(/\/leaderboard$/);
+  await expect(page.getByText("Leaderboard directory")).toBeVisible();
+
+  await page.locator("section").filter({ has: page.getByRole("heading", { name: "GPT-4.1" }) }).getByRole("link", { name: "Open full board" }).click();
   await expect(page).toHaveURL(/leaderboard\/openai-gpt-4\.1/);
   await expect(page.getByRole("heading", { name: "GPT-4.1" })).toBeVisible();
 
@@ -128,10 +136,11 @@ test("public mobile navigation exposes the primary routes", async ({ page }) => 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/probe");
   await page.getByRole("button", { name: "Menu" }).click();
+  const mobileNav = page.locator("#mobile-primary-nav");
 
-  await expect(page.getByRole("link", { name: "Home" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Leaderboard" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Methodology" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Submit" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Probe" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Home" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Leaderboard" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Methodology" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Submit" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "Probe" })).toBeVisible();
 });

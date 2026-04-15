@@ -190,6 +190,42 @@ textarea {
   color: white;
 }
 
+.site-footer-link,
+.footer-icon-link {
+  transition:
+    color 160ms ease,
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.site-footer-link {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.site-footer-link:hover {
+  color: white;
+  transform: translateX(2px);
+}
+
+.footer-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.footer-icon-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
 .panel {
   position: relative;
   overflow: hidden;
