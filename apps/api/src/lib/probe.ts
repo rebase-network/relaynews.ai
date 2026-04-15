@@ -137,20 +137,93 @@ function buildAttemptTrace(results: ProbeAttemptResult[], matchedAttempt: ProbeA
   }));
 }
 
-function shouldReplaceFailure(current: ProbeAttemptResult | null, next: ProbeAttemptResult) {
+export function getProbeFailurePriority(result: ProbeAttemptResult) {
+  const status = result.response.status;
+
+  if (status === 401 || status === 403) {
+    return 100;
+  }
+
+  if (status === 429) {
+    return 90;
+  }
+
+  if (status >= 500) {
+    return 80;
+  }
+
+  if (status >= 200 && status < 300) {
+    return 70;
+  }
+
+  if (status === 415) {
+    return 60;
+  }
+
+  if (status === 400) {
+    return 50;
+  }
+
+  if (status === 405) {
+    return 40;
+  }
+
+  if (status === 404) {
+    return 30;
+  }
+
+  if (status >= 300 && status < 400) {
+    return 20;
+  }
+
+  return 10;
+}
+
+export function pickPreferredProbeFailure(current: ProbeAttemptResult | null, next: ProbeAttemptResult) {
   if (!current) {
+    return next;
+  }
+
+  if (getProbeFailurePriority(next) > getProbeFailurePriority(current)) {
+    return next;
+  }
+
+  return current;
+}
+
+export function shouldContinueProbeSequence(result: ProbeAttemptResult) {
+  if (RETRIABLE_HTTP_STATUSES.has(result.response.status)) {
     return true;
   }
 
-  if (current.response.status === 404 && next.response.status !== 404) {
+  if (!result.response.ok) {
+    return false;
+  }
+
+  if (result.contentType.toLowerCase().includes("application/json")) {
     return true;
   }
 
-  if (current.response.status === 405 && ![404, 405].includes(next.response.status)) {
+  if (result.contentType.toLowerCase().includes("text/event-stream")) {
     return true;
   }
 
-  return false;
+  const body = result.body.trim();
+  return body.startsWith("{") || body.startsWith("[") || body.startsWith("data:");
+}
+
+export function buildProbeFailureMessage(result: ProbeAttemptResult) {
+  const label = probeCompatibilityModeLabels[result.attempt.mode];
+
+  if (result.response.ok) {
+    return `Upstream returned ${result.response.status}, but the payload did not match ${label}`;
+  }
+
+  if (result.response.status >= 300 && result.response.status < 400) {
+    return `Upstream redirected with ${result.response.status} while testing ${label}`;
+  }
+
+  return `Upstream returned ${result.response.status} while testing ${label}`;
 }
 
 async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promise<ProbeAttemptResult> {
@@ -225,11 +298,9 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         });
       }
 
-      if (shouldReplaceFailure(bestFailure, result)) {
-        bestFailure = result;
-      }
+      bestFailure = pickPreferredProbeFailure(bestFailure, result);
 
-      if (!RETRIABLE_HTTP_STATUSES.has(result.response.status)) {
+      if (!shouldContinueProbeSequence(result)) {
         break;
       }
     }
@@ -256,7 +327,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
       usedUrl: bestFailure.attempt.url.toString(),
       attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
       attemptTrace: buildAttemptTrace(executedResults),
-      message: `Upstream returned ${bestFailure.response.status} while testing ${probeCompatibilityModeLabels[bestFailure.attempt.mode]}`,
+      message: buildProbeFailureMessage(bestFailure),
       measuredAt,
     });
   } catch (error) {
