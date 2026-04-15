@@ -430,6 +430,17 @@ textarea {
   color: rgba(31, 31, 31, 0.62);
 }
 
+.form-field-inline {
+  display: grid;
+  grid-template-columns: 6.4rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.form-field-inline > span:first-child {
+  line-height: 1.4;
+}
+
 .input-shell {
   width: 100%;
   border: 1px solid rgba(31, 31, 31, 0.14);

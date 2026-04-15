@@ -586,10 +586,10 @@ function ProbeFormFields({
           key={key}
           className={clsx(
             "form-field",
-            compact ? "grid grid-cols-[6.8rem_minmax(0,1fr)] items-center gap-2" : "block",
+            compact ? "form-field-inline" : "block",
           )}
         >
-          <span className={clsx(compact && "leading-5")}>{label}</span>
+          <span>{label}</span>
           <div>
             <input
               className={clsx("input-shell", compact ? "py-3" : "mt-2")}
