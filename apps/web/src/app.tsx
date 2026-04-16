@@ -746,7 +746,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="site-main mx-auto max-w-7xl px-5 lg:px-10">{children}</main>
-      <footer className="site-footer px-5 py-8 lg:px-10">
+      <footer className="site-footer px-5 py-6 md:py-7 lg:px-10">
         <div className="site-footer-shell mx-auto max-w-7xl">
           <div className="site-footer-inline">
             <p className="site-footer-meta">© {currentYear} relaynew.ai</p>
@@ -767,7 +767,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
                 rel="noreferrer"
                 target="_blank"
               >
-                <GitHubIcon className="h-[18px] w-[18px]" />
+                <GitHubIcon className="site-footer-github-icon" />
               </a>
             </div>
           </div>
