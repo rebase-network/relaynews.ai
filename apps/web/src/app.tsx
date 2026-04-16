@@ -2445,7 +2445,7 @@ function MiniBars({
 
 function RelayLatencyLegend() {
   return (
-    <div className="flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
+    <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[0.64rem] uppercase tracking-[0.16em] text-black/48">
       {[
         { label: "<1s", toneClassName: "bg-emerald-500" },
         { label: "1-2s", toneClassName: "bg-yellow-400" },
@@ -2454,7 +2454,25 @@ function RelayLatencyLegend() {
         { label: "No sample", toneClassName: "bg-zinc-300" },
       ].map((item) => (
         <span key={item.label} className="inline-flex items-center gap-1.5">
-          <span className={clsx("h-2.5 w-2.5 rounded-full", item.toneClassName)} />
+          <span className={clsx("h-2 w-2 rounded-full", item.toneClassName)} />
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function RelayStatusLegend() {
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[0.64rem] uppercase tracking-[0.16em] text-black/48">
+      {[
+        { label: "Stable", toneClassName: "bg-emerald-500" },
+        { label: "Degraded", toneClassName: "bg-amber-500" },
+        { label: "Down", toneClassName: "bg-red-500" },
+        { label: "No sample", toneClassName: "bg-zinc-300" },
+      ].map((item) => (
+        <span key={item.label} className="inline-flex items-center gap-1.5">
+          <span className={clsx("h-2 w-2 rounded-full", item.toneClassName)} />
           {item.label}
         </span>
       ))}
@@ -2483,7 +2501,7 @@ function formatStatusHistoryTitle(slot: DailyHistorySlot) {
 
 function StatusHistoryGrid({ slots }: { slots: DailyHistorySlot[] }) {
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
       {slots.map((slot) => (
         <div
           key={slot.dateKey}
@@ -2543,25 +2561,22 @@ function StatusHistoryPanel({
   }
 
   const healthyCount = measuredSlots.filter((slot) => slot.point && getAvailabilityTrendStatus(slot.point.availability) === "healthy").length;
-  const degradedCount = measuredSlots.filter((slot) => slot.point && getAvailabilityTrendStatus(slot.point.availability) === "degraded").length;
 
   return (
     <div className="space-y-3">
       <StatusHistoryGrid slots={slots} />
+      <RelayStatusLegend />
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="surface-card px-3 py-2.5 text-sm">
-          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Stable windows</p>
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Stable days</p>
           <p className="mt-2 text-black/76">{healthyCount} of {measuredSlots.length || 0}</p>
         </div>
         <div className="surface-card px-3 py-2.5 text-sm">
-          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Events in 30d</p>
-          <p className="mt-2 text-black/76">{incidentCount}</p>
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Coverage</p>
+          <p className="mt-2 text-black/76">{measuredSlots.length} of {slots.length}</p>
         </div>
       </div>
-      <p className="text-sm leading-6 text-black/64">
-        Green means stable, amber means degraded, red means down, and gray means no sample for that day.
-        {degradedCount > 0 ? ` ${degradedCount} sampled windows show degraded behavior.` : ""}
-      </p>
+      <p className="text-sm text-black/60">{incidentCount === 0 ? "No incidents in 30d." : `${incidentCount} incidents in 30d.`}</p>
     </div>
   );
 }
@@ -2618,6 +2633,7 @@ function RelayPage() {
     currentPrice: latestPricingByModelKey.get(row.modelKey) ?? null,
   })) ?? [];
   const historySlots = history.data ? buildDailyHistorySlots(history.data.points, history.data.measuredAt) : [];
+  const measuredHistorySlotCount = historySlots.filter((slot) => slot.point).length;
   const latestMeasuredHistoryPoint = [...historySlots].reverse().find((slot) => slot.point?.latencyP95Ms !== null)?.point ?? null;
 
   return (
@@ -2686,8 +2702,8 @@ function RelayPage() {
                   <p className="mt-2 text-black/76">30d</p>
                 </div>
                 <div className="surface-card px-3 py-2.5 text-sm">
-                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Samples</p>
-                  <p className="mt-2 text-black/76">{history.data.points.length} buckets</p>
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Coverage</p>
+                  <p className="mt-2 text-black/76">{measuredHistorySlotCount} of 30 days</p>
                 </div>
                 <div className="surface-card px-3 py-2.5 text-sm">
                   <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Latest p95</p>
