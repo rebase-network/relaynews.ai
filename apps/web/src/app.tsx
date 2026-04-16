@@ -2369,6 +2369,11 @@ function RelayPage() {
     }
   }
 
+  const modelPricingRows = models.data?.rows.map((row) => ({
+    ...row,
+    currentPrice: latestPricingByModelKey.get(row.modelKey) ?? null,
+  })) ?? [];
+
   return (
     <div className="space-y-4">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
@@ -2464,63 +2469,95 @@ function RelayPage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
         <Panel
-          title="Models and current pricing"
-          kicker="Coverage"
+          title="Models"
+          kicker="Current pricing"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
           {models.loading || !models.data ? <p className="text-sm text-black/60">Loading models...</p> : (
-            <div className="grid gap-2.5 md:grid-cols-2">
-              {models.data.rows.map((row) => (
-                <div key={row.modelKey} className="surface-card p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-lg tracking-[-0.03em]">{row.modelName}</p>
-                      <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+            <>
+              <div className="space-y-2.5 md:hidden">
+                {modelPricingRows.map((row) => (
+                  <div key={row.modelKey} className="surface-card p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg tracking-[-0.03em]">{row.modelName}</p>
+                        <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+                      </div>
+                      <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/50">{row.supportStatus}</p>
                     </div>
-                    <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/50">{row.supportStatus}</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Input / 1M</p>
+                        <p className="mt-2 text-sm leading-5 text-black/78">
+                          {formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
+                        </p>
+                      </div>
+                      <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Output / 1M</p>
+                        <p className="mt-2 text-sm leading-5 text-black/78">
+                          {formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm text-black/65">
+                      stream {row.supportsStream ? "yes" : "no"}
+                      {" · "}
+                      tools {row.supportsTools ? "yes" : "no"}
+                      {" · "}
+                      reasoning {row.supportsReasoning ? "yes" : "no"}
+                    </p>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-                      <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Input / 1M</p>
-                      <p className="mt-2 text-sm leading-5 text-black/78">
-                        {latestPricingByModelKey.has(row.modelKey)
-                          ? formatPricePerMillion(latestPricingByModelKey.get(row.modelKey)?.inputPricePer1M ?? null, latestPricingByModelKey.get(row.modelKey)?.currency ?? "USD")
-                          : "-"}
-                      </p>
-                    </div>
-                    <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-                      <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Output / 1M</p>
-                      <p className="mt-2 text-sm leading-5 text-black/78">
-                        {latestPricingByModelKey.has(row.modelKey)
-                          ? formatPricePerMillion(latestPricingByModelKey.get(row.modelKey)?.outputPricePer1M ?? null, latestPricingByModelKey.get(row.modelKey)?.currency ?? "USD")
-                          : "-"}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-black/65">
-                    stream {row.supportsStream ? "yes" : "no"}
-                    {" · "}
-                    tools {row.supportsTools ? "yes" : "no"}
-                    {" · "}
-                    reasoning {row.supportsReasoning ? "yes" : "no"}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <div className="data-table hidden md:block">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-black/10">
+                      <th className="pb-2.5">Model</th>
+                      <th className="pb-2.5">Status</th>
+                      <th className="pb-2.5">Input / 1M</th>
+                      <th className="pb-2.5">Output / 1M</th>
+                      <th className="pb-2.5">Capabilities</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modelPricingRows.map((row) => (
+                      <tr key={row.modelKey} className="align-top">
+                        <td className="py-3">
+                          <p className="text-[1.02rem] tracking-[-0.03em]">{row.modelName}</p>
+                          <p className="mt-1 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+                        </td>
+                        <td className="py-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/52">{row.supportStatus}</td>
+                        <td className="py-3">{formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}</td>
+                        <td className="py-3">{formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}</td>
+                        <td className="py-3 text-sm text-black/66">
+                          stream {row.supportsStream ? "yes" : "no"}
+                          {" · "}
+                          tools {row.supportsTools ? "yes" : "no"}
+                          {" · "}
+                          reasoning {row.supportsReasoning ? "yes" : "no"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Panel>
-        <div className="space-y-4">
+        <div className="h-full space-y-4">
           <Panel
             title="Incident timeline"
             kicker="Operator awareness"
+            className="h-full"
             headerClassName="mb-3"
             titleClassName="text-[2.2rem] md:text-[2.45rem]"
           >
             {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
               <div className="space-y-2.5">
                 {incidents.data.rows.length === 0 ? (
-                  <div className="surface-card px-3 py-3 text-sm text-black/60">
+                  <div className="surface-card flex min-h-[11rem] items-center px-3 py-3 text-sm text-black/60">
                     No incidents in the selected window.
                   </div>
                 ) : incidents.data.rows.map((row) => (
