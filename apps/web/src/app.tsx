@@ -25,6 +25,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
+import rebaseLogoUrl from "./assets/rebase-logo-wordmark-white-text.svg";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
@@ -67,10 +68,7 @@ const PROBE_COMPATIBILITY_LABELS: Record<ProbeResolvedCompatibilityMode, string>
 };
 
 const GITHUB_REPOSITORY_URL = "https://github.com/rebase-network/relaynews.ai";
-
-const FOOTER_FRIEND_LINKS = [
-  { label: "Rebase", href: "https://rebase.network" },
-] as const;
+const REBASE_NETWORK_URL = "https://rebase.network";
 
 const HEALTH_STATUS_COPY: Record<string, string> = {
   healthy: "Consistent responses and stable measurements across the recent observation window.",
@@ -753,17 +751,15 @@ function AppShell({ children }: { children: React.ReactNode }) {
           <div className="site-footer-inline">
             <p className="site-footer-meta">© {currentYear} relaynew.ai</p>
             <div className="site-footer-link-list">
-              {FOOTER_FRIEND_LINKS.map((item) => (
-                <a
-                  key={item.href}
-                  className="site-footer-link"
-                  href={item.href}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {item.label}
-                </a>
-              ))}
+              <a
+                aria-label="Rebase"
+                className="site-footer-mark-link"
+                href={REBASE_NETWORK_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <img alt="" aria-hidden="true" className="site-footer-mark-image" src={rebaseLogoUrl} />
+              </a>
               <a
                 aria-label="GitHub repository"
                 className="site-footer-github"
