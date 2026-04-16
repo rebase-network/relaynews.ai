@@ -2708,280 +2708,235 @@ function ProbePage() {
 
   return (
     <div className="space-y-6">
-      <section className="panel bg-[#fff0c2]">
-        <p className="kicker">Self-check probe</p>
-        <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
-          <div>
-            <h1 className="max-w-3xl text-[2.45rem] leading-[0.92] tracking-[-0.06em] md:text-5xl">
-              Check the exact relay route your operators rely on.
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/72 md:mt-4 md:text-base md:leading-7">
-              Run a bounded server-side probe for connectivity, compatibility detection, and endpoint resolution. Start with automatic mode unless you already know the required API family.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2 md:mt-5">
-              <span className="signal-chip">No persistent key storage</span>
-              <span className="signal-chip">Auto detect first</span>
-              <span className="signal-chip">Copy resolved endpoint</span>
-            </div>
-            <details className="surface-card mt-4 p-4 md:hidden">
-              <summary className="cursor-pointer font-mono text-[0.68rem] uppercase tracking-[0.18em] text-black/70">
-                Before you run
-              </summary>
-              <div className="mt-3 space-y-2 text-sm leading-6 text-black/68">
-                <p>Paste the relay root or provider prefix you use in production.</p>
-                <p>If auto detect looks wrong, rerun with a manual compatibility override.</p>
-              </div>
-            </details>
-          </div>
-          <div className="hidden surface-card p-4 xl:block">
-            <p className="kicker">Before you run</p>
-            <div className="space-y-3 text-sm leading-6 text-black/68">
-              <p>Paste the relay root or provider prefix you use in production. The probe can add protocol-specific suffixes automatically.</p>
-              <p>Model names help automatic mode decide whether OpenAI Responses, Chat Completions, or Anthropic Messages should be checked first.</p>
-              <p>If the automatic result looks wrong, rerun with a manual compatibility override in the advanced section.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
-        <form className="panel form-shell" onSubmit={handleSubmit}>
-          <div className="form-note text-sm leading-6">
-            <span className="md:hidden">
-              Use your production base URL, key, and model. The result will show the resolved route and request trace.
-            </span>
-            <span className="hidden md:inline">
-              Use the same base URL, key, and model that your application sends in production. The result panel below will show the resolved route and request trace.
-            </span>
-          </div>
-          <ProbeFormFields setState={setState} state={state} />
-          <details className="surface-card p-4">
-            <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">Advanced / API type</summary>
-            <label className="form-field mt-4">
-              Compatibility Mode
-              <select
-                className="input-shell mt-2"
-                value={state.compatibilityMode}
-                onChange={(event) =>
-                  setState((current) => ({
-                    ...current,
-                    compatibilityMode: event.target.value as ProbeCompatibilityMode,
-                  }))
-                }
-              >
-                {PROBE_COMPATIBILITY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <p className="mt-3 text-sm leading-6 text-black/60">
-              Automatic mode infers the adapter order from the model. Manual mode locks the probe to a single compatibility shape.
-            </p>
-          </details>
-          <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Checking..." : "Run probe"}</button>
-        </form>
-
-        <details className="panel-soft border border-black/8 px-4 py-4 md:hidden">
-          <summary className="cursor-pointer font-mono text-[0.68rem] uppercase tracking-[0.18em] text-black/70">
-            What the result includes
-          </summary>
-          <div className="mt-4 space-y-3">
-            {PROBE_OUTPUT_CARDS.map((item) => (
-              <div key={item.title} className="surface-card p-3.5">
-                <p className="kicker !text-black/52">{item.title}</p>
-                <p className="text-sm leading-6 text-black/68">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </details>
-
-        <Panel title="What the result includes" kicker="Output preview" className="panel-soft hidden md:block">
-          <div className="space-y-3">
-            {PROBE_OUTPUT_CARDS.map((item) => (
-              <div key={item.title} className="surface-card p-3.5">
-                <p className="kicker !text-black/52">{item.title}</p>
-                <p className="text-sm leading-6 text-black/68">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      </section>
-
-      {result ? (
-        <Panel title="Probe result" kicker="Diagnostic output">
-          <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
-            <p className="kicker !mb-2 !text-current/70">Result state</p>
-            <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
-            <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
-          </div>
-          <div className="mb-5 flex flex-wrap gap-2">
-            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-              {requestSummary}
-            </div>
-            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-              {formatProbeCompatibilityMode(result.compatibilityMode)}
-            </div>
-            <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-              HTTP {formatProbeHttpStatus(result.protocol.httpStatus)}
-            </div>
-            {usedEndpointPath ? (
-              <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                {usedEndpointPath}
-              </div>
-            ) : null}
-          </div>
-          <MetricGrid
-            columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
-            items={[
-              {
-                label: "Host",
-                value: result.targetHost,
-                testId: "probe-host-value",
-                valueClassName: "font-mono text-[1.12rem] leading-6 break-all",
-                valueTitle: result.targetHost,
-              },
-              {
-                label: "Connectivity",
-                value: result.connectivity.ok ? "ok" : "failed",
-                testId: "probe-connectivity-value",
-                cardClassName: getConnectivityCardTone(result.connectivity.ok),
-              },
-              {
-                label: "Protocol",
-                value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
-                testId: "probe-protocol-value",
-                cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
-              },
-              { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
-              {
-                label: "Compatibility",
-                value: formatProbeCompatibilityMode(result.compatibilityMode),
-                testId: "probe-mode-value",
-                valueClassName: "text-[1.7rem] leading-[0.94]",
-              },
-              { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
-            ]}
-          />
-          <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-            <div className="space-y-4">
-              {result.usedUrl ? (
-                <div className="surface-card p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="kicker">Used endpoint</p>
-                    <button
-                      className="copy-button"
-                      data-testid="probe-copy-endpoint-button"
-                      onClick={handleCopyUsedUrl}
-                      type="button"
-                    >
-                      {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
-                    </button>
-                  </div>
-                  <p
-                    className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
-                    data-testid="probe-used-url-value"
-                    title={result.usedUrl}
-                  >
-                    {result.usedUrl}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
-                    {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
-                    <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
-                  </div>
-                </div>
-              ) : null}
-              {attemptTrace.length > 0 ? (
-                <div className="surface-card p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="kicker">Execution trace</p>
-                    <p className="text-[0.7rem] uppercase tracking-[0.16em] text-black/45">
-                      {attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    {attemptTrace.map((attempt, index) => (
-                      <div
-                        className={clsx("trace-card border px-3 py-3", getTraceCardTone(attempt.httpStatus, attempt.matched))}
-                        key={`${attempt.url}-${index}`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs uppercase tracking-[0.16em]">
-                            #{index + 1} {attempt.label}
-                          </p>
-                          <p className="text-xs uppercase tracking-[0.16em]">
-                            {attempt.matched ? "Matched" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "No response"}
-                          </p>
-                        </div>
-                        <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {result.message ? (
-                <div
-                  className={clsx(
-                    "border p-4 text-sm leading-6",
-                    result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
-                  )}
-                >
-                  {result.message}
-                </div>
-              ) : null}
-              {failureGuidance ? (
-                <div className="surface-card p-4">
-                  <p className="kicker">Failure interpretation</p>
-                  <div className="space-y-3 text-sm leading-6 text-black/72">
-                    <p><span className="font-medium text-black/90">Source:</span> {failureGuidance.source}</p>
-                    <p><span className="font-medium text-black/90">Meaning:</span> {failureGuidance.meaning}</p>
-                    <p><span className="font-medium text-black/90">Next step:</span> {failureGuidance.nextStep}</p>
-                  </div>
-                </div>
-              ) : null}
-              {!result.ok && result.detectionMode === "auto" ? (
-                <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
-                  If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
-                </div>
-              ) : null}
-            </div>
-            <MetricGrid
-              columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
-              items={[
-                {
-                  label: "Model",
-                  value: result.model,
-                  testId: "probe-model-value",
-                  valueClassName: "text-[1.35rem] leading-[1.05] break-words",
-                  valueTitle: result.model,
-                },
-                {
-                  label: "HTTP status",
-                  value: formatProbeHttpStatus(result.protocol.httpStatus),
-                  testId: "probe-http-status-value",
-                  valueClassName: "text-[1.8rem] leading-[0.95]",
-                },
-                {
-                  label: "Measured at",
-                  value: formatProbeMeasuredAt(result.measuredAt),
-                  testId: "probe-measured-at-value",
-                  valueClassName: "text-lg leading-7",
-                  valueTitle: result.measuredAt,
-                },
-              ]}
-            />
-          </div>
-        </Panel>
-      ) : null}
-      {error ? (
-        <div className="panel border border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]" role="alert">
-          <p className="kicker !text-current/70">Probe request failed</p>
-          <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
-          <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
-          <p className="mt-2 text-sm leading-6 text-current/80">
-            Recheck the base URL, key, compatibility mode, and upstream route, then try again.
+      <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr] xl:items-start">
+        <section className="panel">
+          <p className="kicker">Self-check probe</p>
+          <h1 className="text-[2.45rem] leading-[0.92] tracking-[-0.06em] md:text-5xl">
+            Run probe
+          </h1>
+          <p className="form-note mt-4 text-sm leading-6">
+            Use the same base URL, key, and model that your application sends in production. Start with automatic mode unless you already know the required API family.
           </p>
-        </div>
-      ) : null}
+          <form className="form-shell mt-4" onSubmit={handleSubmit}>
+            <ProbeFormFields setState={setState} state={state} />
+            <details className="surface-card p-4">
+              <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">Advanced / API type</summary>
+              <label className="form-field mt-4">
+                Compatibility Mode
+                <select
+                  className="input-shell mt-2"
+                  value={state.compatibilityMode}
+                  onChange={(event) =>
+                    setState((current) => ({
+                      ...current,
+                      compatibilityMode: event.target.value as ProbeCompatibilityMode,
+                    }))
+                  }
+                >
+                  {PROBE_COMPATIBILITY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="mt-3 text-sm leading-6 text-black/60">
+                Automatic mode infers the adapter order from the model. Manual mode locks the probe to a single compatibility shape.
+              </p>
+            </details>
+            <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Checking..." : "Run probe"}</button>
+          </form>
+        </section>
+
+        <Panel title="Probe result" kicker={result ? "Diagnostic output" : error ? "Request failed" : "Awaiting input"} className={!result && !error ? "panel-soft" : ""}>
+          {result ? (
+            <>
+              <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
+                <p className="kicker !mb-2 !text-current/70">Result state</p>
+                <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
+                <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
+              </div>
+              <div className="mb-5 flex flex-wrap gap-2">
+                <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+                  {requestSummary}
+                </div>
+                <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+                  {formatProbeCompatibilityMode(result.compatibilityMode)}
+                </div>
+                <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+                  HTTP {formatProbeHttpStatus(result.protocol.httpStatus)}
+                </div>
+                {usedEndpointPath ? (
+                  <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
+                    {usedEndpointPath}
+                  </div>
+                ) : null}
+              </div>
+              <MetricGrid
+                columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
+                items={[
+                  {
+                    label: "Host",
+                    value: result.targetHost,
+                    testId: "probe-host-value",
+                    valueClassName: "font-mono text-[1.12rem] leading-6 break-all",
+                    valueTitle: result.targetHost,
+                  },
+                  {
+                    label: "Connectivity",
+                    value: result.connectivity.ok ? "ok" : "failed",
+                    testId: "probe-connectivity-value",
+                    cardClassName: getConnectivityCardTone(result.connectivity.ok),
+                  },
+                  {
+                    label: "Protocol",
+                    value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
+                    testId: "probe-protocol-value",
+                    cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
+                  },
+                  { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
+                  {
+                    label: "Compatibility",
+                    value: formatProbeCompatibilityMode(result.compatibilityMode),
+                    testId: "probe-mode-value",
+                    valueClassName: "text-[1.7rem] leading-[0.94]",
+                  },
+                  { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
+                ]}
+              />
+              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                <div className="space-y-4">
+                  {result.usedUrl ? (
+                    <div className="surface-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="kicker">Used endpoint</p>
+                        <button
+                          className="copy-button"
+                          data-testid="probe-copy-endpoint-button"
+                          onClick={handleCopyUsedUrl}
+                          type="button"
+                        >
+                          {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+                        </button>
+                      </div>
+                      <p
+                        className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
+                        data-testid="probe-used-url-value"
+                        title={result.usedUrl}
+                      >
+                        {result.usedUrl}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
+                        {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
+                        <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
+                      </div>
+                    </div>
+                  ) : null}
+                  {attemptTrace.length > 0 ? (
+                    <div className="surface-card p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="kicker">Execution trace</p>
+                        <p className="text-[0.7rem] uppercase tracking-[0.16em] text-black/45">
+                          {attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        {attemptTrace.map((attempt, index) => (
+                          <div
+                            className={clsx("trace-card border px-3 py-3", getTraceCardTone(attempt.httpStatus, attempt.matched))}
+                            key={`${attempt.url}-${index}`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-xs uppercase tracking-[0.16em]">
+                                #{index + 1} {attempt.label}
+                              </p>
+                              <p className="text-xs uppercase tracking-[0.16em]">
+                                {attempt.matched ? "Matched" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "No response"}
+                              </p>
+                            </div>
+                            <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {result.message ? (
+                    <div
+                      className={clsx(
+                        "border p-4 text-sm leading-6",
+                        result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
+                      )}
+                    >
+                      {result.message}
+                    </div>
+                  ) : null}
+                  {failureGuidance ? (
+                    <div className="surface-card p-4">
+                      <p className="kicker">Failure interpretation</p>
+                      <div className="space-y-3 text-sm leading-6 text-black/72">
+                        <p><span className="font-medium text-black/90">Source:</span> {failureGuidance.source}</p>
+                        <p><span className="font-medium text-black/90">Meaning:</span> {failureGuidance.meaning}</p>
+                        <p><span className="font-medium text-black/90">Next step:</span> {failureGuidance.nextStep}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  {!result.ok && result.detectionMode === "auto" ? (
+                    <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
+                      If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
+                    </div>
+                  ) : null}
+                </div>
+                <MetricGrid
+                  columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
+                  items={[
+                    {
+                      label: "Model",
+                      value: result.model,
+                      testId: "probe-model-value",
+                      valueClassName: "text-[1.35rem] leading-[1.05] break-words",
+                      valueTitle: result.model,
+                    },
+                    {
+                      label: "HTTP status",
+                      value: formatProbeHttpStatus(result.protocol.httpStatus),
+                      testId: "probe-http-status-value",
+                      valueClassName: "text-[1.8rem] leading-[0.95]",
+                    },
+                    {
+                      label: "Measured at",
+                      value: formatProbeMeasuredAt(result.measuredAt),
+                      testId: "probe-measured-at-value",
+                      valueClassName: "text-lg leading-7",
+                      valueTitle: result.measuredAt,
+                    },
+                  ]}
+                />
+              </div>
+            </>
+          ) : error ? (
+            <div className="border border-[#b42318]/20 bg-[#fff2ef] px-4 py-4 text-[#8d2d17]" role="alert">
+              <p className="kicker !text-current/70">Probe request failed</p>
+              <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
+              <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
+              <p className="mt-2 text-sm leading-6 text-current/80">
+                Recheck the base URL, key, compatibility mode, and upstream route, then try again.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm leading-6 text-black/70">
+                The result panel will show connectivity, protocol status, compatibility detection, the resolved endpoint, and the request trace used to reach the upstream route.
+              </p>
+              <div className="space-y-3">
+                {PROBE_OUTPUT_CARDS.map((item) => (
+                  <div key={item.title} className="surface-card p-3.5">
+                    <p className="kicker !text-black/52">{item.title}</p>
+                    <p className="text-sm leading-6 text-black/68">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+      </section>
     </div>
   );
 }

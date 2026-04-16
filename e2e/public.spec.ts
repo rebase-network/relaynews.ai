@@ -214,12 +214,14 @@ test("probe page stays compact on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/probe");
 
+  await expect(page.getByRole("heading", { name: "Run probe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Probe result" })).toBeVisible();
   await expect(page.locator(".input-helper-mobile")).toHaveCount(3);
   await expect(page.locator(".input-helper-desktop")).toHaveCount(3);
   await expect(page.locator(".input-helper-mobile").first()).toBeVisible();
   await expect(page.locator(".input-helper-desktop").first()).toBeHidden();
-  await expect(page.locator("details").filter({ has: page.getByText("Before you run") })).toBeVisible();
-  await expect(page.locator("details").filter({ has: page.getByText("What the result includes") })).toBeVisible();
+  await expect(page.getByText("Before you run")).toHaveCount(0);
+  await expect(page.getByText("What the result includes")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Run probe" })).toBeVisible();
 });
 
