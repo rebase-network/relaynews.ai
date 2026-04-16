@@ -1052,6 +1052,19 @@ textarea {
   background: rgba(255, 226, 149, 0.96);
 }
 
+.leaderboard-preview-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-preview-row {
+  min-height: 5.55rem;
+}
+
+.leaderboard-preview-score {
+  align-self: center;
+}
+
 @media (max-width: 767px) {
   .leaderboard-row-filter-grid {
     grid-template-columns: 1fr;
@@ -1096,6 +1109,18 @@ textarea {
 
   .quick-probe-inline-summary {
     width: 100%;
+  }
+
+  .leaderboard-preview-row {
+    align-items: flex-start;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .leaderboard-preview-score {
+    align-self: flex-start;
+    min-width: 0;
+    text-align: left;
   }
 }
 

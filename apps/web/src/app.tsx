@@ -1597,49 +1597,53 @@ function LeaderboardPreviewCard({
   const rows = board.rows.slice(0, rowLimit ?? board.rows.length);
 
   return (
-    <section className="panel h-full">
+    <section className="panel leaderboard-preview-card h-full">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="kicker">{board.modelKey}</p>
           <h2 className="text-3xl leading-[0.94] tracking-[-0.05em]">{board.modelName}</h2>
-          <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/50">
-            Snapshot {new Date(board.measuredAt).toLocaleString()}
-          </p>
         </div>
         <Link className="signal-chip" to={getLeaderboardPath(board.modelKey)}>
           Open full board
         </Link>
       </div>
-      <div className="mt-5 space-y-2.5">
+      <div className="mt-4 space-y-2">
         {rows.map((row) => (
           <Link
             key={row.relay.slug}
-            className="surface-link flex items-center justify-between gap-4 p-3.5"
+            className="surface-link leaderboard-preview-row flex items-center justify-between gap-4 p-3"
             to={`/relay/${row.relay.slug}`}
           >
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-black/55">#{row.rank}</p>
-              <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="text-[0.65rem] uppercase tracking-[0.18em] text-black/50">#{row.rank}</p>
+                <p className="truncate text-[1.08rem] leading-tight tracking-[-0.03em]">{row.relay.name}</p>
+              </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {row.badges.slice(0, 2).map((badge) => (
+                {row.badges.slice(0, 1).map((badge) => (
                   <span key={badge} className="signal-chip">
                     {badge}
                   </span>
                 ))}
+                {row.badges.length > 1 ? (
+                  <span className="signal-chip">+{row.badges.length - 1}</span>
+                ) : null}
               </div>
             </div>
-            <div className="min-w-[8.5rem] text-right text-sm">
-              <div className="flex items-center justify-end gap-2 uppercase tracking-[0.12em]">
-                <StatusDot status={row.healthStatus} /> {row.healthStatus}
+            <div className="leaderboard-preview-score min-w-[8.75rem] text-right text-sm">
+              <div className="flex items-center justify-end gap-2 text-[0.66rem] uppercase tracking-[0.15em] text-black/62">
+                <StatusDot status={row.healthStatus} /> {row.healthStatus} · {row.score.toFixed(1)}
               </div>
-              <p className="mt-1">{row.score.toFixed(1)} score</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-black/54">
+              <p className="mt-1 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
                 {formatAvailability(row.availability24h)} · {formatLatency(row.latencyP50Ms)}
               </p>
             </div>
           </Link>
         ))}
       </div>
+      <p className="mt-4 text-[0.68rem] uppercase tracking-[0.18em] text-black/46">
+        Snapshot {new Date(board.measuredAt).toLocaleString()}
+      </p>
     </section>
   );
 }
@@ -1704,13 +1708,13 @@ function HomePage() {
         <div className="grid gap-5 xl:grid-cols-[0.98fr_1.02fr] xl:items-start">
           <div className="order-2 md:order-1">
             <p className="kicker text-black/70">Relay intelligence</p>
-            <h1 className="max-w-4xl text-4xl leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
+            <h1 className="max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
               Find strong relays fast, test your own endpoint, and submit for inclusion.
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-black/75">
-              Browse model-specific boards, inspect neutral ranking signals, and open the full probe workspace when you need deeper diagnostics.
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72 md:mt-4 md:text-base md:leading-7">
+              Browse ranked model lanes, run a quick relay check, and open the full probe workspace when you need deeper diagnostics.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2.5">
+            <div className="mt-5 flex flex-wrap gap-2.5">
               <Link className="button-dark" to="/leaderboard">Browse leaderboards</Link>
               <Link className="button-cream" to="/probe">Run probe</Link>
               <Link className="button-cream" to="/submit">Submit relay</Link>
@@ -1755,7 +1759,7 @@ function HomePage() {
       <Panel title="Featured boards" kicker="Model lanes">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <p className="max-w-3xl text-sm leading-6 text-black/68">
-            The homepage highlights a curated set of model lanes. Open any board to inspect the full ranked table, then compare pricing, stability, and latency in more detail.
+            Four model lanes from the directory, each showing the current top relays before you jump into the full board.
           </p>
           <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
             All model lanes
