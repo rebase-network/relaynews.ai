@@ -1,5 +1,9 @@
 import { clsx } from "clsx";
 import {
+  type AdminProbeCredentialCreate,
+  type AdminProbeCredentialDetail,
+  type AdminProbeCredentialMutationResponse,
+  type AdminProbeCredentialsResponse,
   type AdminOverviewResponse,
   type AdminPriceCreate,
   type AdminPricesResponse,
@@ -7,6 +11,8 @@ import {
   type AdminRelaysResponse,
   type AdminSubmissionsResponse,
   type AdminSponsorsResponse,
+  type ProbeCompatibilityMode,
+  type ProbeCredentialOwnerType,
 } from "@relaynews/shared";
 import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Route, Routes } from "react-router-dom";
@@ -49,6 +55,14 @@ type PriceFormState = {
   source: AdminPriceCreate["source"];
 };
 type PriceFormErrors = Partial<Record<"relayId" | "modelId" | "inputPricePer1M" | "outputPricePer1M" | "effectiveFrom", string>>;
+type ProbeCredentialFormState = {
+  ownerType: ProbeCredentialOwnerType;
+  ownerId: string;
+  apiKey: string;
+  testModel: string;
+  compatibilityMode: ProbeCompatibilityMode;
+};
+type ProbeCredentialFormErrors = Partial<Record<keyof ProbeCredentialFormState, string>>;
 
 type ApiErrorPayload = {
   message?: string | string[];
@@ -63,12 +77,14 @@ function formatApiErrorPayload(payload: ApiErrorPayload | null) {
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (typeof init?.body !== "undefined" && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -247,6 +263,31 @@ function validatePriceForm(form: PriceFormState) {
   return { errors, payload };
 }
 
+function validateProbeCredentialForm(form: ProbeCredentialFormState) {
+  const payload: AdminProbeCredentialCreate = {
+    ownerType: form.ownerType,
+    ownerId: trimString(form.ownerId),
+    apiKey: trimString(form.apiKey),
+    testModel: trimString(form.testModel),
+    compatibilityMode: form.compatibilityMode,
+  };
+  const errors: ProbeCredentialFormErrors = {};
+
+  if (!payload.ownerId) {
+    errors.ownerId = `Select a ${payload.ownerType}.`;
+  }
+
+  if (!payload.apiKey) {
+    errors.apiKey = "API key is required.";
+  }
+
+  if (!payload.testModel) {
+    errors.testModel = "Test model is required.";
+  }
+
+  return { errors, payload };
+}
+
 function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -292,6 +333,7 @@ function AdminShell({ children }: { children: ReactNode }) {
     ["/", "Overview"],
     ["/relays", "Relays"],
     ["/submissions", "Submissions"],
+    ["/credentials", "Credentials"],
     ["/sponsors", "Sponsors"],
     ["/prices", "Prices"],
   ] as const;
@@ -603,6 +645,435 @@ function SubmissionsPage() {
   );
 }
 
+function CredentialsPage() {
+  const credentials = useLoadable<AdminProbeCredentialsResponse>(() => fetchJson("/admin/probe-credentials"), []);
+  const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
+  const submissions = useLoadable<AdminSubmissionsResponse>(() => fetchJson("/admin/submissions"), []);
+  const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
+  const detail = useLoadable<AdminProbeCredentialDetail | null>(
+    () => (selectedCredentialId ? fetchJson(`/admin/probe-credentials/${selectedCredentialId}`) : Promise.resolve(null)),
+    [selectedCredentialId],
+  );
+  const [createForm, setCreateForm] = useState<ProbeCredentialFormState>({
+    ownerType: "relay",
+    ownerId: "",
+    apiKey: "",
+    testModel: "gpt-5.4",
+    compatibilityMode: "auto",
+  });
+  const [rotateForm, setRotateForm] = useState<ProbeCredentialFormState>({
+    ownerType: "relay",
+    ownerId: "",
+    apiKey: "",
+    testModel: "gpt-5.4",
+    compatibilityMode: "auto",
+  });
+  const [fieldErrors, setFieldErrors] = useState<ProbeCredentialFormErrors>({});
+  const [rotateErrors, setRotateErrors] = useState<ProbeCredentialFormErrors>({});
+  const [createMutation, setCreateMutation] = useMutationState();
+  const [actionMutation, setActionMutation] = useMutationState();
+  const [revealedKey, setRevealedKey] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+
+  useEffect(() => {
+    if (!credentials.data?.rows.length) {
+      setSelectedCredentialId(null);
+      return;
+    }
+
+    if (!selectedCredentialId || !credentials.data.rows.some((row) => row.id === selectedCredentialId)) {
+      setSelectedCredentialId(credentials.data.rows[0]?.id ?? null);
+    }
+  }, [credentials.data, selectedCredentialId]);
+
+  useEffect(() => {
+    if (!detail.data) {
+      setRevealedKey(false);
+      setCopiedKey(false);
+      return;
+    }
+
+    setRotateForm({
+      ownerType: detail.data.ownerType,
+      ownerId: detail.data.ownerId,
+      apiKey: "",
+      testModel: detail.data.testModel,
+      compatibilityMode: detail.data.compatibilityMode,
+    });
+    setRotateErrors({});
+    setRevealedKey(false);
+    setCopiedKey(false);
+  }, [detail.data]);
+
+  const relayOwnerOptions = relays.data?.rows ?? [];
+  const submissionOwnerOptions = submissions.data?.rows ?? [];
+
+  async function reloadCredentialViews(nextSelectedId?: string | null) {
+    await credentials.reload();
+
+    if (nextSelectedId && nextSelectedId !== selectedCredentialId) {
+      setSelectedCredentialId(nextSelectedId);
+      return;
+    }
+
+    if (selectedCredentialId) {
+      await detail.reload();
+    }
+  }
+
+  async function createCredential() {
+    const { errors, payload } = validateProbeCredentialForm(createForm);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setCreateMutation({ pending: false, error: "Please fix the highlighted credential fields before saving.", success: null });
+      return;
+    }
+
+    setCreateMutation({ pending: true, error: null, success: null });
+    try {
+      const response = await fetchJson<AdminProbeCredentialMutationResponse>("/admin/probe-credentials", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setCreateMutation({
+        pending: false,
+        error: null,
+        success: response.probe
+          ? `Credential created. Initial probe ${response.probe.ok ? "passed" : "needs review"}.`
+          : "Credential created.",
+      });
+      setCreateForm((current) => ({ ...current, ownerId: "", apiKey: "" }));
+      setFieldErrors({});
+      setSelectedCredentialId(response.id);
+      await reloadCredentialViews(response.id);
+    } catch (reason) {
+      setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create credential.", success: null });
+    }
+  }
+
+  async function reprobeSelected() {
+    if (!detail.data) {
+      return;
+    }
+
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      const response = await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${detail.data.id}/reprobe`, {
+        method: "POST",
+      });
+      setActionMutation({
+        pending: false,
+        error: null,
+        success: response.probe
+          ? `Probe rerun complete: ${response.probe.healthStatus}${response.probe.httpStatus ? ` · ${response.probe.httpStatus}` : ""}.`
+          : "Probe rerun complete.",
+      });
+      await reloadCredentialViews(detail.data.id);
+    } catch (reason) {
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rerun probe.", success: null });
+    }
+  }
+
+  async function rotateSelected() {
+    if (!detail.data) {
+      return;
+    }
+
+    const { errors, payload } = validateProbeCredentialForm(rotateForm);
+    setRotateErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setActionMutation({ pending: false, error: "Please fix the highlighted rotation fields before saving.", success: null });
+      return;
+    }
+
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      const response = await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${detail.data.id}/rotate`, {
+        method: "POST",
+        body: JSON.stringify({
+          apiKey: payload.apiKey,
+          testModel: payload.testModel,
+          compatibilityMode: payload.compatibilityMode,
+        }),
+      });
+      setActionMutation({
+        pending: false,
+        error: null,
+        success: response.probe
+          ? `Credential rotated. New probe ${response.probe.ok ? "passed" : "needs review"}.`
+          : "Credential rotated.",
+      });
+      setSelectedCredentialId(response.id);
+      await reloadCredentialViews(response.id);
+    } catch (reason) {
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rotate credential.", success: null });
+    }
+  }
+
+  async function revokeSelected() {
+    if (!detail.data) {
+      return;
+    }
+
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${detail.data.id}/revoke`, {
+        method: "POST",
+      });
+      setActionMutation({ pending: false, error: null, success: "Credential revoked." });
+      await reloadCredentialViews(detail.data.id);
+    } catch (reason) {
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to revoke credential.", success: null });
+    }
+  }
+
+  async function copySelectedKey() {
+    if (!detail.data) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(detail.data.apiKey);
+    setCopiedKey(true);
+    setActionMutation((current) => ({ ...current, success: "Credential key copied." }));
+  }
+
+  if (credentials.loading || relays.loading || submissions.loading) return <LoadingCard />;
+  if (credentials.error || relays.error || submissions.error || !credentials.data || !relays.data || !submissions.data) {
+    return <ErrorCard message={credentials.error ?? relays.error ?? submissions.error ?? "Unable to load credentials."} />;
+  }
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+      <Card title="Probe credentials" kicker="Monitoring keys">
+        <div className="space-y-2.5">
+          {credentials.data.rows.map((row) => (
+            <button
+              key={row.id}
+              className={clsx(
+                "admin-list-card w-full border p-3.5 text-left transition",
+                row.id === selectedCredentialId
+                  ? "border-[#ffd06a]/70 bg-white/10"
+                  : "border-white/10 bg-white/5 hover:bg-white/8",
+              )}
+              onClick={() => setSelectedCredentialId(row.id)}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg tracking-[-0.03em]">{row.ownerName}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
+                    {row.ownerType} · {row.status} · {row.apiKeyPreview}
+                  </p>
+                </div>
+                <p className="text-xs uppercase tracking-[0.14em] text-white/45">{row.compatibilityMode}</p>
+              </div>
+              <p className="mt-2 text-sm text-white/62">{row.ownerBaseUrl}</p>
+              <p className="mt-2 text-sm text-white/70">
+                {row.testModel} · {row.lastHealthStatus ?? "unknown"}
+                {row.lastHttpStatus ? ` · ${row.lastHttpStatus}` : ""}
+              </p>
+              {row.lastMessage ? <p className="mt-2 text-sm text-white/45">{row.lastMessage}</p> : null}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <div className="space-y-4">
+        <Card title="Create credential" kicker="Attach a key">
+          <div className="grid gap-2.5">
+            <label className="field-label">
+              Owner type
+              <select
+                className="field-input"
+                value={createForm.ownerType}
+                onChange={(event) => {
+                  const ownerType = event.target.value as ProbeCredentialOwnerType;
+                  setCreateForm((current) => ({ ...current, ownerType, ownerId: "" }));
+                  setFieldErrors((current) => withoutFieldError(current, "ownerId"));
+                  setCreateMutation((current) => ({ ...current, error: null }));
+                }}
+              >
+                <option value="relay">relay</option>
+                <option value="submission">submission</option>
+              </select>
+            </label>
+            <label className="field-label">
+              Owner record
+              <select
+                className="field-input"
+                value={createForm.ownerId}
+                onChange={(event) => {
+                  setCreateForm((current) => ({ ...current, ownerId: event.target.value }));
+                  setFieldErrors((current) => withoutFieldError(current, "ownerId"));
+                  setCreateMutation((current) => ({ ...current, error: null }));
+                }}
+              >
+                <option value="">Select {createForm.ownerType}</option>
+                {createForm.ownerType === "relay"
+                  ? relayOwnerOptions.map((owner) => (
+                      <option key={owner.id} value={owner.id}>
+                        {owner.name}
+                      </option>
+                    ))
+                  : submissionOwnerOptions.map((owner) => (
+                      <option key={owner.id} value={owner.id}>
+                        {owner.relayName} · {owner.status}
+                      </option>
+                    ))}
+              </select>
+              <FieldError message={fieldErrors.ownerId} />
+            </label>
+            <label className="field-label">
+              API key
+              <input
+                className="field-input"
+                type="password"
+                placeholder="sk-monitoring"
+                value={createForm.apiKey}
+                onChange={(event) => {
+                  setCreateForm((current) => ({ ...current, apiKey: event.target.value }));
+                  setFieldErrors((current) => withoutFieldError(current, "apiKey"));
+                  setCreateMutation((current) => ({ ...current, error: null }));
+                }}
+              />
+              <FieldError message={fieldErrors.apiKey} />
+            </label>
+            <label className="field-label">
+              Test model
+              <input
+                className="field-input"
+                placeholder="gpt-5.4"
+                value={createForm.testModel}
+                onChange={(event) => {
+                  setCreateForm((current) => ({ ...current, testModel: event.target.value }));
+                  setFieldErrors((current) => withoutFieldError(current, "testModel"));
+                  setCreateMutation((current) => ({ ...current, error: null }));
+                }}
+              />
+              <FieldError message={fieldErrors.testModel} />
+            </label>
+            <label className="field-label">
+              API type
+              <select
+                className="field-input"
+                value={createForm.compatibilityMode}
+                onChange={(event) => setCreateForm((current) => ({ ...current, compatibilityMode: event.target.value as ProbeCompatibilityMode }))}
+              >
+                <option value="auto">auto</option>
+                <option value="openai-responses">openai-responses</option>
+                <option value="openai-chat-completions">openai-chat-completions</option>
+                <option value="anthropic-messages">anthropic-messages</option>
+              </select>
+            </label>
+            <button className="pill pill-active" disabled={createMutation.pending} onClick={createCredential} type="button">
+              {createMutation.pending ? "Creating..." : "Create credential"}
+            </button>
+            <Notice state={createMutation} />
+          </div>
+        </Card>
+
+        <Card title="Credential detail" kicker={detail.data ? detail.data.ownerName : "Select a credential"}>
+          {!selectedCredentialId ? (
+            <p className="text-sm text-white/55">No credential selected.</p>
+          ) : detail.loading ? (
+            <p className="text-sm text-white/55">Loading credential detail...</p>
+          ) : detail.error || !detail.data ? (
+            <p className="text-sm text-[#ffb59c]">{detail.error ?? "Unable to load credential detail."}</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/45">
+                  {detail.data.ownerType} · {detail.data.status}
+                </p>
+                <p className="mt-2 text-sm text-white/72">{detail.data.ownerBaseUrl}</p>
+                <p className="mt-2 text-sm text-white/65">
+                  {detail.data.testModel} · {detail.data.compatibilityMode}
+                </p>
+                <p className="mt-2 break-all font-mono text-sm text-[#ffd06a]">
+                  {revealedKey ? detail.data.apiKey : detail.data.apiKeyPreview}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button className="pill pill-idle" type="button" onClick={() => setRevealedKey((current) => !current)}>
+                    {revealedKey ? "Hide key" : "Reveal key"}
+                  </button>
+                  <button className="pill pill-idle" type="button" onClick={copySelectedKey}>
+                    {copiedKey ? "Copied" : "Copy key"}
+                  </button>
+                  <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={reprobeSelected}>
+                    {actionMutation.pending ? "Running..." : "Re-run probe"}
+                  </button>
+                  <button className="pill pill-ghost" disabled={actionMutation.pending || detail.data.status === "revoked"} type="button" onClick={revokeSelected}>
+                    Revoke
+                  </button>
+                </div>
+                <div className="mt-3 space-y-1 text-sm text-white/55">
+                  <p>
+                    Last probe · {detail.data.lastHealthStatus ?? "unknown"}
+                    {detail.data.lastHttpStatus ? ` · ${detail.data.lastHttpStatus}` : ""}
+                    {detail.data.lastVerifiedAt ? ` · ${new Date(detail.data.lastVerifiedAt).toLocaleString()}` : ""}
+                  </p>
+                  {detail.data.lastDetectionMode ? <p>Detection · {detail.data.lastDetectionMode}</p> : null}
+                  {detail.data.lastUsedUrl ? <p className="break-all">Used URL · {detail.data.lastUsedUrl}</p> : null}
+                  {detail.data.lastMessage ? <p>{detail.data.lastMessage}</p> : null}
+                </div>
+              </div>
+
+              <div className="grid gap-2.5">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Rotate credential</p>
+                <label className="field-label">
+                  New API key
+                  <input
+                    className="field-input"
+                    type="password"
+                    placeholder="sk-new-monitoring"
+                    value={rotateForm.apiKey}
+                    onChange={(event) => {
+                      setRotateForm((current) => ({ ...current, apiKey: event.target.value }));
+                      setRotateErrors((current) => withoutFieldError(current, "apiKey"));
+                      setActionMutation((current) => ({ ...current, error: null }));
+                    }}
+                  />
+                  <FieldError message={rotateErrors.apiKey} />
+                </label>
+                <label className="field-label">
+                  New test model
+                  <input
+                    className="field-input"
+                    value={rotateForm.testModel}
+                    onChange={(event) => {
+                      setRotateForm((current) => ({ ...current, testModel: event.target.value }));
+                      setRotateErrors((current) => withoutFieldError(current, "testModel"));
+                      setActionMutation((current) => ({ ...current, error: null }));
+                    }}
+                  />
+                  <FieldError message={rotateErrors.testModel} />
+                </label>
+                <label className="field-label">
+                  New API type
+                  <select
+                    className="field-input"
+                    value={rotateForm.compatibilityMode}
+                    onChange={(event) => setRotateForm((current) => ({ ...current, compatibilityMode: event.target.value as ProbeCompatibilityMode }))}
+                  >
+                    <option value="auto">auto</option>
+                    <option value="openai-responses">openai-responses</option>
+                    <option value="openai-chat-completions">openai-chat-completions</option>
+                    <option value="anthropic-messages">anthropic-messages</option>
+                  </select>
+                </label>
+                <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={rotateSelected}>
+                  {actionMutation.pending ? "Rotating..." : "Rotate credential"}
+                </button>
+                <Notice state={actionMutation} />
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function SponsorsPage() {
   const sponsors = useLoadable<AdminSponsorsResponse>(() => fetchJson("/admin/sponsors"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
@@ -751,6 +1222,7 @@ export function App() {
         <Route path="/" element={<OverviewPage />} />
         <Route path="/relays" element={<RelaysPage />} />
         <Route path="/submissions" element={<SubmissionsPage />} />
+        <Route path="/credentials" element={<CredentialsPage />} />
         <Route path="/sponsors" element={<SponsorsPage />} />
         <Route path="/prices" element={<PricesPage />} />
       </Routes>

@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  adminProbeCredentialCreateSchema,
+  adminProbeCredentialDetailSchema,
   adminRelayUpsertSchema,
   homeSummaryResponseSchema,
   leaderboardDirectoryResponseSchema,
@@ -231,4 +233,41 @@ test("public submission and admin relay inputs normalize blank optional fields",
   assert.equal(relay.websiteUrl, null);
   assert.equal(relay.docsUrl, null);
   assert.equal(relay.notes, null);
+});
+
+test("admin probe credential schemas parse", () => {
+  const createPayload = adminProbeCredentialCreateSchema.parse({
+    ownerType: "relay",
+    ownerId: "relay-123",
+    apiKey: " sk-monitoring ",
+    testModel: " gpt-5.4 ",
+  });
+
+  const detailPayload = adminProbeCredentialDetailSchema.parse({
+    id: "credential-123",
+    ownerType: "relay",
+    ownerId: "relay-123",
+    ownerName: "Northwind Relay",
+    ownerSlug: "northwind-relay",
+    ownerBaseUrl: "https://northwind.example.ai/v1",
+    status: "active",
+    testModel: "gpt-5.4",
+    compatibilityMode: "auto",
+    apiKeyPreview: "sk-m…ring",
+    apiKey: "sk-monitoring",
+    lastVerifiedAt: "2026-04-15T10:00:00.000Z",
+    lastProbeOk: false,
+    lastHealthStatus: "degraded",
+    lastHttpStatus: 405,
+    lastMessage: "Upstream returned 405 while testing OpenAI Responses",
+    lastDetectionMode: "auto",
+    lastUsedUrl: "https://northwind.example.ai/v1/responses",
+    createdAt: "2026-04-15T09:00:00.000Z",
+    updatedAt: "2026-04-15T10:00:00.000Z",
+  });
+
+  assert.equal(createPayload.apiKey, "sk-monitoring");
+  assert.equal(createPayload.testModel, "gpt-5.4");
+  assert.equal(detailPayload.ownerSlug, "northwind-relay");
+  assert.equal(detailPayload.lastDetectionMode, "auto");
 });

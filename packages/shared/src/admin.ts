@@ -33,6 +33,7 @@ const nullableNonEmptyStringSchema = z.preprocess(emptyStringToNull, z.string().
 const requiredNonEmptyStringSchema = z.preprocess(trimString, z.string().min(1));
 
 export const probeCredentialStatusSchema = z.enum(["active", "rotated", "revoked"]);
+export const probeCredentialOwnerTypeSchema = z.enum(["submission", "relay"]);
 
 export const publicSubmissionRequestSchema = z.object({
   relayName: requiredNonEmptyStringSchema,
@@ -141,6 +142,56 @@ export const adminSubmissionReviewSchema = z.object({
   reviewNotes: z.string().nullable().optional(),
 });
 
+export const adminProbeCredentialSchema = z.object({
+  id: internalIdSchema,
+  ownerType: probeCredentialOwnerTypeSchema,
+  ownerId: internalIdSchema,
+  ownerName: z.string().min(1),
+  ownerSlug: z.string().min(1).nullable(),
+  ownerBaseUrl: requiredUrlSchema,
+  status: probeCredentialStatusSchema,
+  testModel: z.string().min(1),
+  compatibilityMode: probeCompatibilityModeSchema,
+  apiKeyPreview: z.string().min(1),
+  lastVerifiedAt: isoTimestampSchema.nullable(),
+  lastProbeOk: z.boolean().nullable(),
+  lastHealthStatus: healthStatusSchema.nullable(),
+  lastHttpStatus: z.number().int().min(100).max(599).nullable(),
+  lastMessage: z.string().nullable(),
+  updatedAt: isoTimestampSchema,
+});
+
+export const adminProbeCredentialsResponseSchema = z.object({
+  rows: z.array(adminProbeCredentialSchema),
+});
+
+export const adminProbeCredentialDetailSchema = adminProbeCredentialSchema.extend({
+  apiKey: z.string().min(1),
+  lastDetectionMode: probeDetectionModeSchema.nullable(),
+  lastUsedUrl: nullableUrlSchema,
+  createdAt: isoTimestampSchema,
+});
+
+export const adminProbeCredentialCreateSchema = z.object({
+  ownerType: probeCredentialOwnerTypeSchema,
+  ownerId: internalIdSchema,
+  apiKey: requiredNonEmptyStringSchema,
+  testModel: requiredNonEmptyStringSchema,
+  compatibilityMode: z.preprocess(trimString, probeCompatibilityModeSchema).default("auto"),
+});
+
+export const adminProbeCredentialRotateSchema = z.object({
+  apiKey: requiredNonEmptyStringSchema,
+  testModel: requiredNonEmptyStringSchema,
+  compatibilityMode: z.preprocess(trimString, probeCompatibilityModeSchema).default("auto"),
+});
+
+export const adminProbeCredentialMutationResponseSchema = z.object({
+  ok: z.literal(true),
+  id: internalIdSchema,
+  probe: submissionProbeSummarySchema.nullable().optional(),
+});
+
 export const adminSponsorSchema = z.object({
   id: internalIdSchema,
   name: z.string().min(1),
@@ -215,6 +266,13 @@ export type AdminSubmission = z.infer<typeof adminSubmissionSchema>;
 export type AdminSubmissionsResponse = z.infer<typeof adminSubmissionsResponseSchema>;
 export type AdminSubmissionReview = z.infer<typeof adminSubmissionReviewSchema>;
 export type ProbeCredentialStatus = z.infer<typeof probeCredentialStatusSchema>;
+export type ProbeCredentialOwnerType = z.infer<typeof probeCredentialOwnerTypeSchema>;
+export type AdminProbeCredential = z.infer<typeof adminProbeCredentialSchema>;
+export type AdminProbeCredentialsResponse = z.infer<typeof adminProbeCredentialsResponseSchema>;
+export type AdminProbeCredentialDetail = z.infer<typeof adminProbeCredentialDetailSchema>;
+export type AdminProbeCredentialCreate = z.infer<typeof adminProbeCredentialCreateSchema>;
+export type AdminProbeCredentialRotate = z.infer<typeof adminProbeCredentialRotateSchema>;
+export type AdminProbeCredentialMutationResponse = z.infer<typeof adminProbeCredentialMutationResponseSchema>;
 export type AdminSponsor = z.infer<typeof adminSponsorSchema>;
 export type AdminSponsorsResponse = z.infer<typeof adminSponsorsResponseSchema>;
 export type AdminSponsorUpsert = z.infer<typeof adminSponsorUpsertSchema>;

@@ -1,5 +1,10 @@
 import {
   adminOverviewResponseSchema,
+  adminProbeCredentialCreateSchema,
+  adminProbeCredentialDetailSchema,
+  adminProbeCredentialMutationResponseSchema,
+  adminProbeCredentialRotateSchema,
+  adminProbeCredentialsResponseSchema,
   adminPriceCreateSchema,
   adminPricesResponseSchema,
   adminRelayUpsertSchema,
@@ -8,6 +13,8 @@ import {
   adminSubmissionsResponseSchema,
   adminSponsorUpsertSchema,
   adminSponsorsResponseSchema,
+  type ProbeCompatibilityMode,
+  type ProbeCredentialOwnerType,
   publicSubmissionRequestSchema,
   publicSubmissionResponseSchema,
 } from "@relaynews/shared";
@@ -109,6 +116,265 @@ async function resolveApprovedRelay(
     })
     .returning(["id", "slug", "name"])
     .executeTakeFirstOrThrow();
+}
+
+type ProbeCredentialRow = {
+  id: string;
+  submissionId: string | null;
+  relayId: string | null;
+  status: string;
+  testModel: string;
+  compatibilityMode: ProbeCompatibilityMode;
+  apiKey: string;
+  lastVerifiedAt: string | null;
+  lastProbeOk: boolean | null;
+  lastHealthStatus: string | null;
+  lastHttpStatus: number | null;
+  lastMessage: string | null;
+  lastDetectionMode: "auto" | "manual" | null;
+  lastUsedUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  submissionRelayName: string | null;
+  submissionBaseUrl: string | null;
+  relaySlug: string | null;
+  relayName: string | null;
+  relayBaseUrl: string | null;
+};
+
+type ProbeCredentialOwner = {
+  ownerType: ProbeCredentialOwnerType;
+  ownerId: string;
+  ownerName: string;
+  ownerSlug: string | null;
+  ownerBaseUrl: string;
+  submissionId: string | null;
+  relayId: string | null;
+};
+
+function makeNotFoundError(message: string) {
+  const error = new Error(message);
+  (error as Error & { statusCode?: number }).statusCode = 404;
+  return error;
+}
+
+function probeCredentialBaseQuery(db: DbExecutor) {
+  return db
+    .selectFrom("probe_credentials as pc")
+    .leftJoin("submissions as s", "s.id", "pc.submission_id")
+    .leftJoin("relays as r", "r.id", "pc.relay_id")
+    .select([
+      "pc.id as id",
+      "pc.submission_id as submissionId",
+      "pc.relay_id as relayId",
+      "pc.status as status",
+      "pc.test_model as testModel",
+      "pc.compatibility_mode as compatibilityMode",
+      "pc.api_key as apiKey",
+      "pc.last_verified_at as lastVerifiedAt",
+      "pc.last_probe_ok as lastProbeOk",
+      "pc.last_health_status as lastHealthStatus",
+      "pc.last_http_status as lastHttpStatus",
+      "pc.last_message as lastMessage",
+      "pc.last_detection_mode as lastDetectionMode",
+      "pc.last_used_url as lastUsedUrl",
+      "pc.created_at as createdAt",
+      "pc.updated_at as updatedAt",
+      "s.relay_name as submissionRelayName",
+      "s.base_url as submissionBaseUrl",
+      "r.slug as relaySlug",
+      "r.name as relayName",
+      "r.base_url as relayBaseUrl",
+    ]);
+}
+
+function resolveProbeCredentialOwner(row: ProbeCredentialRow): ProbeCredentialOwner {
+  if (row.relayId && row.relayName && row.relayBaseUrl) {
+    return {
+      ownerType: "relay",
+      ownerId: row.relayId,
+      ownerName: row.relayName,
+      ownerSlug: row.relaySlug,
+      ownerBaseUrl: row.relayBaseUrl,
+      submissionId: null,
+      relayId: row.relayId,
+    };
+  }
+
+  if (row.submissionId && row.submissionRelayName && row.submissionBaseUrl) {
+    return {
+      ownerType: "submission",
+      ownerId: row.submissionId,
+      ownerName: row.submissionRelayName,
+      ownerSlug: null,
+      ownerBaseUrl: row.submissionBaseUrl,
+      submissionId: row.submissionId,
+      relayId: null,
+    };
+  }
+
+  throw makeNotFoundError("Probe credential owner not found");
+}
+
+function serializeAdminProbeCredential(row: ProbeCredentialRow) {
+  const owner = resolveProbeCredentialOwner(row);
+
+  return {
+    id: row.id,
+    ownerType: owner.ownerType,
+    ownerId: owner.ownerId,
+    ownerName: owner.ownerName,
+    ownerSlug: owner.ownerSlug,
+    ownerBaseUrl: owner.ownerBaseUrl,
+    status: row.status,
+    testModel: row.testModel,
+    compatibilityMode: row.compatibilityMode,
+    apiKeyPreview: maskApiKey(row.apiKey),
+    lastVerifiedAt: row.lastVerifiedAt,
+    lastProbeOk: row.lastProbeOk,
+    lastHealthStatus: row.lastHealthStatus,
+    lastHttpStatus: row.lastHttpStatus,
+    lastMessage: row.lastMessage,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function serializeAdminProbeCredentialDetail(row: ProbeCredentialRow) {
+  return {
+    ...serializeAdminProbeCredential(row),
+    apiKey: row.apiKey,
+    lastDetectionMode: row.lastDetectionMode,
+    lastUsedUrl: row.lastUsedUrl,
+    createdAt: row.createdAt,
+  };
+}
+
+async function getProbeCredentialRowById(db: DbExecutor, id: string) {
+  const row = await probeCredentialBaseQuery(db)
+    .where("pc.id", "=", id)
+    .executeTakeFirst();
+
+  if (!row) {
+    throw makeNotFoundError("Probe credential not found");
+  }
+
+  return row as ProbeCredentialRow;
+}
+
+async function resolveProbeCredentialOwnerTarget(
+  db: DbExecutor,
+  ownerType: ProbeCredentialOwnerType,
+  ownerId: string,
+): Promise<ProbeCredentialOwner> {
+  if (ownerType === "relay") {
+    const relay = await db
+      .selectFrom("relays")
+      .select([
+        "id",
+        "slug",
+        "name",
+        "base_url as baseUrl",
+      ])
+      .where("id", "=", ownerId)
+      .executeTakeFirst();
+
+    if (!relay) {
+      throw makeNotFoundError("Relay not found");
+    }
+
+    return {
+      ownerType,
+      ownerId: relay.id,
+      ownerName: relay.name,
+      ownerSlug: relay.slug,
+      ownerBaseUrl: relay.baseUrl,
+      submissionId: null,
+      relayId: relay.id,
+    };
+  }
+
+  const submission = await db
+    .selectFrom("submissions")
+    .select([
+      "id",
+      "relay_name as relayName",
+      "base_url as baseUrl",
+    ])
+    .where("id", "=", ownerId)
+    .executeTakeFirst();
+
+  if (!submission) {
+    throw makeNotFoundError("Submission not found");
+  }
+
+  return {
+    ownerType,
+    ownerId: submission.id,
+    ownerName: submission.relayName,
+    ownerSlug: null,
+    ownerBaseUrl: submission.baseUrl,
+    submissionId: submission.id,
+    relayId: null,
+  };
+}
+
+async function rotateActiveOwnerCredentialIfNeeded(db: DbExecutor, owner: ProbeCredentialOwner) {
+  let query = db
+    .selectFrom("probe_credentials")
+    .select(["id"])
+    .where("status", "=", "active");
+
+  query =
+    owner.ownerType === "relay"
+      ? query.where("relay_id", "=", owner.ownerId)
+      : query.where("submission_id", "=", owner.ownerId);
+
+  const activeCredential = await query.executeTakeFirst();
+
+  if (activeCredential) {
+    await db
+      .updateTable("probe_credentials")
+      .set({ status: "rotated" })
+      .where("id", "=", activeCredential.id)
+      .executeTakeFirst();
+  }
+}
+
+async function createProbeCredentialForOwner(
+  db: DbExecutor,
+  owner: ProbeCredentialOwner,
+  input: {
+    apiKey: string;
+    testModel: string;
+    compatibilityMode: ProbeCompatibilityMode;
+  },
+) {
+  const createdAt = new Date().toISOString();
+  await rotateActiveOwnerCredentialIfNeeded(db, owner);
+
+  const row = await db
+    .insertInto("probe_credentials")
+    .values({
+      submission_id: owner.submissionId,
+      relay_id: owner.relayId,
+      api_key: input.apiKey,
+      test_model: input.testModel,
+      compatibility_mode: input.compatibilityMode,
+      status: "active",
+      last_verified_at: null,
+      last_probe_ok: null,
+      last_health_status: null,
+      last_http_status: null,
+      last_message: null,
+      last_detection_mode: null,
+      last_used_url: null,
+      created_at: createdAt,
+      updated_at: createdAt,
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  return row.id;
 }
 
 export async function registerAdminRoutes(app: FastifyInstance) {
@@ -362,6 +628,129 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           createdAt: row.createdAt,
         };
       }),
+    });
+  });
+
+  app.get("/admin/probe-credentials", async () => {
+    const rows = (await probeCredentialBaseQuery(app.db)
+      .orderBy("pc.updated_at", "desc")
+      .execute()) as ProbeCredentialRow[];
+
+    return adminProbeCredentialsResponseSchema.parse({
+      rows: rows.map((row) => serializeAdminProbeCredential(row)),
+    });
+  });
+
+  app.get("/admin/probe-credentials/:id", async (request) => {
+    const params = request.params as { id: string };
+    const row = await getProbeCredentialRowById(app.db, params.id);
+
+    return adminProbeCredentialDetailSchema.parse(serializeAdminProbeCredentialDetail(row));
+  });
+
+  app.post("/admin/probe-credentials", async (request, reply) => {
+    const body = adminProbeCredentialCreateSchema.parse(request.body ?? {});
+    const owner = await resolveProbeCredentialOwnerTarget(app.db, body.ownerType, body.ownerId);
+    const id = await app.db.transaction().execute(async (trx) =>
+      createProbeCredentialForOwner(trx, owner, {
+        apiKey: body.apiKey,
+        testModel: body.testModel,
+        compatibilityMode: body.compatibilityMode,
+      }),
+    );
+
+    const probeResult = await runPublicProbe({
+      baseUrl: owner.ownerBaseUrl,
+      apiKey: body.apiKey,
+      model: body.testModel,
+      compatibilityMode: body.compatibilityMode,
+    });
+
+    await app.db
+      .updateTable("probe_credentials")
+      .set(toProbeCredentialVerification(probeResult))
+      .where("id", "=", id)
+      .executeTakeFirst();
+
+    reply.code(201);
+    return adminProbeCredentialMutationResponseSchema.parse({
+      ok: true,
+      id,
+      probe: toSubmissionProbeSummary(probeResult),
+    });
+  });
+
+  app.post("/admin/probe-credentials/:id/reprobe", async (request) => {
+    const params = request.params as { id: string };
+    const credential = await getProbeCredentialRowById(app.db, params.id);
+    const owner = resolveProbeCredentialOwner(credential);
+    const probeResult = await runPublicProbe({
+      baseUrl: owner.ownerBaseUrl,
+      apiKey: credential.apiKey,
+      model: credential.testModel,
+      compatibilityMode: credential.compatibilityMode,
+    });
+
+    await app.db
+      .updateTable("probe_credentials")
+      .set(toProbeCredentialVerification(probeResult))
+      .where("id", "=", credential.id)
+      .executeTakeFirst();
+
+    return adminProbeCredentialMutationResponseSchema.parse({
+      ok: true,
+      id: credential.id,
+      probe: toSubmissionProbeSummary(probeResult),
+    });
+  });
+
+  app.post("/admin/probe-credentials/:id/rotate", async (request) => {
+    const params = request.params as { id: string };
+    const body = adminProbeCredentialRotateSchema.parse(request.body ?? {});
+    const credential = await getProbeCredentialRowById(app.db, params.id);
+    const owner = resolveProbeCredentialOwner(credential);
+    const id = await app.db.transaction().execute(async (trx) =>
+      createProbeCredentialForOwner(trx, owner, {
+        apiKey: body.apiKey,
+        testModel: body.testModel,
+        compatibilityMode: body.compatibilityMode,
+      }),
+    );
+
+    const probeResult = await runPublicProbe({
+      baseUrl: owner.ownerBaseUrl,
+      apiKey: body.apiKey,
+      model: body.testModel,
+      compatibilityMode: body.compatibilityMode,
+    });
+
+    await app.db
+      .updateTable("probe_credentials")
+      .set(toProbeCredentialVerification(probeResult))
+      .where("id", "=", id)
+      .executeTakeFirst();
+
+    return adminProbeCredentialMutationResponseSchema.parse({
+      ok: true,
+      id,
+      probe: toSubmissionProbeSummary(probeResult),
+    });
+  });
+
+  app.post("/admin/probe-credentials/:id/revoke", async (request) => {
+    const params = request.params as { id: string };
+    const credential = await getProbeCredentialRowById(app.db, params.id);
+
+    await app.db
+      .updateTable("probe_credentials")
+      .set({ status: "revoked" })
+      .where("id", "=", credential.id)
+      .executeTakeFirst();
+
+    return adminProbeCredentialMutationResponseSchema.parse({
+      ok: true,
+      id: credential.id,
+      probe: null,
     });
   });
 

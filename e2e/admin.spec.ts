@@ -21,6 +21,18 @@ async function readOverviewMetric(page: Page, label: string) {
 
 async function readOverviewTotals(page: Page) {
   await page.goto(`${adminBaseUrl}/`);
+
+  try {
+    await page.getByText(/pending submissions/i).waitFor({ state: "visible", timeout: 8_000 });
+  } catch {
+    const fetchError = page.getByText("Failed to fetch");
+    if (await fetchError.isVisible().catch(() => false)) {
+      await page.reload();
+    }
+
+    await page.getByText(/pending submissions/i).waitFor({ state: "visible", timeout: 8_000 });
+  }
+
   return {
     relays: await readOverviewMetric(page, "relays"),
     pendingSubmissions: await readOverviewMetric(page, "pending submissions"),
@@ -32,7 +44,8 @@ async function readOverviewTotals(page: Page) {
 test("admin overview shows operating totals", async ({ page }) => {
   await page.goto(`${adminBaseUrl}/`);
   await expect(page.getByText("Operate the relay catalog, sponsorships, and pricing lanes.")).toBeVisible();
-  await expect(page.getByText(/pending submissions/i)).toBeVisible();
+  const overviewTotals = await readOverviewTotals(page);
+  expect(overviewTotals.pendingSubmissions).toBeGreaterThanOrEqual(0);
 
   await page.getByRole("link", { name: "Relays" }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/relays$`));
@@ -41,6 +54,10 @@ test("admin overview shows operating totals", async ({ page }) => {
   await page.getByRole("link", { name: "Submissions" }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/submissions$`));
   await expect(page.getByRole("heading", { name: "Submission queue", exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "Credentials" }).click();
+  await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/credentials$`));
+  await expect(page.getByRole("heading", { name: "Probe credentials", exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Sponsors" }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sponsors$`));
@@ -86,6 +103,78 @@ test("admin can create a relay", async ({ page }) => {
 
   const after = await readOverviewTotals(page);
   expect(after.relays).toBe(before.relays + 1);
+});
+
+test("admin can create and manage probe credentials", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Credential management is skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const relaySlug = `credential-relay-${runId}`;
+  const relayName = `Credential Relay ${runId}`;
+  const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+
+  const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    data: {
+      slug: relaySlug,
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      providerName: "Credential Ops",
+      websiteUrl: "https://example.com",
+      catalogStatus: "active",
+      isFeatured: false,
+      isSponsored: false,
+      description: "Created for credential admin coverage.",
+      docsUrl: `https://example.com/docs/${relaySlug}`,
+      notes: "Playwright credential verification",
+    },
+  });
+  expect(relayResponse.ok()).toBeTruthy();
+
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"], {
+    origin: new URL(adminBaseUrl).origin,
+  });
+
+  await page.goto(`${adminBaseUrl}/credentials`);
+  const createCard = page.locator("section.card").filter({
+    has: page.getByRole("heading", { name: "Create credential", exact: true }),
+  }).first();
+  await createCard.getByLabel("Owner record").selectOption({ label: relayName });
+  await createCard.getByLabel("API key").fill("sk-credential-initial");
+  await createCard.getByLabel("Test model").fill("gpt-5.4");
+  await createCard.getByRole("button", { name: "Create credential" }).click();
+  await expect(page.getByText(/Credential created\./)).toBeVisible();
+
+  const credentialCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await expect(credentialCard).toBeVisible();
+  await credentialCard.click();
+  const detailCard = page.locator("section.card").filter({
+    has: page.getByRole("heading", { name: "Credential detail", exact: true }),
+  }).first();
+  await page.getByRole("button", { name: "Reveal key" }).click();
+  await expect(page.getByText("sk-credential-initial")).toBeVisible();
+
+  await page.getByRole("button", { name: "Copy key" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+
+  const reprobeResponse = page.waitForResponse((response) =>
+    response.url().includes("/admin/probe-credentials/") &&
+    response.url().includes("/reprobe") &&
+    response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Re-run probe" }).click();
+  expect((await reprobeResponse).ok()).toBeTruthy();
+
+  await page.getByLabel("New API key").fill("sk-credential-rotated");
+  await page.getByRole("button", { name: "Rotate credential" }).click();
+  await expect(page.getByText(/Credential rotated\./)).toBeVisible();
+  await page.getByRole("button", { name: "Reveal key" }).click();
+  await expect(page.getByText("sk-credential-rotated")).toBeVisible();
+
+  await detailCard.getByRole("button", { name: "Revoke", exact: true }).click();
+  await expect(page.getByText("Credential revoked.")).toBeVisible();
+  await expect(page.locator(".admin-list-card").filter({ hasText: relayName }).first()).toContainText("revoked");
 });
 
 test("admin can review submissions, create sponsors, and add prices", async ({ page, request }) => {
