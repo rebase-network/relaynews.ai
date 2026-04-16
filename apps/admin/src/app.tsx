@@ -384,8 +384,8 @@ function AdminShell({ children }: { children: ReactNode }) {
   const items = [
     ["/", "Overview"],
     ["/relays", "Relays"],
-    ["/submissions", "Submissions"],
-    ["/credentials", "Credentials"],
+    ["/submissions", "Intake"],
+    ["/credentials", "Keys"],
     ["/sponsors", "Sponsors"],
     ["/prices", "Prices"],
   ] as const;
@@ -532,8 +532,8 @@ function OverviewPage() {
               <p className="mt-1 text-lg tracking-[-0.03em]">Check relay status and metadata</p>
             </Link>
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/credentials">
-              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Monitoring keys</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Rotate or recover probe credentials</p>
+              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Relay keys</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">Rotate or recover monitoring keys</p>
             </Link>
           </div>
         </Card>
@@ -801,7 +801,7 @@ function SubmissionsPage() {
   const needsAttention = pendingRows.filter((row) => row.probeCredential?.lastProbeOk === false).length;
 
   return (
-    <Card title="Submission queue" kicker="Review lane">
+    <Card title="Intake queue" kicker="Review lane">
       <div className="space-y-3">
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white/68">
           <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">Approval flow</p>
@@ -1090,7 +1090,7 @@ function CredentialsPage() {
     const { errors, payload } = validateProbeCredentialForm(createForm);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setCreateMutation({ pending: false, error: "Please fix the highlighted credential fields before saving.", success: null });
+      setCreateMutation({ pending: false, error: "Please fix the highlighted key fields before saving.", success: null });
       return;
     }
 
@@ -1104,15 +1104,15 @@ function CredentialsPage() {
         pending: false,
         error: null,
         success: response.probe
-          ? `Credential created. Initial probe ${response.probe.ok ? "passed" : "needs review"}.`
-          : "Credential created.",
+          ? `Key attached. Initial probe ${response.probe.ok ? "passed" : "needs review"}.`
+          : "Key attached.",
       });
       setCreateForm((current) => ({ ...current, ownerId: "", apiKey: "" }));
       setFieldErrors({});
       setSelectedCredentialId(response.id);
       await reloadCredentialViews(response.id);
     } catch (reason) {
-      setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create credential.", success: null });
+      setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to attach key.", success: null });
     }
   }
 
@@ -1165,13 +1165,13 @@ function CredentialsPage() {
         pending: false,
         error: null,
         success: response.probe
-          ? `Credential rotated. New probe ${response.probe.ok ? "passed" : "needs review"}.`
-          : "Credential rotated.",
+          ? `Key rotated. New probe ${response.probe.ok ? "passed" : "needs review"}.`
+          : "Key rotated.",
       });
       setSelectedCredentialId(response.id);
       await reloadCredentialViews(response.id);
     } catch (reason) {
-      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rotate credential.", success: null });
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rotate key.", success: null });
     }
   }
 
@@ -1185,10 +1185,10 @@ function CredentialsPage() {
       await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${detail.data.id}/revoke`, {
         method: "POST",
       });
-      setActionMutation({ pending: false, error: null, success: "Credential revoked." });
+      setActionMutation({ pending: false, error: null, success: "Key revoked." });
       await reloadCredentialViews(detail.data.id);
     } catch (reason) {
-      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to revoke credential.", success: null });
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to revoke key.", success: null });
     }
   }
 
@@ -1209,7 +1209,7 @@ function CredentialsPage() {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-      <Card title="Probe credentials" kicker="Monitoring keys">
+      <Card title="Relay keys" kicker="Monitoring ops">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           Use this lane for key rotation, revoke, or recovery work on an existing relay. New
           approvals from the submission queue now activate monitoring automatically.
@@ -1248,7 +1248,7 @@ function CredentialsPage() {
       </Card>
 
       <div className="space-y-4">
-        <Card title="Create credential" kicker="Attach a key">
+        <Card title="Attach key" kicker="Relay-owned credential">
           {requestedOwnerId ? (
             <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
               This form is prefilled from the previous page so you can attach or replace the monitoring key without reselecting the owner.
@@ -1340,19 +1340,19 @@ function CredentialsPage() {
               </select>
             </label>
             <button className="pill pill-active" disabled={createMutation.pending} onClick={createCredential} type="button">
-              {createMutation.pending ? "Creating..." : "Create credential"}
+              {createMutation.pending ? "Creating..." : "Attach key"}
             </button>
             <Notice state={createMutation} />
           </div>
         </Card>
 
-        <Card title="Credential detail" kicker={detail.data ? detail.data.ownerName : "Select a credential"}>
+        <Card title="Key detail" kicker={detail.data ? detail.data.ownerName : "Select a key"}>
           {!selectedCredentialId ? (
-            <p className="text-sm text-white/55">No credential selected.</p>
+            <p className="text-sm text-white/55">No key selected.</p>
           ) : detail.loading ? (
-            <p className="text-sm text-white/55">Loading credential detail...</p>
+            <p className="text-sm text-white/55">Loading key detail...</p>
           ) : detail.error || !detail.data ? (
-            <p className="text-sm text-[#ffb59c]">{detail.error ?? "Unable to load credential detail."}</p>
+            <p className="text-sm text-[#ffb59c]">{detail.error ?? "Unable to load key detail."}</p>
           ) : (
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
@@ -1393,7 +1393,7 @@ function CredentialsPage() {
               </div>
 
               <div className="grid gap-2.5">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Rotate credential</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Rotate key</p>
                 <label className="field-label">
                   New API key
                   <input
@@ -1436,7 +1436,7 @@ function CredentialsPage() {
                   </select>
                 </label>
                 <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={rotateSelected}>
-                  {actionMutation.pending ? "Rotating..." : "Rotate credential"}
+                  {actionMutation.pending ? "Rotating..." : "Rotate key"}
                 </button>
                 <Notice state={actionMutation} />
               </div>

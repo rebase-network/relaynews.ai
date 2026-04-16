@@ -55,13 +55,13 @@ test("admin overview shows operating totals", async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/relays$`));
   await expect(page.getByRole("heading", { name: "Relay catalog", exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "Submissions", exact: true }).click();
+  await page.getByRole("link", { name: "Intake", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/submissions$`));
-  await expect(page.getByRole("heading", { name: "Submission queue", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Intake queue", exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "Credentials", exact: true }).click();
+  await page.getByRole("link", { name: "Keys", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/credentials$`));
-  await expect(page.getByRole("heading", { name: "Probe credentials", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Relay keys", exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Sponsors", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sponsors$`));
@@ -142,19 +142,19 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
 
   await page.goto(`${adminBaseUrl}/credentials`);
   const createCard = page.locator("section.card").filter({
-    has: page.getByRole("heading", { name: "Create credential", exact: true }),
+    has: page.getByRole("heading", { name: "Attach key", exact: true }),
   }).first();
   await createCard.getByLabel("Owner record").selectOption({ label: relayName });
   await createCard.getByLabel("API key").fill("sk-credential-initial");
   await createCard.getByLabel("Test model").fill("gpt-5.4");
-  await createCard.getByRole("button", { name: "Create credential" }).click();
-  await expect(page.getByText(/Credential created\./)).toBeVisible();
+  await createCard.getByRole("button", { name: "Attach key" }).click();
+  await expect(page.getByText(/Key attached\./)).toBeVisible();
 
   const credentialCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(credentialCard).toBeVisible();
   await credentialCard.click();
   const detailCard = page.locator("section.card").filter({
-    has: page.getByRole("heading", { name: "Credential detail", exact: true }),
+    has: page.getByRole("heading", { name: "Key detail", exact: true }),
   }).first();
   await page.getByRole("button", { name: "Reveal key" }).click();
   await expect(page.getByText("sk-credential-initial")).toBeVisible();
@@ -171,13 +171,13 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   expect((await reprobeResponse).ok()).toBeTruthy();
 
   await page.getByLabel("New API key").fill("sk-credential-rotated");
-  await page.getByRole("button", { name: "Rotate credential" }).click();
-  await expect(page.getByText(/Credential rotated\./)).toBeVisible();
+  await page.getByRole("button", { name: "Rotate key" }).click();
+  await expect(page.getByText(/Key rotated\./)).toBeVisible();
   await page.getByRole("button", { name: "Reveal key" }).click();
   await expect(page.getByText("sk-credential-rotated")).toBeVisible();
 
   await detailCard.getByRole("button", { name: "Revoke", exact: true }).click();
-  await expect(page.getByText("Credential revoked.")).toBeVisible();
+  await expect(page.getByText("Key revoked.")).toBeVisible();
   await expect(page.locator(".admin-list-card").filter({ hasText: relayName }).first()).toContainText("revoked");
 });
 
@@ -245,7 +245,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(relayCard).toContainText(/Monitoring key · active/i);
   await relayCard.getByRole("link", { name: "Manage key" }).click();
   await expect(page).toHaveURL(/\/credentials\?/);
-  await expect(page.getByRole("heading", { name: "Credential detail", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Key detail", exact: true })).toBeVisible();
   await expect(page.getByText(relayName).first()).toBeVisible();
 
   await page.goto(`${adminBaseUrl}/sponsors`);

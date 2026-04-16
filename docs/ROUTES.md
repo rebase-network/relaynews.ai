@@ -38,8 +38,8 @@ These routes live on the dedicated admin hostname. They are not mirrored under
 |---|---|---|---|
 | `/` | Admin dashboard landing page | CSR in admin SPA | `GET /admin/overview` |
 | `/relays` | Relay review and metadata management | CSR in admin SPA | `GET /admin/relays` |
-| `/submissions` | Submission review queue | CSR in admin SPA | `GET /admin/submissions` |
-| `/credentials` | Probe credential management with rotation and reprobe controls | CSR in admin SPA | `GET /admin/probe-credentials` |
+| `/submissions` | Intake review queue for new relay submissions | CSR in admin SPA | `GET /admin/submissions` |
+| `/credentials` | Relay-key operations for rotation, revoke, and reprobe controls | CSR in admin SPA | `GET /admin/probe-credentials` |
 | `/sponsors` | Sponsor placement management | CSR in admin SPA | `GET /admin/sponsors` |
 | `/prices` | Price record management | CSR in admin SPA | `GET /admin/prices` |
 

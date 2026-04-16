@@ -2628,8 +2628,8 @@ function SubmitPage() {
             <p className="text-sm leading-6 text-black/72">Every relay enters an operator review lane before it appears anywhere public.</p>
           </div>
           <div className="surface-card p-3.5">
-            <p className="kicker !text-black/52">Stored credential</p>
-            <p className="text-sm leading-6 text-black/72">Monitoring keys live in a dedicated credential record so they can be rotated without rewriting relay metadata.</p>
+            <p className="kicker !text-black/52">Verification input</p>
+            <p className="text-sm leading-6 text-black/72">Provide a working key and test model so the review queue can verify the relay against a real request.</p>
           </div>
           <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Initial probe</p>
@@ -2694,9 +2694,6 @@ function SubmitPage() {
             value={state.testApiKey}
             onChange={(event) => updateField("testApiKey", event.target.value)}
           />
-          <span className="form-note mt-2 text-xs leading-5 text-black/56">
-            Use a dedicated monitoring key. It stays attached to the relay credential record and can be rotated later.
-          </span>
           {fieldErrors.testApiKey ? <span className="field-error">{fieldErrors.testApiKey}</span> : null}
         </label>
         <div className="grid gap-4 md:grid-cols-[1fr_0.82fr]">
