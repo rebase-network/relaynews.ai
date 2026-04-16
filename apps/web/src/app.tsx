@@ -582,12 +582,10 @@ function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_STATE) 
 function ProbeFormFields({
   state,
   setState,
-  compact = false,
   showHelpers = true,
 }: {
   state: ProbeFormState;
   setState: React.Dispatch<React.SetStateAction<ProbeFormState>>;
-  compact?: boolean;
   showHelpers?: boolean;
 }) {
   const fields = [
@@ -599,17 +597,11 @@ function ProbeFormFields({
   return (
     <>
       {fields.map(([label, key]) => (
-        <label
-          key={key}
-          className={clsx(
-            "form-field",
-            compact ? "form-field-inline quick-probe-field" : "block",
-          )}
-        >
+        <label key={key} className="form-field block">
           <span>{label}</span>
           <div>
             <input
-              className={clsx("input-shell", compact ? "quick-probe-input" : "mt-2")}
+              className="input-shell mt-2"
               type={key === "apiKey" ? "password" : "text"}
               placeholder={PROBE_FIELD_META[key].placeholder}
               value={state[key]}
@@ -628,42 +620,6 @@ function ProbeFormFields({
         </label>
       ))}
     </>
-  );
-}
-
-function InlineProbeSummary({
-  result,
-  error,
-  resultTone,
-}: {
-  result: PublicProbeResponse | null;
-  error: string | null;
-  resultTone: ReturnType<typeof getProbeResultTone> | null;
-}) {
-  if (error) {
-    return (
-      <p className="quick-probe-inline-summary quick-probe-inline-summary-error" role="alert">
-        Probe failed. {error}
-      </p>
-    );
-  }
-
-  if (!result || !resultTone) {
-    return (
-      <p className="quick-probe-inline-summary">
-        Status, latency, HTTP, and API type appear here after a probe.
-      </p>
-    );
-  }
-
-  const latencyText = result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "latency n/a";
-  const httpText = `HTTP ${formatProbeHttpStatus(result.protocol.httpStatus)}`;
-  const compatibilityText = formatProbeCompatibilityMode(result.compatibilityMode);
-
-  return (
-    <p className={clsx("quick-probe-inline-summary", resultTone.className)}>
-      {resultTone.label} · {latencyText} · {httpText} · {compatibilityText}
-    </p>
   );
 }
 
@@ -944,7 +900,6 @@ function LeaderboardPreviewCard({
 
 function HomePage() {
   const { data, loading, error } = useLoadable<HomeSummaryResponse>(() => fetchJson("/public/home-summary"), []);
-  const quickProbe = useProbeController(DEFAULT_PROBE_STATE);
 
   if (loading) return <LoadingPanel />;
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load homepage."} />;
@@ -952,50 +907,18 @@ function HomePage() {
   return (
     <div className="space-y-5">
       <section className="panel hero-panel min-h-0">
-        <div className="grid gap-5 xl:grid-cols-[1fr_0.98fr] xl:items-start">
-          <div>
-            <p className="kicker text-black/70">Relay intelligence</p>
-            <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
-              Find strong relays fast, test your own endpoint, and submit for inclusion.
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-black/75">
-              Browse model-specific boards, inspect neutral ranking signals, and use the public probe before you list or promote a relay.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              <Link className="button-dark" to="/leaderboard">Browse leaderboards</Link>
-              <Link className="button-cream" to="/submit">Submit relay</Link>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <form className="quick-probe-card quick-probe-form" onSubmit={quickProbe.handleSubmit}>
-              <div className="quick-probe-header">
-                <p className="quick-probe-heading">Quick probe</p>
-                <Link
-                  aria-label="Open the Pro probe page"
-                  className="quick-probe-link"
-                  title="Open the Pro probe page"
-                  to="/probe"
-                >
-                  Pro
-                </Link>
-              </div>
-              <ProbeFormFields
-                compact
-                setState={quickProbe.setState}
-                showHelpers={false}
-                state={quickProbe.state}
-              />
-              <div className="quick-probe-footer">
-                <InlineProbeSummary
-                  error={quickProbe.error}
-                  result={quickProbe.result}
-                  resultTone={quickProbe.resultTone}
-                />
-                <button className="button-dark quick-probe-action" disabled={quickProbe.submitting} type="submit">
-                  {quickProbe.submitting ? "Checking..." : "Probe"}
-                </button>
-              </div>
-            </form>
+        <div className="max-w-5xl">
+          <p className="kicker text-black/70">Relay intelligence</p>
+          <h1 className="max-w-4xl text-4xl leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
+            Find strong relays fast, test your own endpoint, and submit for inclusion.
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-black/75">
+            Browse model-specific boards, inspect neutral ranking signals, and open the full probe workspace when you need deeper diagnostics.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2.5">
+            <Link className="button-dark" to="/leaderboard">Browse leaderboards</Link>
+            <Link className="button-cream" to="/probe">Run probe</Link>
+            <Link className="button-cream" to="/submit">Submit relay</Link>
           </div>
         </div>
       </section>

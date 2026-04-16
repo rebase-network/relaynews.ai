@@ -15,8 +15,10 @@ const manualCompatibilityLabels: Record<string, string> = {
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Find strong relays fast, test your own endpoint, and submit for inclusion.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Find strong relays fast/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Run probe" })).toBeVisible();
+  await expect(page.getByText("Quick probe")).toHaveCount(0);
 
   if (isDeployedRun) {
     await page.getByRole("link", { name: "Leaderboard" }).click();
