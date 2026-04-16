@@ -194,6 +194,16 @@ function formatLatency(value: number | null) {
   return value === null ? "n/a" : `${value} ms`;
 }
 
+function formatPricePerMillion(value: number | null, currency = "USD") {
+  if (value === null) {
+    return "-";
+  }
+
+  const digits = value >= 100 ? 0 : value >= 10 ? 1 : value >= 1 ? 2 : 3;
+  const amount = value.toFixed(digits);
+  return currency === "USD" ? `$${amount}` : `${currency} ${amount}`;
+}
+
 function getModelVendorKey(modelKey: string) {
   return modelKey.split("-")[0] ?? "other";
 }
@@ -1060,13 +1070,33 @@ function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Panel({ title, kicker, children, className }: { title?: string; kicker?: string; children: React.ReactNode; className?: string }) {
+function Panel({
+  title,
+  kicker,
+  children,
+  className,
+  headerClassName,
+  titleClassName,
+  kickerClassName,
+}: {
+  title?: string;
+  kicker?: string;
+  children: React.ReactNode;
+  className?: string;
+  headerClassName?: string;
+  titleClassName?: string;
+  kickerClassName?: string;
+}) {
   return (
     <section className={clsx("panel", className)}>
       {(kicker || title) && (
-        <header className="mb-4">
-          {kicker ? <p className="kicker">{kicker}</p> : null}
-          {title ? <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">{title}</h2> : null}
+        <header className={clsx("mb-4", headerClassName)}>
+          {kicker ? <p className={clsx("kicker", kickerClassName)}>{kicker}</p> : null}
+          {title ? (
+            <h2 className={clsx("text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]", titleClassName)}>
+              {title}
+            </h2>
+          ) : null}
         </header>
       )}
       {children}
@@ -2298,83 +2328,222 @@ function RelayPage() {
   if (overview.loading) return <RelayPageSkeleton />;
   if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Unable to load relay."} />;
 
+  const snapshotMetrics = [
+    { label: "Availability 24h", value: formatAvailability(overview.data.availability24h) },
+    { label: "Latency p50", value: formatLatency(overview.data.latencyP50Ms) },
+    { label: "Latency p95", value: formatLatency(overview.data.latencyP95Ms) },
+    { label: "Models", value: overview.data.supportedModelsCount },
+    { label: "Incidents 7d", value: overview.data.incidents7d },
+    {
+      label: "Starts at",
+      value: `${formatPricePerMillion(overview.data.startingInputPricePer1M)} / ${formatPricePerMillion(overview.data.startingOutputPricePer1M)}`,
+      valueTitle: "Input / Output price per 1M tokens",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay detail</p>
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <div className="flex items-center gap-3 text-sm uppercase tracking-[0.16em]"><StatusDot status={overview.data.healthStatus} /> {overview.data.healthStatus}</div>
-            <h1 className="mt-3 text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">{overview.data.relay.name}</h1>
-            <p className="mt-3 max-w-2xl text-black/70">{overview.data.relay.baseUrl}</p>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/65">
-              {overview.data.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_21rem] xl:items-start">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.16em]">
+              <span className="inline-flex items-center gap-2">
+                <StatusDot status={overview.data.healthStatus} />
+                {overview.data.healthStatus}
+              </span>
+              <span className="text-black/46">Measured {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
             </div>
+            <div>
+              <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-[4.2rem]">{overview.data.relay.name}</h1>
+              <p className="mt-2 break-all font-mono text-[0.8rem] text-black/62">{overview.data.relay.baseUrl}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {overview.data.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
+              {overview.data.relay.websiteUrl ? (
+                <a
+                  className="signal-chip"
+                  href={overview.data.relay.websiteUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Website
+                </a>
+              ) : null}
+              <Link className="signal-chip" to="/leaderboard">Leaderboard</Link>
+            </div>
+            <MetricGrid
+              columnsClassName="grid-cols-2 lg:grid-cols-3"
+              items={snapshotMetrics.map((item) => ({
+                ...item,
+                cardClassName: "probe-metric-card",
+                valueClassName: "text-[1.4rem] leading-[1.05]",
+                valueSpacingClassName: "mt-2.5",
+              }))}
+            />
           </div>
-          <MetricGrid
-            items={[
-              { label: "Availability 24h", value: `${(overview.data.availability24h * 100).toFixed(2)}%` },
-              { label: "Latency p50", value: `${overview.data.latencyP50Ms ?? "-"} ms` },
-              { label: "Models", value: overview.data.supportedModelsCount },
-              { label: "Incidents 7d", value: overview.data.incidents7d },
-            ]}
-          />
+          <div className="surface-card p-4">
+            <p className="kicker">Current read</p>
+            <p className="text-sm leading-6 text-black/72">
+              {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "Recent evidence is still being accumulated for this relay."}
+            </p>
+            <dl className="mt-4 space-y-3 text-sm text-black/68">
+              <div className="flex items-start justify-between gap-4 border-t border-black/8 pt-3">
+                <dt className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-black/46">Status</dt>
+                <dd className="text-right uppercase tracking-[0.12em]">{overview.data.healthStatus}</dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 border-t border-black/8 pt-3">
+                <dt className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-black/46">Coverage</dt>
+                <dd className="text-right">{overview.data.supportedModelsCount} tracked models</dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 border-t border-black/8 pt-3">
+                <dt className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-black/46">Price floor</dt>
+                <dd className="text-right">
+                  {formatPricePerMillion(overview.data.startingInputPricePer1M)}
+                  {" / "}
+                  {formatPricePerMillion(overview.data.startingOutputPricePer1M)}
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Panel title="Score composition" kicker="Why the relay ranks here">
+      <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr] xl:items-start">
+        <Panel
+          title="Score composition"
+          kicker="Why the relay ranks here"
+          headerClassName="mb-3"
+          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+        >
           <MetricGrid
-            items={Object.entries(overview.data.scoreSummary).map(([label, value]) => ({ label, value: value.toFixed(1) }))}
+            columnsClassName="grid-cols-2 lg:grid-cols-3"
+            items={Object.entries(overview.data.scoreSummary).map(([label, value]) => ({
+              label,
+              value: value.toFixed(1),
+              cardClassName: "probe-metric-card",
+              valueClassName: "text-[1.55rem]",
+              valueSpacingClassName: "mt-2.5",
+            }))}
           />
         </Panel>
-        <Panel title="Latency profile" kicker="Seven-day shape">
-          {history.loading || !history.data ? <p className="text-sm text-black/60">Loading trend...</p> : <MiniBars points={history.data.points} />}
+        <Panel
+          title="Latency profile"
+          kicker="Seven-day shape"
+          headerClassName="mb-3"
+          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+        >
+          {history.loading || !history.data ? <p className="text-sm text-black/60">Loading trend...</p> : (
+            <div className="space-y-3">
+              <MiniBars points={history.data.points} />
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div className="surface-card px-3 py-2.5 text-sm">
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Window</p>
+                  <p className="mt-2 text-black/76">7d</p>
+                </div>
+                <div className="surface-card px-3 py-2.5 text-sm">
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Samples</p>
+                  <p className="mt-2 text-black/76">{history.data.points.length} buckets</p>
+                </div>
+                <div className="surface-card px-3 py-2.5 text-sm">
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Latest p95</p>
+                  <p className="mt-2 text-black/76">
+                    {formatLatency(history.data.points[history.data.points.length - 1]?.latencyP95Ms ?? null)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </Panel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
-        <Panel title="Supported models" kicker="Coverage">
+      <section className="grid gap-4 xl:grid-cols-[1.06fr_0.94fr] xl:items-start">
+        <Panel
+          title="Supported models"
+          kicker="Coverage"
+          headerClassName="mb-3"
+          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+        >
           {models.loading || !models.data ? <p className="text-sm text-black/60">Loading models...</p> : (
-            <div className="space-y-2.5">
+            <div className="grid gap-2.5 md:grid-cols-2">
               {models.data.rows.map((row) => (
                 <div key={row.modelKey} className="surface-card p-3.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xl tracking-[-0.03em]">{row.modelName}</p>
-                    <p className="text-xs uppercase tracking-[0.16em] text-black/55">{row.supportStatus}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg tracking-[-0.03em]">{row.modelName}</p>
+                      <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+                    </div>
+                    <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/50">{row.supportStatus}</p>
                   </div>
-                  <p className="mt-3 text-sm text-black/65">stream {row.supportsStream ? "yes" : "no"} · tools {row.supportsTools ? "yes" : "no"} · reasoning {row.supportsReasoning ? "yes" : "no"}</p>
+                  <p className="mt-3 text-sm text-black/65">
+                    stream {row.supportsStream ? "yes" : "no"}
+                    {" · "}
+                    tools {row.supportsTools ? "yes" : "no"}
+                    {" · "}
+                    reasoning {row.supportsReasoning ? "yes" : "no"}
+                  </p>
                 </div>
               ))}
             </div>
           )}
         </Panel>
-        <Panel title="Pricing history" kicker="Current economics">
-          {pricing.loading || !pricing.data ? <p className="text-sm text-black/60">Loading pricing...</p> : (
-            <div className="space-y-2.5">
-              {pricing.data.rows.map((row) => (
-                <div key={`${row.modelKey}-${row.effectiveFrom}`} className="surface-card p-3.5 text-sm">
-                  <p className="text-lg tracking-[-0.03em]">{row.modelKey}</p>
-                  <p className="mt-2">Input {row.inputPricePer1M ?? "-"} · Output {row.outputPricePer1M ?? "-"}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.14em] text-black/50">{row.source} · {new Date(row.effectiveFrom).toLocaleDateString()}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-        <Panel title="Incident timeline" kicker="Operator awareness">
-          {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
-            <div className="space-y-2.5">
-              {incidents.data.rows.length === 0 ? <p className="text-sm text-black/60">No incidents in the selected window.</p> : incidents.data.rows.map((row) => (
-                <div key={row.id} className="surface-card p-3.5">
-                  <div className="flex items-center gap-2 text-sm uppercase tracking-[0.14em]"><StatusDot status={row.severity} /> {row.severity}</div>
-                  <p className="mt-3 text-xl tracking-[-0.03em]">{row.title}</p>
-                  <p className="mt-2 text-sm text-black/70">{row.summary}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
+        <div className="space-y-4">
+          <Panel
+            title="Pricing history"
+            kicker="Current economics"
+            headerClassName="mb-3"
+            titleClassName="text-[2.2rem] md:text-[2.45rem]"
+          >
+            {pricing.loading || !pricing.data ? <p className="text-sm text-black/60">Loading pricing...</p> : (
+              <div className="space-y-2.5">
+                {pricing.data.rows.map((row) => (
+                  <div key={`${row.modelKey}-${row.effectiveFrom}`} className="surface-card p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base tracking-[-0.03em]">{row.modelKey}</p>
+                        <p className="mt-1 text-black/68">
+                          In {formatPricePerMillion(row.inputPricePer1M, row.currency)}
+                          {" · "}
+                          Out {formatPricePerMillion(row.outputPricePer1M, row.currency)}
+                        </p>
+                      </div>
+                      <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">
+                        {new Date(row.effectiveFrom).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+          <Panel
+            title="Incident timeline"
+            kicker="Operator awareness"
+            headerClassName="mb-3"
+            titleClassName="text-[2.2rem] md:text-[2.45rem]"
+          >
+            {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
+              <div className="space-y-2.5">
+                {incidents.data.rows.length === 0 ? (
+                  <div className="surface-card px-3 py-3 text-sm text-black/60">
+                    No incidents in the selected window.
+                  </div>
+                ) : incidents.data.rows.map((row) => (
+                  <div key={row.id} className="surface-card p-3">
+                    <div className="flex items-center gap-2 text-[0.64rem] uppercase tracking-[0.18em] text-black/52">
+                      <StatusDot status={row.severity} />
+                      {row.severity}
+                      <span className="text-black/34">·</span>
+                      {new Date(row.startedAt).toLocaleDateString()}
+                    </div>
+                    <p className="mt-2 text-lg tracking-[-0.03em]">{row.title}</p>
+                    <p className="mt-1.5 text-sm leading-6 text-black/70">{row.summary}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        </div>
       </section>
     </div>
   );
