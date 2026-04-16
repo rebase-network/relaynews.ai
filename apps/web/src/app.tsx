@@ -978,15 +978,14 @@ function HomePage() {
               <div className="quick-probe-header">
                 <div>
                   <p className="quick-probe-heading">Quick probe</p>
-                  <p className="quick-probe-subheading">Try a fast relay check from the homepage.</p>
                 </div>
                 <Link
-                  aria-label="Open the full probe page"
+                  aria-label="Open the pro probe page"
                   className="quick-probe-link"
-                  title="Open the full probe page"
+                  title="Open the pro probe page"
                   to="/probe"
                 >
-                  Full page
+                  Pro Probe
                 </Link>
               </div>
               <ProbeFormFields

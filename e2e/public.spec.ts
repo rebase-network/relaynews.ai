@@ -36,7 +36,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Run probe" })).toBeVisible();
   await expect(page.getByText("Quick probe")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open the full probe page" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open the pro probe page" })).toBeVisible();
 
   if (isDeployedRun) {
     await page.getByRole("link", { name: "Leaderboard" }).click();
