@@ -123,6 +123,8 @@ const PROBE_OUTPUT_CARDS = [
 ] as const;
 
 const HOME_LEADERBOARD_ROW_LIMIT = 3;
+const DEFAULT_LEADERBOARD_MODEL_KEY = "openai-gpt-5.4";
+const LEADERBOARD_DIRECTORY_PATH = "/leaderboard/directory";
 
 const LEADERBOARD_VENDOR_LABELS: Record<string, string> = {
   anthropic: "Anthropic",
@@ -197,6 +199,10 @@ function getModelVendorKey(modelKey: string) {
 function getModelVendorLabel(modelKey: string) {
   const vendorKey = getModelVendorKey(modelKey);
   return LEADERBOARD_VENDOR_LABELS[vendorKey] ?? vendorKey.replace(/^\w/, (char) => char.toUpperCase());
+}
+
+function getLeaderboardPath(modelKey: string) {
+  return modelKey === DEFAULT_LEADERBOARD_MODEL_KEY ? "/leaderboard" : `/leaderboard/${modelKey}`;
 }
 
 function getProbeEndpointPath(value: string | null | undefined) {
@@ -860,7 +866,7 @@ function LeaderboardPreviewCard({
             Snapshot {new Date(board.measuredAt).toLocaleString()}
           </p>
         </div>
-        <Link className="signal-chip" to={`/leaderboard/${board.modelKey}`}>
+        <Link className="signal-chip" to={getLeaderboardPath(board.modelKey)}>
           Open full board
         </Link>
       </div>
@@ -923,13 +929,13 @@ function HomePage() {
         </div>
       </section>
 
-      <Panel title="Leaderboard directory" kicker="Featured leaderboards">
+      <Panel title="Featured boards" kicker="Model lanes">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <p className="max-w-3xl text-sm leading-6 text-black/68">
             The homepage highlights a curated set of model lanes. Open any board to inspect the full ranked table, then compare pricing, stability, and latency in more detail.
           </p>
-          <Link className="button-cream" to="/leaderboard">
-            Browse all boards
+          <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
+            All model lanes
           </Link>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
@@ -1071,8 +1077,8 @@ function LeaderboardIndexPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 xl:justify-end">
-            <Link className="button-dark" to="/probe">Run probe</Link>
-            <Link className="button-cream" to="/methodology">Read methodology</Link>
+            <Link className="button-dark" to="/leaderboard">Open live board</Link>
+            <Link className="button-cream" to="/probe">Run probe</Link>
           </div>
         </div>
       </section>
@@ -1142,7 +1148,7 @@ function LeaderboardIndexPage() {
 }
 
 function LeaderboardPage() {
-  const { modelKey = "openai-gpt-5.4" } = useParams();
+  const { modelKey = DEFAULT_LEADERBOARD_MODEL_KEY } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const limit = searchParams.get("limit") ?? "20";
   const rowQuery = searchParams.get("q")?.trim() ?? "";
@@ -1239,20 +1245,24 @@ function LeaderboardPage() {
     <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
         <p className="kicker">Leaderboard</p>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">{data.model.name}</h1>
             <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/60">Measured at {new Date(data.measuredAt).toLocaleString()}</p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link className="button-dark" to={LEADERBOARD_DIRECTORY_PATH}>All model lanes</Link>
+            <Link className="button-cream" to="/probe">Run probe</Link>
           </div>
         </div>
       </section>
       {directory.data?.boards.length ? (
         <section className="panel-soft border border-black/8 px-4 py-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3">
             <div>
               <p className="kicker">Switch model lane</p>
               <p className="text-sm leading-6 text-black/68">
-                Compare the same relay set across every tracked model board without leaving the leaderboard flow.
+                Move across tracked model boards without leaving the full ranking view.
               </p>
             </div>
             <div className="leaderboard-model-switcher">
@@ -1264,7 +1274,7 @@ function LeaderboardPage() {
                     board.modelKey === data.model.key && "leaderboard-model-pill-active",
                   )}
                   to={{
-                    pathname: `/leaderboard/${board.modelKey}`,
+                    pathname: getLeaderboardPath(board.modelKey),
                     search: leaderboardSearch ? `?${leaderboardSearch}` : "",
                   }}
                 >
@@ -2058,7 +2068,8 @@ export function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/leaderboard" element={<LeaderboardIndexPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path={LEADERBOARD_DIRECTORY_PATH} element={<LeaderboardIndexPage />} />
         <Route path="/leaderboard/:modelKey" element={<LeaderboardPage />} />
         <Route path="/relay/:slug" element={<RelayPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />

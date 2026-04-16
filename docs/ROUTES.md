@@ -16,6 +16,8 @@ for each route, and the primary data source that should back it.
 | Route | Purpose | Render | Primary Data Source |
 |---|---|---|---|
 | `/` | Homepage with status summary, model leaderboard previews, and recent updates | CSR in public SPA | `GET /public/home-summary` |
+| `/leaderboard` | Default full leaderboard view using the primary model lane | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
+| `/leaderboard/directory` | Model lane directory for browsing all tracked boards | CSR in public SPA | `GET /public/leaderboard-directory` |
 | `/leaderboard/:modelKey` | Main leaderboard for a model | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
 | `/relay/:slug` | Relay detail page with overview and trend charts | CSR in public SPA | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history`, `GET /public/relay/:slug/incidents` |
 | `/methodology` | Ranking and scoring explanation | CSR in public SPA | static content or `GET /public/methodology` |
@@ -58,6 +60,8 @@ in `docs/API_CONTRACT_V1.md`.
 
 The leaderboard page is expected to include:
 - model header and last measured time
+- direct access from `/leaderboard` without forcing a directory click first
+- a secondary link to the full model lane directory
 - ranked table with score, availability, latency, and price
 - filters for region and result limits
 - sponsor placement section separated from natural rankings

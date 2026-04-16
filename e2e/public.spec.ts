@@ -23,7 +23,8 @@ test("public site renders the main discovery flow", async ({ page }) => {
   if (isDeployedRun) {
     await page.getByRole("link", { name: "Leaderboard" }).click();
     await expect(page).toHaveURL(/\/leaderboard$/);
-    await expect(page.getByText("Leaderboard directory")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+    await expect(page.getByText("Ranked relay rows")).toBeVisible();
 
     await page.getByRole("link", { name: "Methodology" }).click();
     await expect(page).toHaveURL(/\/methodology$/);
@@ -35,16 +36,20 @@ test("public site renders the main discovery flow", async ({ page }) => {
     return;
   }
 
-  await expect(page.getByText("Featured leaderboards")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Featured boards" })).toBeVisible();
   await page.getByRole("link", { name: "Browse leaderboards" }).click();
   await expect(page).toHaveURL(/\/leaderboard$/);
+  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+  await expect(page.getByText("Ranked relay rows")).toBeVisible();
+  await page.getByRole("link", { name: "All model lanes" }).click();
+  await expect(page).toHaveURL(/\/leaderboard\/directory$/);
   await expect(page.getByText("Leaderboard directory")).toBeVisible();
   await page.getByLabel("Search lanes").fill("Gemini");
   await expect(page.getByRole("heading", { name: "Gemini 3.1" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sonnet 4.6" })).toHaveCount(0);
 
   await page.goto("/");
-  const featuredSection = page.locator("section").filter({ has: page.getByText("Featured leaderboards") }).first();
+  const featuredSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "Featured boards" }) }).first();
   await expect(featuredSection.getByRole("heading", { name: "Sonnet 4.6" })).toBeVisible();
   await expect(featuredSection.getByRole("heading", { name: "Opus 4.6" })).toBeVisible();
   await expect(featuredSection.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
