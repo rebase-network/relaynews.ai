@@ -35,6 +35,38 @@ service.
 8. Use `./ops/manage.sh releases` and `./ops/manage.sh rollback` when a release
    needs to be inspected or reverted.
 
+## Admin Auth Checks
+
+When `ADMIN_AUTH_USERNAME` and `ADMIN_AUTH_PASSWORD` are set in the remote API env
+file, the backend will protect every `/admin/*` API route with Basic Auth.
+
+Recommended verification after deploy:
+
+1. Confirm the normal health endpoint still works:
+
+   ```bash
+   ./ops/manage.sh health
+   ```
+
+2. Confirm admin routes reject anonymous requests:
+
+   ```bash
+   curl -i https://api.relaynew.ai/admin/overview
+   ```
+
+   Expected result: `401 Unauthorized`
+
+3. Confirm admin routes accept the configured credentials:
+
+   ```bash
+   curl -i -u 'admin:replace-with-a-strong-password' https://api.relaynew.ai/admin/overview
+   ```
+
+   Expected result: `200 OK`
+
+4. Confirm `https://admin.relaynew.ai` shows the login screen before loading admin
+   content.
+
 ## Notes
 
 - `deploy` is focused on `apps/api` only. It does not publish `web`, `api-edge`,

@@ -109,6 +109,55 @@ mapping stays in the repository build scripts and GitHub-connected Workers Build
    ./ops/manage.sh rollback 20260415094500
    ```
 
+## Admin Auth Rollout
+
+Use this checklist when turning on admin protection for a remote environment.
+
+1. Set both admin credentials in the remote API env file:
+
+   ```env
+   ADMIN_AUTH_USERNAME=admin
+   ADMIN_AUTH_PASSWORD=replace-with-a-strong-password
+   ```
+
+2. Push the env file if needed:
+
+   ```bash
+   ./ops/manage.sh env-push /path/to/api.env
+   ```
+
+3. Redeploy the backend API:
+
+   ```bash
+   ./ops/manage.sh deploy
+   ```
+
+4. Verify that unauthenticated admin API access is blocked:
+
+   ```bash
+   curl -i https://api.relaynew.ai/admin/overview
+   ```
+
+   Expected result: `401 Unauthorized`
+
+5. Verify that authenticated admin API access succeeds:
+
+   ```bash
+   curl -i -u 'admin:replace-with-a-strong-password' https://api.relaynew.ai/admin/overview
+   ```
+
+   Expected result: `200 OK`
+
+6. Open `https://admin.relaynew.ai` and confirm the admin login screen appears before
+   any control-deck data loads.
+
+Operational note:
+
+- `./ops/manage.sh health` only checks the public `/health` endpoint; it does not
+  confirm that admin auth is enabled correctly
+- if you later add Cloudflare Access in front of `admin.relaynew.ai`, keep the API
+  Basic Auth enabled as a second layer rather than replacing it
+
 ## Cloudflare Deploy Flow
 
 Before the first production deploy, make sure:
