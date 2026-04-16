@@ -2764,50 +2764,61 @@ function ProbePage() {
                 <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
                   HTTP {formatProbeHttpStatus(result.protocol.httpStatus)}
                 </div>
-                {usedEndpointPath ? (
-                  <div className="border border-black/10 bg-white/80 px-3 py-2 text-[0.72rem] uppercase tracking-[0.16em] text-black/62">
-                    {usedEndpointPath}
-                  </div>
-                ) : null}
               </div>
-              <MetricGrid
-                columnsClassName="sm:grid-cols-2 xl:grid-cols-3"
-                items={[
-                  {
-                    label: "Host",
-                    value: result.targetHost,
-                    testId: "probe-host-value",
-                    valueClassName: "font-mono text-[1.12rem] leading-6 break-all",
-                    valueTitle: result.targetHost,
-                  },
-                  {
-                    label: "Connectivity",
-                    value: result.connectivity.ok ? "ok" : "failed",
-                    testId: "probe-connectivity-value",
-                    cardClassName: getConnectivityCardTone(result.connectivity.ok),
-                  },
-                  {
-                    label: "Protocol",
-                    value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
-                    testId: "probe-protocol-value",
-                    cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
-                  },
-                  { label: "Latency", value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-", testId: "probe-latency-value" },
-                  {
-                    label: "Compatibility",
-                    value: formatProbeCompatibilityMode(result.compatibilityMode),
-                    testId: "probe-mode-value",
-                    valueClassName: "text-[1.7rem] leading-[0.94]",
-                  },
-                  { label: "Detection", value: formatProbeDetectionMode(result.detectionMode), testId: "probe-detection-value" },
-                ]}
-              />
-              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
                 <div className="space-y-4">
-                  {result.usedUrl ? (
-                    <div className="surface-card p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="kicker">Used endpoint</p>
+                  <div className="surface-card p-4">
+                    <p className="kicker">Host</p>
+                    <p
+                      className="mt-3 break-all font-mono text-[1.02rem] leading-6 tracking-[-0.02em]"
+                      data-testid="probe-host-value"
+                      title={result.targetHost}
+                    >
+                      {result.targetHost}
+                    </p>
+                  </div>
+                  <MetricGrid
+                    columnsClassName="grid-cols-2"
+                    items={[
+                      {
+                        label: "Connectivity",
+                        value: result.connectivity.ok ? "ok" : "failed",
+                        testId: "probe-connectivity-value",
+                        cardClassName: getConnectivityCardTone(result.connectivity.ok),
+                        valueClassName: "text-[1.3rem] leading-[0.96]",
+                      },
+                      {
+                        label: "Protocol",
+                        value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
+                        testId: "probe-protocol-value",
+                        cardClassName: getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok),
+                        valueClassName: "text-[1.3rem] leading-[0.96]",
+                      },
+                      {
+                        label: "Compatibility",
+                        value: formatProbeCompatibilityMode(result.compatibilityMode),
+                        testId: "probe-mode-value",
+                        valueClassName: "text-[1.1rem] leading-[1.02]",
+                      },
+                      {
+                        label: "Detection",
+                        value: formatProbeDetectionMode(result.detectionMode),
+                        testId: "probe-detection-value",
+                        valueClassName: "text-[1.1rem] leading-[1.02]",
+                      },
+                    ]}
+                  />
+                  <div className="surface-card p-4">
+                    <p className="kicker">Used endpoint</p>
+                    <div className="mt-3 flex items-start justify-between gap-3">
+                      <p
+                        className="min-w-0 break-all font-mono text-sm leading-6 text-black/72"
+                        data-testid="probe-used-url-value"
+                        title={result.usedUrl ?? undefined}
+                      >
+                        {result.usedUrl ?? "No resolved endpoint was captured."}
+                      </p>
+                      {result.usedUrl ? (
                         <button
                           className="copy-button"
                           data-testid="probe-copy-endpoint-button"
@@ -2816,29 +2827,66 @@ function ProbePage() {
                         >
                           {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
                         </button>
-                      </div>
-                      <p
-                        className="overflow-hidden break-all font-mono text-sm leading-6 text-black/72"
-                        data-testid="probe-used-url-value"
-                        title={result.usedUrl}
-                      >
-                        {result.usedUrl}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
-                        {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
-                        <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
-                      </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                  {attemptTrace.length > 0 ? (
-                    <div className="surface-card p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="kicker">Execution trace</p>
-                        <p className="text-[0.7rem] uppercase tracking-[0.16em] text-black/45">
-                          {attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="surface-card col-span-2 p-3">
+                        <p className="kicker !text-black/52">Model</p>
+                        <p
+                          className="text-[1rem] leading-6 break-words"
+                          data-testid="probe-model-value"
+                          title={result.model}
+                        >
+                          {result.model}
                         </p>
                       </div>
-                      <div className="space-y-3">
+                      <div className="surface-card p-3">
+                        <p className="kicker !text-black/52">Latency</p>
+                        <p className="text-[1.2rem] leading-[1]" data-testid="probe-latency-value">
+                          {result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-"}
+                        </p>
+                      </div>
+                      <div className="surface-card p-3">
+                        <p className="kicker !text-black/52">HTTP status</p>
+                        <p className="text-[1.2rem] leading-[1]" data-testid="probe-http-status-value">
+                          {formatProbeHttpStatus(result.protocol.httpStatus)}
+                        </p>
+                      </div>
+                      <div className="surface-card col-span-2 p-3">
+                        <p className="kicker !text-black/52">Measured at</p>
+                        <p
+                          className="text-sm leading-6"
+                          data-testid="probe-measured-at-value"
+                          title={result.measuredAt}
+                        >
+                          {formatProbeMeasuredAt(result.measuredAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
+                      {usedEndpointPath ? <span className="signal-chip">{usedEndpointPath}</span> : null}
+                      <span className="signal-chip">{formatProbeRequestCount(attemptTrace.length)}</span>
+                    </div>
+                  </div>
+                  {result.message ? (
+                    <div
+                      className={clsx(
+                        "border p-4 text-sm leading-6",
+                        result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
+                      )}
+                    >
+                      {result.message}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="space-y-4">
+                  <details className="surface-card p-4">
+                    <summary className="flex cursor-pointer items-center justify-between gap-3 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-black/68">
+                      <span>Execution trace</span>
+                      <span>{attemptTrace.length} request{attemptTrace.length === 1 ? "" : "s"}</span>
+                    </summary>
+                    {attemptTrace.length > 0 ? (
+                      <div className="mt-4 space-y-3">
                         {attemptTrace.map((attempt, index) => (
                           <div
                             className={clsx("trace-card border px-3 py-3", getTraceCardTone(attempt.httpStatus, attempt.matched))}
@@ -2856,16 +2904,18 @@ function ProbePage() {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ) : null}
-                  {result.message ? (
-                    <div
-                      className={clsx(
-                        "border p-4 text-sm leading-6",
-                        result.ok ? "border-black/10 bg-[#fff4da] text-black/72" : "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
-                      )}
-                    >
-                      {result.message}
+                    ) : (
+                      <p className="mt-4 text-sm leading-6 text-black/68">
+                        No request attempts were recorded for this run.
+                      </p>
+                    )}
+                  </details>
+                  {result.usedUrl ? (
+                    <div className="surface-card p-4">
+                      <p className="kicker">Resolved request</p>
+                      <p className="mt-3 text-sm leading-6 text-black/70">
+                        The probe reached the upstream route and can reuse this endpoint shape for repeat checks.
+                      </p>
                     </div>
                   ) : null}
                   {failureGuidance ? (
@@ -2884,31 +2934,6 @@ function ProbePage() {
                     </div>
                   ) : null}
                 </div>
-                <MetricGrid
-                  columnsClassName="sm:grid-cols-2 xl:grid-cols-1"
-                  items={[
-                    {
-                      label: "Model",
-                      value: result.model,
-                      testId: "probe-model-value",
-                      valueClassName: "text-[1.35rem] leading-[1.05] break-words",
-                      valueTitle: result.model,
-                    },
-                    {
-                      label: "HTTP status",
-                      value: formatProbeHttpStatus(result.protocol.httpStatus),
-                      testId: "probe-http-status-value",
-                      valueClassName: "text-[1.8rem] leading-[0.95]",
-                    },
-                    {
-                      label: "Measured at",
-                      value: formatProbeMeasuredAt(result.measuredAt),
-                      testId: "probe-measured-at-value",
-                      valueClassName: "text-lg leading-7",
-                      valueTitle: result.measuredAt,
-                    },
-                  ]}
-                />
               </div>
             </>
           ) : error ? (
@@ -2921,18 +2946,15 @@ function ProbePage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 text-sm leading-6 text-black/70">
               <p className="text-sm leading-6 text-black/70">
                 The result panel will show connectivity, protocol status, compatibility detection, the resolved endpoint, and the request trace used to reach the upstream route.
               </p>
-              <div className="space-y-3">
-                {PROBE_OUTPUT_CARDS.map((item) => (
-                  <div key={item.title} className="surface-card p-3.5">
-                    <p className="kicker !text-black/52">{item.title}</p>
-                    <p className="text-sm leading-6 text-black/68">{item.body}</p>
-                  </div>
-                ))}
-              </div>
+              <ul className="m-0 list-disc space-y-2 pl-5 text-black/66">
+                <li>Connectivity covers reachability and latency to the tested relay host.</li>
+                <li>Protocol checks whether the selected API family responds with a valid shape and health state.</li>
+                <li>Trace detail shows the exact endpoint path and request attempts the probe used.</li>
+              </ul>
             </div>
           )}
         </Panel>
