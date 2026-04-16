@@ -77,6 +77,8 @@ The repository also supports a deployed smoke mode for `relaynew.ai` and
   when deployed data mutation is acceptable
 - source probe credentials from `.env` so the browser can exercise the real public
   probe flow without hardcoding secrets in the repo
+- when admin auth is enabled, provide `ADMIN_AUTH_USERNAME` and
+  `ADMIN_AUTH_PASSWORD` in `.env` so the admin Playwright suite can sign in first
 
 ## Data Strategy
 

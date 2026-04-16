@@ -261,7 +261,8 @@ MVP assumption:
 - `api.relaynew.ai` sits behind a product-owned Cloudflare Worker and dedicated tunnel
 - `admin.relaynew.ai` is the dedicated administrative entry point
 - the public site should not expose an admin navigation entry
-- admin endpoints should be protected with Cloudflare Access or equivalent auth
+- admin endpoints should be protected with API-level auth at minimum, and Cloudflare
+  Access can be layered on later if the static admin assets should also stay private
 - the public probe flow must use a dedicated public-safe endpoint rather than any
   generic internal probe surface
 - the public probe flow should rely on server-owned compatibility adapters instead of

@@ -16,12 +16,14 @@ import {
   type ProbeCredentialOwnerType,
 } from "@relaynews/shared";
 import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState } from "react";
-import { Link, NavLink, Route, Routes, useSearchParams } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useSearchParams } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
 const PUBLIC_SITE_URL =
   import.meta.env.VITE_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:4173";
+const ADMIN_AUTH_STORAGE_KEY = "relaynews.admin.basic-auth";
+const ADMIN_AUTH_REQUIRED_EVENT = "relaynews.admin.auth-required";
 
 type AdminModelOption = {
   id: string;
@@ -69,6 +71,55 @@ type ApiErrorPayload = {
   message?: string | string[];
 };
 
+type AdminAccessState =
+  | { status: "checking" }
+  | { status: "login" }
+  | { status: "ready"; showLogout: boolean }
+  | { status: "error"; message: string };
+
+class ApiRequestError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.statusCode = statusCode;
+  }
+}
+
+function readStoredAdminAuthorization() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.sessionStorage.getItem(ADMIN_AUTH_STORAGE_KEY);
+}
+
+function writeStoredAdminAuthorization(value: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (value) {
+    window.sessionStorage.setItem(ADMIN_AUTH_STORAGE_KEY, value);
+    return;
+  }
+
+  window.sessionStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
+}
+
+function buildBasicAuthorization(username: string, password: string) {
+  return `Basic ${window.btoa(`${username}:${password}`)}`;
+}
+
+function dispatchAdminAuthRequired() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(ADMIN_AUTH_REQUIRED_EVENT));
+}
+
 function formatApiErrorPayload(payload: ApiErrorPayload | null) {
   if (!payload?.message) {
     return null;
@@ -77,10 +128,25 @@ function formatApiErrorPayload(payload: ApiErrorPayload | null) {
   return Array.isArray(payload.message) ? payload.message.join("; ") : payload.message;
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function fetchJson<T>(
+  path: string,
+  init?: RequestInit,
+  options: {
+    authHeader?: string | null;
+    skipStoredAuth?: boolean;
+    suppressUnauthorizedEvent?: boolean;
+  } = {},
+): Promise<T> {
   const headers = new Headers(init?.headers);
+  const authorization = options.skipStoredAuth
+    ? options.authHeader
+    : options.authHeader ?? readStoredAdminAuthorization();
+
   if (typeof init?.body !== "undefined" && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
+  }
+  if (authorization && !headers.has("authorization")) {
+    headers.set("authorization", authorization);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -89,15 +155,22 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && !options.suppressUnauthorizedEvent) {
+      dispatchAdminAuthRequired();
+    }
+
     const contentType = response.headers.get("content-type") ?? "";
 
     if (contentType.includes("application/json")) {
       const payload = (await response.json()) as ApiErrorPayload;
-      throw new Error(formatApiErrorPayload(payload) ?? `Request failed with ${response.status}`);
+      throw new ApiRequestError(
+        formatApiErrorPayload(payload) ?? `Request failed with ${response.status}`,
+        response.status,
+      );
     }
 
     const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
+    throw new ApiRequestError(text || `Request failed with ${response.status}`, response.status);
   }
 
   return (await response.json()) as T;
@@ -380,11 +453,19 @@ function useMutationState(): [MutationState, Dispatch<SetStateAction<MutationSta
   return [state, setState];
 }
 
-function AdminShell({ children }: { children: ReactNode }) {
+function AdminShell({
+  children,
+  showLogout,
+  onLogout,
+}: {
+  children: ReactNode;
+  showLogout: boolean;
+  onLogout: () => void;
+}) {
   const items = [
     ["/", "Overview"],
     ["/relays", "Relays"],
-    ["/submissions", "Intake"],
+    ["/intake", "Intake"],
     ["/credentials", "Keys"],
     ["/sponsors", "Sponsors"],
     ["/prices", "Prices"],
@@ -425,7 +506,16 @@ function AdminShell({ children }: { children: ReactNode }) {
                   </NavLink>
                 ))}
               </div>
-              <a className="pill pill-ghost" href={PUBLIC_SITE_URL} target="_blank" rel="noreferrer">Public site</a>
+              <div className="flex flex-wrap items-center justify-end gap-2.5">
+                <a className="pill pill-ghost" href={PUBLIC_SITE_URL} target="_blank" rel="noreferrer">
+                  Public site
+                </a>
+                {showLogout ? (
+                  <button className="pill pill-idle" type="button" onClick={onLogout}>
+                    Sign out
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -471,6 +561,82 @@ function FieldError({ message }: { message: string | undefined }) {
   return <span className="mt-2 block text-xs normal-case tracking-normal text-[#ffb59c]">{message}</span>;
 }
 
+function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: string | null) => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+
+    try {
+      const authorization = buildBasicAuthorization(username.trim(), password);
+      await fetchJson("/admin/overview", undefined, {
+        authHeader: authorization,
+        skipStoredAuth: true,
+        suppressUnauthorizedEvent: true,
+      });
+      writeStoredAdminAuthorization(authorization);
+      onAuthenticated(authorization);
+    } catch (reason) {
+      if (reason instanceof ApiRequestError && reason.statusCode === 401) {
+        setError("Invalid admin credentials.");
+      } else {
+        setError(reason instanceof Error ? reason.message : "Unable to sign in.");
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="admin-shell min-h-screen bg-[var(--bg)] text-white">
+      <main className="admin-main mx-auto flex min-h-screen max-w-7xl items-center justify-center px-5 lg:px-10">
+        <section className="card w-full max-w-md">
+          <p className="eyebrow">Admin auth</p>
+          <h1 className="text-3xl tracking-[-0.04em] md:text-[2rem]">Sign in to continue</h1>
+          <p className="mt-3 text-sm leading-6 text-white/62">
+            The admin UI now requires credentials before it can load intake, relay, sponsor, or pricing operations.
+          </p>
+          <form className="mt-5 grid gap-3" onSubmit={handleSubmit}>
+            <label className="field-label">
+              Username
+              <input
+                autoComplete="username"
+                className="field-input"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="admin"
+                required
+                type="text"
+              />
+            </label>
+            <label className="field-label">
+              Password
+              <input
+                autoComplete="current-password"
+                className="field-input"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                required
+                type="password"
+              />
+            </label>
+            {error ? <p className="text-sm text-[#ffb59c]">{error}</p> : null}
+            <button className="pill pill-active justify-center" disabled={pending} type="submit">
+              {pending ? "Checking..." : "Sign in"}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function OverviewPage() {
   const { data, loading, error } = useLoadable<AdminOverviewResponse>(() => fetchJson("/admin/overview"), []);
   if (loading) return <LoadingCard />;
@@ -493,14 +659,14 @@ function OverviewPage() {
               {
                 step: "1",
                 title: "Review intake",
-                text: "Start with the submission queue. Pending rows already include the initial probe snapshot and submitter key preview.",
-                action: { href: "/submissions", label: "Open intake" },
+                text: "Start with the intake queue. Pending rows already include the initial probe snapshot and submitter key preview.",
+                action: { href: "/intake", label: "Open intake" },
               },
               {
                 step: "2",
                 title: "Approve & activate",
                 text: "Approval links or creates the relay, moves the active key, and starts the first relay-owned monitoring probe.",
-                action: { href: "/submissions", label: "Approve queue" },
+                action: { href: "/intake", label: "Approve queue" },
               },
               {
                 step: "3",
@@ -523,9 +689,9 @@ function OverviewPage() {
 
         <Card title="Where to go" kicker="Fast lanes">
           <div className="grid gap-3">
-            <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/submissions">
+            <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/intake">
               <p className="text-sm uppercase tracking-[0.16em] text-white/42">Intake</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Work pending submissions first</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">Work pending intake first</p>
             </Link>
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/relays">
               <p className="text-sm uppercase tracking-[0.16em] text-white/42">Catalog</p>
@@ -753,7 +919,7 @@ function RelaysPage() {
   );
 }
 
-function SubmissionsPage() {
+function IntakePage() {
   const submissions = useLoadable<AdminSubmissionsResponse>(() => fetchJson("/admin/submissions"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -1212,7 +1378,7 @@ function CredentialsPage() {
       <Card title="Relay keys" kicker="Monitoring ops">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           Use this lane for key rotation, revoke, or recovery work on an existing relay. New
-          approvals from the submission queue now activate monitoring automatically.
+          approvals from the intake queue now activate monitoring automatically.
         </div>
         <div className="space-y-2.5">
           {credentials.data.rows.map((row) => (
@@ -1589,17 +1755,156 @@ function PricesPage() {
   );
 }
 
-export function App() {
+async function verifyAdminAccess(authorization: string | null) {
+  await fetchJson("/admin/overview", undefined, {
+    authHeader: authorization,
+    skipStoredAuth: true,
+    suppressUnauthorizedEvent: true,
+  });
+}
+
+function AdminBootstrapCard({
+  title,
+  message,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   return (
-    <AdminShell>
-      <Routes>
-        <Route path="/" element={<OverviewPage />} />
-        <Route path="/relays" element={<RelaysPage />} />
-        <Route path="/submissions" element={<SubmissionsPage />} />
-        <Route path="/credentials" element={<CredentialsPage />} />
-        <Route path="/sponsors" element={<SponsorsPage />} />
-        <Route path="/prices" element={<PricesPage />} />
-      </Routes>
+    <div className="admin-shell min-h-screen bg-[var(--bg)] text-white">
+      <main className="admin-main mx-auto flex min-h-screen max-w-7xl items-center justify-center px-5 lg:px-10">
+        <section className="card w-full max-w-md">
+          <h1 className="text-3xl tracking-[-0.04em] md:text-[2rem]">{title}</h1>
+          <p className="mt-3 text-sm leading-6 text-white/62">{message}</p>
+          {actionLabel && onAction ? (
+            <button className="pill pill-active mt-5" type="button" onClick={onAction}>
+              {actionLabel}
+            </button>
+          ) : null}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function AdminRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<OverviewPage />} />
+      <Route path="/relays" element={<RelaysPage />} />
+      <Route path="/intake" element={<IntakePage />} />
+      <Route path="/submissions" element={<Navigate replace to="/intake" />} />
+      <Route path="/credentials" element={<CredentialsPage />} />
+      <Route path="/sponsors" element={<SponsorsPage />} />
+      <Route path="/prices" element={<PricesPage />} />
+      <Route path="*" element={<Navigate replace to="/" />} />
+    </Routes>
+  );
+}
+
+export function App() {
+  const [authState, setAuthState] = useState<AdminAccessState>({ status: "checking" });
+
+  useEffect(() => {
+    let active = true;
+
+    async function bootstrap() {
+      const storedAuthorization = readStoredAdminAuthorization();
+
+      try {
+        await verifyAdminAccess(storedAuthorization);
+
+        if (active) {
+          setAuthState({
+            status: "ready",
+            showLogout: Boolean(storedAuthorization),
+          });
+        }
+      } catch (reason) {
+        if (!active) {
+          return;
+        }
+
+        if (reason instanceof ApiRequestError && reason.statusCode === 401) {
+          writeStoredAdminAuthorization(null);
+          setAuthState({ status: "login" });
+          return;
+        }
+
+        setAuthState({
+          status: "error",
+          message: reason instanceof Error ? reason.message : "Unable to reach the admin API.",
+        });
+      }
+    }
+
+    void bootstrap();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    function handleAuthRequired() {
+      writeStoredAdminAuthorization(null);
+      setAuthState({ status: "login" });
+    }
+
+    window.addEventListener(ADMIN_AUTH_REQUIRED_EVENT, handleAuthRequired);
+
+    return () => {
+      window.removeEventListener(ADMIN_AUTH_REQUIRED_EVENT, handleAuthRequired);
+    };
+  }, []);
+
+  function handleAuthenticated(authorization: string | null) {
+    setAuthState({
+      status: "ready",
+      showLogout: Boolean(authorization),
+    });
+  }
+
+  function handleLogout() {
+    writeStoredAdminAuthorization(null);
+    setAuthState({ status: "login" });
+  }
+
+  if (authState.status === "checking") {
+    return (
+      <AdminBootstrapCard
+        title="Checking admin access"
+        message="Verifying whether the admin API needs credentials before loading the control deck."
+      />
+    );
+  }
+
+  if (authState.status === "error") {
+    return (
+      <AdminBootstrapCard
+        title="Admin API unavailable"
+        message={authState.message}
+        actionLabel="Retry"
+        onAction={() => window.location.reload()}
+      />
+    );
+  }
+
+  if (authState.status === "login") {
+    return <AdminLogin onAuthenticated={handleAuthenticated} />;
+  }
+
+  return (
+    <AdminShell onLogout={handleLogout} showLogout={authState.showLogout}>
+      <AdminRoutes />
     </AdminShell>
   );
 }

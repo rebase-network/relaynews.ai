@@ -6,9 +6,51 @@ const adminBaseUrl = process.env.ADMIN_BASE_URL ?? "http://127.0.0.1:4174";
 const webBaseUrl = process.env.WEB_BASE_URL ?? "http://127.0.0.1:4173";
 const apiBaseUrl =
   process.env.API_BASE_URL ?? (isDeployedRun ? "https://api.relaynew.ai" : "http://127.0.0.1:8787");
+const adminUsername = process.env.E2E_ADMIN_USERNAME ?? process.env.ADMIN_AUTH_USERNAME ?? "";
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? process.env.ADMIN_AUTH_PASSWORD ?? "";
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildBasicAuthorization(username: string, password: string) {
+  return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+}
+
+function getAdminApiHeaders() {
+  if (!adminUsername || !adminPassword) {
+    return undefined;
+  }
+
+  return {
+    Authorization: buildBasicAuthorization(adminUsername, adminPassword),
+  };
+}
+
+async function openAdmin(page: Page, path = "/") {
+  await page.goto(`${adminBaseUrl}${path}`);
+
+  const loginHeading = page.getByRole("heading", { name: "Sign in to continue", exact: true });
+  const adminBrand = page.getByText("relaynew.ai admin", { exact: true });
+
+  await Promise.race([
+    loginHeading.waitFor({ state: "visible" }).catch(() => undefined),
+    adminBrand.waitFor({ state: "visible" }).catch(() => undefined),
+  ]);
+
+  if (!(await loginHeading.isVisible().catch(() => false))) {
+    return;
+  }
+
+  expect(
+    adminUsername && adminPassword,
+    "Admin auth is enabled. Set ADMIN_AUTH_USERNAME and ADMIN_AUTH_PASSWORD in .env for Playwright.",
+  ).toBeTruthy();
+
+  await page.getByLabel("Username").fill(adminUsername);
+  await page.getByLabel("Password").fill(adminPassword);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(adminBrand).toBeVisible();
 }
 
 async function readOverviewMetric(page: Page, label: string) {
@@ -21,7 +63,7 @@ async function readOverviewMetric(page: Page, label: string) {
 }
 
 async function readOverviewTotals(page: Page) {
-  await page.goto(`${adminBaseUrl}/`);
+  await openAdmin(page, "/");
   const pendingSubmissionsCard = page.locator("section.card").filter({
     has: page.getByText(/^pending submissions$/i),
   }).first();
@@ -46,7 +88,7 @@ async function readOverviewTotals(page: Page) {
 }
 
 test("admin overview shows operating totals", async ({ page }) => {
-  await page.goto(`${adminBaseUrl}/`);
+  await openAdmin(page, "/");
   await expect(page.getByText("Operate the relay catalog, sponsorships, and pricing lanes.")).toBeVisible();
   const overviewTotals = await readOverviewTotals(page);
   expect(overviewTotals.pendingSubmissions).toBeGreaterThanOrEqual(0);
@@ -56,7 +98,7 @@ test("admin overview shows operating totals", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Relay catalog", exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Intake", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/submissions$`));
+  await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/intake$`));
   await expect(page.getByRole("heading", { name: "Intake queue", exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Keys", exact: true }).click();
@@ -73,7 +115,7 @@ test("admin overview shows operating totals", async ({ page }) => {
 });
 
 test("admin relay form validates malformed URLs before saving", async ({ page }) => {
-  await page.goto(`${adminBaseUrl}/relays`);
+  await openAdmin(page, "/relays");
   await page.getByLabel("Slug").fill("broken-relay");
   await page.getByLabel("Name").fill("Broken Relay");
   await page.getByLabel("Base URL").fill("relay.example.ai");
@@ -95,7 +137,7 @@ test("admin can create a relay", async ({ page }) => {
   const slug = `northwind-${Date.now()}`;
   const name = `Northwind ${Date.now()}`;
 
-  await page.goto(`${adminBaseUrl}/relays`);
+  await openAdmin(page, "/relays");
   await page.getByLabel("Slug").fill(slug);
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Base URL").fill(`https://${slug}.example.ai/v1`);
@@ -119,7 +161,10 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   const relayName = `Credential Relay ${runId}`;
   const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
 
+  await openAdmin(page, "/credentials");
+
   const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
     data: {
       slug: relaySlug,
       name: relayName,
@@ -140,7 +185,7 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
     origin: new URL(adminBaseUrl).origin,
   });
 
-  await page.goto(`${adminBaseUrl}/credentials`);
+  await openAdmin(page, "/credentials");
   const createCard = page.locator("section.card").filter({
     has: page.getByRole("heading", { name: "Attach key", exact: true }),
   }).first();
@@ -194,7 +239,10 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   const outputPrice = "1.22";
   const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
 
+  await openAdmin(page, "/intake");
+
   const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
     data: {
       slug: relaySlug,
       name: relayName,
@@ -226,7 +274,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
 
   const before = await readOverviewTotals(page);
 
-  await page.goto(`${adminBaseUrl}/submissions`);
+  await openAdmin(page, "/intake");
   const submissionCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(submissionCard).toBeVisible();
   await expect(submissionCard).toContainText("Credential");
@@ -240,7 +288,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await page.goto(`${webBaseUrl}/leaderboard/openai-gpt-5.4`);
   await expect(page.getByRole("link", { name: relayName })).toBeVisible();
 
-  await page.goto(`${adminBaseUrl}/relays`);
+  await openAdmin(page, "/relays");
   const relayCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(relayCard).toContainText(/Monitoring key · active/i);
   await relayCard.getByRole("link", { name: "Manage key" }).click();
@@ -248,7 +296,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(page.getByRole("heading", { name: "Key detail", exact: true })).toBeVisible();
   await expect(page.getByText(relayName).first()).toBeVisible();
 
-  await page.goto(`${adminBaseUrl}/sponsors`);
+  await openAdmin(page, "/sponsors");
   await page.getByLabel("Name").fill(sponsorName);
   await page.getByLabel("Placement").fill("leaderboard-spotlight");
   await page.getByLabel("Relay").selectOption({ label: relayName });
@@ -258,7 +306,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(sponsorCard).toBeVisible();
   await expect(sponsorCard).toContainText(relayName);
 
-  await page.goto(`${adminBaseUrl}/prices`);
+  await openAdmin(page, "/prices");
   await page.getByLabel("Relay").selectOption({ label: relayName });
   await page.getByLabel("Model").selectOption({ label: "GPT-4.1" });
   await page.getByLabel("Input price").fill(inputPrice);

@@ -9,6 +9,7 @@ import { ZodError } from "zod";
 import { config } from "./config";
 import { createDb } from "./db";
 import type { Database } from "./db/types";
+import { requireAdminAuthorization } from "./lib/admin-auth";
 import { runRelayMonitoringCycle } from "./lib/relay-monitoring";
 import { refreshPublicData } from "./lib/refresh-public-data";
 import { registerAdminRoutes } from "./routes/admin";
@@ -32,8 +33,24 @@ export async function buildApp() {
   await app.register(cors, {
     origin: true,
     methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
   await app.register(sensible);
+
+  app.addHook("onRequest", async (request, reply) => {
+    if (request.method === "OPTIONS") {
+      return;
+    }
+
+    const path = request.url.split("?")[0] ?? request.url;
+    const adminPrefix = config.API_BASE_PATH ? `${config.API_BASE_PATH}/admin` : "/admin";
+
+    if (path !== adminPrefix && !path.startsWith(`${adminPrefix}/`)) {
+      return;
+    }
+
+    return requireAdminAuthorization(request, reply);
+  });
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof ZodError) {

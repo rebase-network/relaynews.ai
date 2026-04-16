@@ -36,7 +36,15 @@ The backend API reads its runtime values from the remote file:
 - `/home/rebase/apps/relaynews-api/shared/api.env`
 
 Start from `ops/api.env.example` and fill in the production database URL,
-PostgreSQL credentials, and tunnel token before the first deploy.
+PostgreSQL credentials, tunnel token, and admin credentials before the first deploy.
+
+Recommended production values:
+
+- set both `ADMIN_AUTH_USERNAME` and `ADMIN_AUTH_PASSWORD` to protect all `/admin/*`
+  API routes
+- leave both values blank only for local development or temporary debugging
+- if you also want to hide the static admin assets themselves, add Cloudflare Access
+  in front of `admin.relaynew.ai`
 
 The remote Docker Compose stack now includes a dedicated `postgres` container and a
 project-local Docker volume. That keeps this product isolated from any pre-existing

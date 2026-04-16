@@ -38,7 +38,7 @@ These routes live on the dedicated admin hostname. They are not mirrored under
 |---|---|---|---|
 | `/` | Admin dashboard landing page | CSR in admin SPA | `GET /admin/overview` |
 | `/relays` | Relay review and metadata management | CSR in admin SPA | `GET /admin/relays` |
-| `/submissions` | Intake review queue for new relay submissions | CSR in admin SPA | `GET /admin/submissions` |
+| `/intake` | Intake review queue for new relay submissions | CSR in admin SPA | `GET /admin/submissions` |
 | `/credentials` | Relay-key operations for rotation, revoke, and reprobe controls | CSR in admin SPA | `GET /admin/probe-credentials` |
 | `/sponsors` | Sponsor placement management | CSR in admin SPA | `GET /admin/sponsors` |
 | `/prices` | Price record management | CSR in admin SPA | `GET /admin/prices` |
@@ -49,7 +49,7 @@ The expected operator path is:
 
 1. a submitter creates a pending record through `/submit` and provides a test key
 2. the initial bounded verification stays attached to the submission record
-3. an admin reviews the submission on `/submissions`
+3. an admin reviews the submission on `/intake`
 4. `Approve & activate` creates or links the relay, moves the active credential to that relay,
    flips the relay to `active`, runs the first relay-owned monitoring probe, and refreshes
    public snapshots
@@ -142,4 +142,6 @@ The probe page is expected to include:
   into the target relay owner rather than duplicating keys across tables
 - approving a submission should immediately activate the relay and trigger its first
   relay-owned monitoring run so the public site can pick it up without a second manual step
+- `/submissions` may remain as a compatibility redirect to `/intake`, but new operator
+  links should point at `/intake`
 - admin routes on `admin.relaynew.ai` should never rely on CDN-cached responses
