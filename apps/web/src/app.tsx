@@ -204,6 +204,36 @@ function formatPricePerMillion(value: number | null, currency = "USD") {
   return currency === "USD" ? `$${amount}` : `${currency} ${amount}`;
 }
 
+function getStatusToneClass(status: string) {
+  return status === "healthy"
+    ? "bg-emerald-500"
+    : status === "degraded"
+      ? "bg-amber-500"
+      : status === "down"
+        ? "bg-red-500"
+        : "bg-zinc-400";
+}
+
+function getAvailabilityTrendStatus(availability: number): HealthStatus {
+  if (availability >= 0.995) {
+    return "healthy";
+  }
+
+  if (availability >= 0.97) {
+    return "degraded";
+  }
+
+  if (availability > 0) {
+    return "down";
+  }
+
+  return "unknown";
+}
+
+function formatScoreMetricLabel(label: keyof RelayOverviewResponse["scoreSummary"]) {
+  return label === "total" ? "Total" : `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+}
+
 function getModelVendorKey(modelKey: string) {
   return modelKey.split("-")[0] ?? "other";
 }
@@ -1391,62 +1421,82 @@ function RelayPageSkeleton() {
   return (
     <div aria-busy="true" className="space-y-6">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <SkeletonBlock className="skeleton-pill w-[6rem]" />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
+          <div className="space-y-4">
             <div className="space-y-3">
-              <SkeletonBlock className="skeleton-heading-lg max-w-[18rem]" />
-              <SkeletonBlock className="skeleton-line max-w-[20rem]" />
-              <SkeletonBlock className="skeleton-line max-w-[32rem]" />
+              <SkeletonBlock className="skeleton-pill w-[10rem]" />
+              <div className="space-y-3">
+                <SkeletonBlock className="skeleton-heading-lg max-w-[18rem]" />
+                <SkeletonBlock className="skeleton-line max-w-[20rem]" />
+                <SkeletonBlock className="skeleton-line max-w-[32rem]" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <SkeletonBlock className="skeleton-pill w-[5rem]" />
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <SkeletonBlock className="skeleton-pill w-[5rem]" />
-              <SkeletonBlock className="skeleton-pill w-[6rem]" />
-              <SkeletonBlock className="skeleton-pill w-[7rem]" />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="metric-card">
+                  <SkeletonBlock className="skeleton-kicker max-w-[6rem]" />
+                  <SkeletonBlock className="skeleton-heading-md mt-4 max-w-[5rem]" />
+                </div>
+              ))}
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="metric-card">
-                <SkeletonBlock className="skeleton-kicker max-w-[6rem]" />
-                <SkeletonBlock className="skeleton-heading-md mt-4 max-w-[5rem]" />
-              </div>
-            ))}
+          <div className="surface-card p-4">
+            <SkeletonBlock className="skeleton-kicker max-w-[5rem]" />
+            <SkeletonBlock className="skeleton-heading-md mt-3 max-w-[5.5rem]" />
+            <div className="mt-4 space-y-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <SkeletonBlock key={index} className="skeleton-line max-w-[8rem]" />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <section className="panel">
-          <div className="mb-4 space-y-2">
-            <SkeletonBlock className="skeleton-kicker max-w-[9rem]" />
-            <SkeletonBlock className="skeleton-heading-md max-w-[15rem]" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="metric-card">
-                <SkeletonBlock className="skeleton-kicker max-w-[5rem]" />
-                <SkeletonBlock className="skeleton-heading-md mt-4 max-w-[4rem]" />
-              </div>
-            ))}
-          </div>
-        </section>
+      <section className="grid gap-4 xl:grid-cols-[1.16fr_0.84fr]">
         <section className="panel">
           <div className="mb-4 space-y-2">
             <SkeletonBlock className="skeleton-kicker max-w-[8rem]" />
             <SkeletonBlock className="skeleton-heading-md max-w-[12rem]" />
           </div>
-          <SkeletonBlock className="h-36 w-full" />
+          <SkeletonBlock className="h-28 w-full" />
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-[4.2rem] w-full" />
+            ))}
+          </div>
+        </section>
+        <section className="panel">
+          <div className="mb-4 space-y-2">
+            <SkeletonBlock className="skeleton-kicker max-w-[6rem]" />
+            <SkeletonBlock className="skeleton-heading-md max-w-[10rem]" />
+          </div>
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: 15 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-10 w-full" />
+            ))}
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-[4.2rem] w-full" />
+            ))}
+          </div>
+          <div className="mt-3 space-y-2">
+            <SkeletonBlock className="skeleton-line max-w-[12rem]" />
+            <SkeletonBlock className="skeleton-line max-w-[10rem]" />
+          </div>
         </section>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+      <section className="grid gap-4">
         <section className="panel">
           <div className="mb-4 space-y-2">
             <SkeletonBlock className="skeleton-kicker max-w-[8rem]" />
             <SkeletonBlock className="skeleton-heading-md max-w-[18rem]" />
           </div>
-          <div className="grid gap-2.5 md:grid-cols-2">
+          <div className="space-y-2.5 md:hidden">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="surface-card p-3.5">
                 <div className="space-y-2">
@@ -1457,29 +1507,16 @@ function RelayPageSkeleton() {
                   <SkeletonBlock className="h-[4.3rem] w-full" />
                   <SkeletonBlock className="h-[4.3rem] w-full" />
                 </div>
-                <div className="mt-3 space-y-2">
-                  <SkeletonBlock className="skeleton-line max-w-[12rem]" />
-                  <SkeletonBlock className="skeleton-line max-w-[10rem]" />
-                </div>
               </div>
             ))}
           </div>
-        </section>
-        <section className="panel">
-          <div className="mb-4 space-y-2">
-            <SkeletonBlock className="skeleton-kicker max-w-[8rem]" />
-            <SkeletonBlock className="skeleton-heading-md max-w-[13rem]" />
-          </div>
-          <div className="space-y-2.5">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="surface-card p-3.5">
-                <div className="space-y-2">
-                  <SkeletonBlock className="skeleton-line max-w-[8rem]" />
-                  <SkeletonBlock className="skeleton-line max-w-[11rem]" />
-                  <SkeletonBlock className="skeleton-line max-w-[14rem]" />
-                </div>
-              </div>
-            ))}
+          <div className="hidden md:block">
+            <div className="space-y-2">
+              <SkeletonBlock className="h-9 w-full" />
+              {Array.from({ length: 6 }).map((_, index) => (
+                <SkeletonBlock key={index} className="h-14 w-full" />
+              ))}
+            </div>
           </div>
         </section>
       </section>
@@ -1578,16 +1615,7 @@ function MethodologyPageSkeleton() {
 }
 
 function StatusDot({ status }: { status: string }) {
-  const tone =
-    status === "healthy"
-      ? "bg-emerald-500"
-      : status === "degraded"
-        ? "bg-amber-500"
-        : status === "down"
-          ? "bg-red-500"
-          : "bg-zinc-400";
-
-  return <span className={clsx("status-dot inline-block h-2.5 w-2.5", tone)} />;
+  return <span className={clsx("status-dot inline-block h-2.5 w-2.5", getStatusToneClass(status))} />;
 }
 
 function MetricGrid({
@@ -2327,6 +2355,87 @@ function MiniBars({
   );
 }
 
+function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["scoreSummary"] }) {
+  const entries = (["availability", "latency", "consistency", "value", "stability"] as const).map((label) => [
+    label,
+    scoreSummary[label],
+  ] as const);
+
+  return (
+    <details className="relative [&_summary::-webkit-details-marker]:hidden">
+      <summary
+        aria-label="Inspect score breakdown"
+        className="surface-link list-none cursor-pointer p-3.5 text-left"
+      >
+        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Score</p>
+        <p className="mt-2 text-[2.2rem] leading-none tracking-[-0.05em]">{scoreSummary.total.toFixed(1)}</p>
+        <p className="mt-2 text-xs text-black/58">View breakdown</p>
+      </summary>
+      <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[16rem] lg:left-auto lg:right-0 lg:w-72">
+        <div className="surface-card p-3.5 shadow-[rgba(127,99,21,0.18)_0_18px_40px]">
+          <p className="kicker">Score breakdown</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {entries.map(([label, value]) => (
+              <div key={label} className="border border-black/8 bg-white/72 px-3 py-2.5">
+                <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">{formatScoreMetricLabel(label)}</p>
+                <p className="mt-2 text-lg tracking-[-0.03em] text-black/82">{value.toFixed(1)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function StatusHistoryPanel({
+  points,
+  incidentCount,
+}: {
+  points: RelayHistoryResponse["points"];
+  incidentCount: number;
+}) {
+  const statusPoints = points.map((point) => ({
+    ...point,
+    status: getAvailabilityTrendStatus(point.availability),
+  }));
+
+  if (statusPoints.length === 0) {
+    return <p className="text-sm text-black/60">No thirty-day status samples yet.</p>;
+  }
+
+  const healthyCount = statusPoints.filter((point) => point.status === "healthy").length;
+  const degradedCount = statusPoints.filter((point) => point.status === "degraded").length;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-5 gap-2">
+        {statusPoints.map((point) => (
+          <div
+            key={point.bucketStart}
+            className={clsx("h-10 rounded-[0.02rem]", getStatusToneClass(point.status))}
+            title={`${new Date(point.bucketStart).toLocaleDateString()} · ${point.status} · ${formatAvailability(point.availability)}`}
+          />
+        ))}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="surface-card px-3 py-2.5 text-sm">
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Stable windows</p>
+          <p className="mt-2 text-black/76">{healthyCount} of {statusPoints.length}</p>
+        </div>
+        <div className="surface-card px-3 py-2.5 text-sm">
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Events in 30d</p>
+          <p className="mt-2 text-black/76">{incidentCount}</p>
+        </div>
+      </div>
+      <p className="text-sm leading-6 text-black/64">
+        Green means stable, amber means degraded, and red means down.
+        {degradedCount > 0 ? ` ${degradedCount} sampled windows show degraded behavior.` : ""}
+      </p>
+    </div>
+  );
+}
+
 function RelayPage() {
   const { slug = "aurora-relay" } = useParams();
   const overview = useLoadable<RelayOverviewResponse>(
@@ -2335,8 +2444,8 @@ function RelayPage() {
     [slug],
   );
   const history = useLoadable<RelayHistoryResponse>(
-    `/public/relay/${slug}/history?window=7d`,
-    () => fetchJson(`/public/relay/${slug}/history?window=7d`),
+    `/public/relay/${slug}/history?window=30d`,
+    () => fetchJson(`/public/relay/${slug}/history?window=30d`),
     [slug],
   );
   const models = useLoadable<RelayModelsResponse>(
@@ -2350,8 +2459,8 @@ function RelayPage() {
     [slug],
   );
   const incidents = useLoadable<RelayIncidentsResponse>(
-    `/public/relay/${slug}/incidents`,
-    () => fetchJson(`/public/relay/${slug}/incidents`),
+    `/public/relay/${slug}/incidents?window=30d`,
+    () => fetchJson(`/public/relay/${slug}/incidents?window=30d`),
     [slug],
   );
 
@@ -2363,7 +2472,6 @@ function RelayPage() {
     { label: "Latency p50", value: formatLatency(overview.data.latencyP50Ms) },
     { label: "Latency p95", value: formatLatency(overview.data.latencyP95Ms) },
     { label: "Models", value: overview.data.supportedModelsCount },
-    { label: "Incidents 7d", value: overview.data.incidents7d },
   ];
 
   const latestPricingByModelKey = new Map<string, RelayPricingHistoryResponse["rows"][number]>();
@@ -2384,35 +2492,40 @@ function RelayPage() {
     <div className="space-y-4">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay detail</p>
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.16em]">
-            <span className="inline-flex items-center gap-2">
-              <StatusDot status={overview.data.healthStatus} />
-              {overview.data.healthStatus}
-            </span>
-            <span className="text-black/46">Measured {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
-          </div>
-          <div>
-            <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-[4.2rem]">{overview.data.relay.name}</h1>
-            <p className="mt-2 break-all font-mono text-[0.8rem] text-black/62">{overview.data.relay.baseUrl}</p>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72">
-              {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "Recent evidence is still being accumulated for this relay."}
-            </p>
-          </div>
-          {overview.data.relay.websiteUrl ? (
-            <div className="flex flex-wrap gap-2">
-              <a
-                className="signal-chip"
-                href={overview.data.relay.websiteUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Website
-              </a>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.16em]">
+              <span className="inline-flex items-center gap-2">
+                <StatusDot status={overview.data.healthStatus} />
+                {overview.data.healthStatus}
+              </span>
+              <span className="text-black/46">Measured {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
             </div>
-          ) : null}
+            <div>
+              <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-[4.2rem]">{overview.data.relay.name}</h1>
+              <p className="mt-2 break-all font-mono text-[0.8rem] text-black/62">{overview.data.relay.baseUrl}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72">
+                {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "Recent evidence is still being accumulated for this relay."}
+              </p>
+            </div>
+            {overview.data.relay.websiteUrl ? (
+              <div className="flex flex-wrap gap-2">
+                <a
+                  className="signal-chip"
+                  href={overview.data.relay.websiteUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Website
+                </a>
+              </div>
+            ) : null}
+          </div>
+          <ScorePopover scoreSummary={overview.data.scoreSummary} />
+        </div>
+        <div className="mt-4">
           <MetricGrid
-            columnsClassName="grid-cols-2 lg:grid-cols-5"
+            columnsClassName="grid-cols-2 lg:grid-cols-4"
             items={snapshotMetrics.map((item) => ({
               ...item,
               cardClassName: "probe-metric-card",
@@ -2423,26 +2536,11 @@ function RelayPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
+      <section className="grid gap-4 xl:grid-cols-[1.16fr_0.84fr]">
         <Panel
-          title="Score composition"
-          kicker="Why the relay ranks here"
-          headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
-        >
-          <MetricGrid
-            columnsClassName="grid-cols-2"
-            items={Object.entries(overview.data.scoreSummary).map(([label, value]) => ({
-              label,
-              value: value.toFixed(1),
-              valueClassName: "text-[1.7rem]",
-              valueSpacingClassName: "mt-2.5",
-            }))}
-          />
-        </Panel>
-        <Panel
+          className="h-full"
           title="Latency profile"
-          kicker="Seven-day shape"
+          kicker="Thirty-day shape"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
@@ -2452,7 +2550,7 @@ function RelayPage() {
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="surface-card px-3 py-2.5 text-sm">
                   <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Window</p>
-                  <p className="mt-2 text-black/76">7d</p>
+                  <p className="mt-2 text-black/76">30d</p>
                 </div>
                 <div className="surface-card px-3 py-2.5 text-sm">
                   <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Samples</p>
@@ -2468,9 +2566,22 @@ function RelayPage() {
             </div>
           )}
         </Panel>
+        <Panel
+          className="h-full"
+          title="Status"
+          kicker="Thirty-day availability"
+          headerClassName="mb-3"
+          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+        >
+          {history.loading || !history.data || incidents.loading || !incidents.data ? (
+            <p className="text-sm text-black/60">Loading status...</p>
+          ) : (
+            <StatusHistoryPanel incidentCount={incidents.data.rows.length} points={history.data.points} />
+          )}
+        </Panel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.24fr_0.76fr] xl:items-start">
+      <section className="grid gap-4">
         <Panel
           title="Models"
           kicker="Current pricing"
@@ -2549,36 +2660,6 @@ function RelayPage() {
             </>
           )}
         </Panel>
-        <div className="h-full space-y-4">
-          <Panel
-            title="Incident timeline"
-            kicker="Operator awareness"
-            className="h-full"
-            headerClassName="mb-3"
-            titleClassName="text-[2.2rem] md:text-[2.45rem]"
-          >
-            {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
-              <div className="space-y-2.5">
-                {incidents.data.rows.length === 0 ? (
-                  <div className="surface-card flex min-h-[8.5rem] items-center px-3 py-3 text-sm text-black/60">
-                    No incidents in the selected window.
-                  </div>
-                ) : incidents.data.rows.map((row) => (
-                  <div key={row.id} className="surface-card p-3">
-                    <div className="flex items-center gap-2 text-[0.64rem] uppercase tracking-[0.18em] text-black/52">
-                      <StatusDot status={row.severity} />
-                      {row.severity}
-                      <span className="text-black/34">·</span>
-                      {new Date(row.startedAt).toLocaleDateString()}
-                    </div>
-                    <p className="mt-2 text-lg tracking-[-0.03em]">{row.title}</p>
-                    <p className="mt-1.5 text-sm leading-6 text-black/70">{row.summary}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-        </div>
       </section>
     </div>
   );

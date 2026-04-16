@@ -98,7 +98,11 @@ test("public site renders the main discovery flow", async ({ page }) => {
   await page.getByRole("link", { name: "Aurora Relay" }).first().click();
   await expect(page).toHaveURL(/relay\/aurora-relay/);
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
-  await expect(page.getByText("Score composition")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Latency profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Status" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Models" })).toBeVisible();
+  await page.getByLabel("Inspect score breakdown").click();
+  await expect(page.getByText("Score breakdown")).toBeVisible();
 });
 
 test("submit flow works from the public site", async ({ page }) => {
