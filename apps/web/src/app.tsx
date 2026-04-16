@@ -2499,13 +2499,13 @@ function formatStatusHistoryTitle(slot: DailyHistorySlot) {
   return `${displayDate} · ${status} · ${formatAvailability(slot.point.availability)}`;
 }
 
-function StatusHistoryGrid({ slots }: { slots: DailyHistorySlot[] }) {
+function StatusHistoryBars({ slots }: { slots: DailyHistorySlot[] }) {
   return (
-    <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
+    <div className="flex h-24 items-stretch gap-1 md:h-28">
       {slots.map((slot) => (
         <div
           key={slot.dateKey}
-          className={clsx("h-10 rounded-[0.02rem]", getStatusHistoryToneClass(slot.point))}
+          className={clsx("flex-1 rounded-[0.02rem]", getStatusHistoryToneClass(slot.point))}
           data-testid="relay-status-bar"
           title={formatStatusHistoryTitle(slot)}
         />
@@ -2564,7 +2564,7 @@ function StatusHistoryPanel({
 
   return (
     <div className="space-y-3">
-      <StatusHistoryGrid slots={slots} />
+      <StatusHistoryBars slots={slots} />
       <RelayStatusLegend />
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="surface-card px-3 py-2.5 text-sm">
