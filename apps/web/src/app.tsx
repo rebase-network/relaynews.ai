@@ -1636,6 +1636,49 @@ function LeaderboardPreviewCard({
   );
 }
 
+function LeaderboardRowCard({ row }: { row: LeaderboardResponse["rows"][number] }) {
+  return (
+    <article className="surface-card p-4 md:hidden">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.16em] text-black/55">#{row.rank}</p>
+          <Link to={`/relay/${row.relay.slug}`} className="mt-1 block text-[1.65rem] leading-[0.96] tracking-[-0.04em] hover:underline">
+            {row.relay.name}
+          </Link>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/55">
+            {row.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-black/62">
+            <StatusDot status={row.healthStatus} /> {row.healthStatus}
+          </div>
+          <p className="mt-3 text-[2rem] leading-[0.94] tracking-[-0.05em]">{row.score.toFixed(1)}</p>
+          <p className="text-[0.68rem] uppercase tracking-[0.18em] text-black/46">score</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
+        <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Avail 24h</p>
+          <p className="mt-2 text-sm leading-5 text-black/78">{formatAvailability(row.availability24h)}</p>
+        </div>
+        <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Latency p50</p>
+          <p className="mt-2 text-sm leading-5 text-black/78">{formatLatency(row.latencyP50Ms)}</p>
+        </div>
+        <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Input / 1M</p>
+          <p className="mt-2 text-sm leading-5 text-black/78">{row.inputPricePer1M ?? "-"}</p>
+        </div>
+        <div className="border border-black/8 bg-white/72 px-3 py-2.5">
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Output / 1M</p>
+          <p className="mt-2 text-sm leading-5 text-black/78">{row.outputPricePer1M ?? "-"}</p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function HomePage() {
   const { data, loading, error } = useLoadable<HomeSummaryResponse>(
     "/public/home-summary",
@@ -2111,41 +2154,48 @@ function LeaderboardPage() {
       </section>
       <Panel title="Ranked relay rows" kicker="Natural ranking">
         {filteredRows.length ? (
-          <div className="data-table">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-black/10">
-                  <th className="pb-2.5">Rank</th>
-                  <th className="pb-2.5">Relay</th>
-                  <th className="pb-2.5">Health</th>
-                  <th className="pb-2.5">Score</th>
-                  <th className="pb-2.5">Avail 24h</th>
-                  <th className="pb-2.5">Latency p50</th>
-                  <th className="pb-2.5">Input</th>
-                  <th className="pb-2.5">Output</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRows.map((row) => (
-                  <tr key={row.relay.slug} className="align-top">
-                    <td className="py-3.5 text-2xl tracking-[-0.04em]">#{row.rank}</td>
-                    <td className="py-3.5">
-                      <Link to={`/relay/${row.relay.slug}`} className="text-xl tracking-[-0.03em] hover:underline">{row.relay.name}</Link>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/55">
-                        {row.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
-                      </div>
-                    </td>
-                    <td className="py-3.5 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</span></td>
-                    <td className="py-3.5 text-xl tracking-[-0.03em]">{row.score.toFixed(1)}</td>
-                    <td className="py-3.5">{formatAvailability(row.availability24h)}</td>
-                    <td className="py-3.5">{formatLatency(row.latencyP50Ms)}</td>
-                    <td className="py-3.5">{row.inputPricePer1M ?? "-"}</td>
-                    <td className="py-3.5">{row.outputPricePer1M ?? "-"}</td>
+          <>
+            <div className="space-y-3 md:hidden">
+              {filteredRows.map((row) => (
+                <LeaderboardRowCard key={row.relay.slug} row={row} />
+              ))}
+            </div>
+            <div className="data-table hidden md:block">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-black/10">
+                    <th className="pb-2.5">Rank</th>
+                    <th className="pb-2.5">Relay</th>
+                    <th className="pb-2.5">Health</th>
+                    <th className="pb-2.5">Score</th>
+                    <th className="pb-2.5">Avail 24h</th>
+                    <th className="pb-2.5">Latency p50</th>
+                    <th className="pb-2.5">Input</th>
+                    <th className="pb-2.5">Output</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredRows.map((row) => (
+                    <tr key={row.relay.slug} className="align-top">
+                      <td className="py-3.5 text-2xl tracking-[-0.04em]">#{row.rank}</td>
+                      <td className="py-3.5">
+                        <Link to={`/relay/${row.relay.slug}`} className="text-xl tracking-[-0.03em] hover:underline">{row.relay.name}</Link>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-black/55">
+                          {row.badges.map((badge) => <span key={badge} className="signal-chip">{badge}</span>)}
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</span></td>
+                      <td className="py-3.5 text-xl tracking-[-0.03em]">{row.score.toFixed(1)}</td>
+                      <td className="py-3.5">{formatAvailability(row.availability24h)}</td>
+                      <td className="py-3.5">{formatLatency(row.latencyP50Ms)}</td>
+                      <td className="py-3.5">{row.inputPricePer1M ?? "-"}</td>
+                      <td className="py-3.5">{row.outputPricePer1M ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <div className="directory-empty-state">
             <p className="kicker">No rows</p>

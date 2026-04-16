@@ -195,3 +195,13 @@ test("public mobile navigation exposes the primary routes", async ({ page }) => 
   await expect(mobileNav.getByRole("link", { name: "Submit" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "Probe" })).toBeVisible();
 });
+
+test("leaderboard remains readable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/leaderboard");
+
+  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Aurora Relay" })).toBeVisible();
+  await expect(page.getByText("Avail 24h").first()).toBeVisible();
+  await expect(page.getByText("Latency p50").first()).toBeVisible();
+});
