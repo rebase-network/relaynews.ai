@@ -2310,10 +2310,16 @@ function LeaderboardPage() {
   );
 }
 
-function MiniBars({ points }: { points: RelayHistoryResponse["points"] }) {
+function MiniBars({
+  points,
+  heightClassName = "h-36",
+}: {
+  points: RelayHistoryResponse["points"];
+  heightClassName?: string;
+}) {
   const maxLatency = Math.max(...points.map((point) => point.latencyP95Ms ?? 0), 1);
   return (
-    <div className="flex h-36 items-end gap-1">
+    <div className={clsx("flex items-end gap-1", heightClassName)}>
       {points.map((point) => (
         <div key={point.bucketStart} className="flex-1 bg-[linear-gradient(180deg,#ffd900,#fa520f)]" style={{ height: `${((point.latencyP95Ms ?? 0) / maxLatency) * 100}%` }} title={`${point.bucketStart} · ${point.latencyP95Ms ?? 0} ms`} />
       ))}
@@ -2419,7 +2425,7 @@ function RelayPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr] xl:items-start">
+      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
         <Panel
           title="Score composition"
           kicker="Why the relay ranks here"
@@ -2427,12 +2433,11 @@ function RelayPage() {
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
           <MetricGrid
-            columnsClassName="grid-cols-2 lg:grid-cols-3"
+            columnsClassName="grid-cols-2"
             items={Object.entries(overview.data.scoreSummary).map(([label, value]) => ({
               label,
               value: value.toFixed(1),
-              cardClassName: "probe-metric-card",
-              valueClassName: "text-[1.55rem]",
+              valueClassName: "text-[1.7rem]",
               valueSpacingClassName: "mt-2.5",
             }))}
           />
@@ -2445,7 +2450,7 @@ function RelayPage() {
         >
           {history.loading || !history.data ? <p className="text-sm text-black/60">Loading trend...</p> : (
             <div className="space-y-3">
-              <MiniBars points={history.data.points} />
+              <MiniBars heightClassName="h-28" points={history.data.points} />
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="surface-card px-3 py-2.5 text-sm">
                   <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Window</p>
@@ -2467,7 +2472,7 @@ function RelayPage() {
         </Panel>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
+      <section className="grid gap-4 xl:grid-cols-[1.24fr_0.76fr] xl:items-start">
         <Panel
           title="Models"
           kicker="Current pricing"
@@ -2557,7 +2562,7 @@ function RelayPage() {
             {incidents.loading || !incidents.data ? <p className="text-sm text-black/60">Loading incidents...</p> : (
               <div className="space-y-2.5">
                 {incidents.data.rows.length === 0 ? (
-                  <div className="surface-card flex min-h-[11rem] items-center px-3 py-3 text-sm text-black/60">
+                  <div className="surface-card flex min-h-[8.5rem] items-center px-3 py-3 text-sm text-black/60">
                     No incidents in the selected window.
                   </div>
                 ) : incidents.data.rows.map((row) => (
