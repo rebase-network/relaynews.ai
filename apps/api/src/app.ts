@@ -30,6 +30,7 @@ export async function buildApp() {
 
   await app.register(cors, {
     origin: true,
+    methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
   });
   await app.register(sensible);
 
