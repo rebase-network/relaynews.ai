@@ -196,6 +196,20 @@ test("public mobile navigation exposes the primary routes", async ({ page }) => 
   await expect(mobileNav.getByRole("link", { name: "Probe" })).toBeVisible();
 });
 
+test("homepage prioritizes quick probe on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoHome(page);
+
+  const quickProbeHeading = page.getByText("Quick probe");
+  const heroHeading = page.getByRole("heading", { name: /Find strong relays fast/i });
+  const quickProbeBox = await quickProbeHeading.boundingBox();
+  const heroHeadingBox = await heroHeading.boundingBox();
+
+  expect(quickProbeBox).not.toBeNull();
+  expect(heroHeadingBox).not.toBeNull();
+  expect(quickProbeBox!.y).toBeLessThan(heroHeadingBox!.y);
+});
+
 test("probe page stays compact on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/probe");

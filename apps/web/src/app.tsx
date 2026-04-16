@@ -1702,7 +1702,7 @@ function HomePage() {
     <div className="space-y-5">
       <section className="panel hero-panel min-h-0">
         <div className="grid gap-5 xl:grid-cols-[0.98fr_1.02fr] xl:items-start">
-          <div>
+          <div className="order-2 md:order-1">
             <p className="kicker text-black/70">Relay intelligence</p>
             <h1 className="max-w-4xl text-4xl leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
               Find strong relays fast, test your own endpoint, and submit for inclusion.
@@ -1716,7 +1716,7 @@ function HomePage() {
               <Link className="button-cream" to="/submit">Submit relay</Link>
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="order-1 space-y-3 md:order-2">
             <form className="quick-probe-card quick-probe-form" onSubmit={quickProbe.handleSubmit}>
               <div className="quick-probe-header">
                 <div>
