@@ -2715,7 +2715,6 @@ function ProbePage() {
           {result ? (
             <>
               <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
-                <p className="kicker !mb-2 !text-current/70">Result state</p>
                 <p className="text-2xl tracking-[-0.05em]">{resultTone?.label}</p>
                 <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
               </div>
