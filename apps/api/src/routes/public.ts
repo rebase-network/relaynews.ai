@@ -1,6 +1,8 @@
 import {
+  healthStatusSchema,
   homeSummaryResponseSchema,
   incidentSeveritySchema,
+  leaderboardDirectoryResponseSchema,
   leaderboardQuerySchema,
   leaderboardResponseSchema,
   methodologyResponseSchema,
@@ -15,6 +17,7 @@ import {
 } from "@relaynews/shared";
 import type { FastifyInstance } from "fastify";
 
+import { orderLeaderboardModels } from "../lib/leaderboard-order";
 import { getMethodologyPayload } from "../lib/methodology";
 
 function assertRelayFound(relay: { id: string; slug: string; name: string } | undefined) {
@@ -36,6 +39,71 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       .executeTakeFirstOrThrow();
 
     return homeSummaryResponseSchema.parse(row.payloadJson);
+  });
+
+  app.get("/public/leaderboard-directory", async () => {
+    const models = orderLeaderboardModels(
+      await app.db
+        .selectFrom("models")
+        .select(["id", "key", "name", "vendor"])
+        .where("is_active", "=", true)
+        .orderBy("name", "asc")
+        .execute(),
+    );
+
+    const boards = (
+      await Promise.all(
+        models.map(async (model) => {
+          const rows = await app.db
+            .selectFrom("leaderboard_snapshots as ls")
+            .innerJoin("relays as r", "r.id", "ls.relay_id")
+            .select([
+              "ls.rank",
+              "ls.total_score as score",
+              "ls.availability_24h as availability24h",
+              "ls.latency_p50_ms as latencyP50Ms",
+              "ls.latency_p95_ms as latencyP95Ms",
+              "ls.status_label as statusLabel",
+              "ls.badges_json as badgesJson",
+              "ls.measured_at as measuredAt",
+              "r.slug",
+              "r.name",
+            ])
+            .where("ls.snapshot_key", "=", `leaderboard:${model.key}:global`)
+            .orderBy("ls.rank", "asc")
+            .limit(5)
+            .execute();
+
+          if (rows.length === 0) {
+            return null;
+          }
+
+          return {
+            modelKey: model.key,
+            modelName: model.name,
+            measuredAt: rows[0]?.measuredAt ?? new Date().toISOString(),
+            rows: rows.map((row) => ({
+              rank: row.rank,
+              relay: {
+                slug: row.slug,
+                name: row.name,
+              },
+              score: row.score,
+              availability24h: row.availability24h,
+              latencyP50Ms: row.latencyP50Ms,
+              latencyP95Ms: row.latencyP95Ms,
+              healthStatus: healthStatusSchema.catch("unknown").parse(row.statusLabel),
+              badges: Array.isArray(row.badgesJson) ? row.badgesJson : [],
+            })),
+          };
+        }),
+      )
+    ).filter((board): board is NonNullable<typeof board> => board !== null);
+
+    return leaderboardDirectoryResponseSchema.parse({
+      boards,
+      measuredAt: boards[0]?.measuredAt ?? new Date().toISOString(),
+    });
   });
 
   app.get("/public/leaderboard/:modelKey", async (request) => {

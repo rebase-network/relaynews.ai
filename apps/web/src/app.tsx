@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import {
   type HomeSummaryResponse,
+  type LeaderboardDirectoryResponse,
   type LeaderboardResponse,
   type MethodologyResponse,
   type ProbeCompatibilityMode,
@@ -1044,7 +1045,10 @@ function HomePage() {
 }
 
 function LeaderboardIndexPage() {
-  const { data, loading, error } = useLoadable<HomeSummaryResponse>(() => fetchJson("/public/home-summary"), []);
+  const { data, loading, error } = useLoadable<LeaderboardDirectoryResponse>(
+    () => fetchJson("/public/leaderboard-directory"),
+    [],
+  );
 
   if (loading) return <LoadingPanel />;
   if (error || !data) return <ErrorPanel message={error ?? "Unable to load leaderboard directory."} />;
@@ -1070,7 +1074,7 @@ function LeaderboardIndexPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {data.leaderboards.map((board) => (
+        {data.boards.map((board) => (
           <LeaderboardPreviewCard key={board.modelKey} board={board} />
         ))}
       </div>
@@ -1079,9 +1083,13 @@ function LeaderboardIndexPage() {
 }
 
 function LeaderboardPage() {
-  const { modelKey = "openai-gpt-4.1" } = useParams();
+  const { modelKey = "openai-gpt-5.4" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const limit = searchParams.get("limit") ?? "20";
+  const directory = useLoadable<LeaderboardDirectoryResponse>(
+    () => fetchJson("/public/leaderboard-directory"),
+    [],
+  );
   const { data, loading, error } = useLoadable<LeaderboardResponse>(
     () => fetchJson(`/public/leaderboard/${modelKey}?limit=${limit}`),
     [modelKey, limit],
@@ -1113,6 +1121,32 @@ function LeaderboardPage() {
           </label>
         </div>
       </section>
+      {directory.data?.boards.length ? (
+        <section className="panel-soft border border-black/8 px-4 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="kicker">Switch model lane</p>
+              <p className="text-sm leading-6 text-black/68">
+                Compare the same relay set across every tracked model board without leaving the leaderboard flow.
+              </p>
+            </div>
+            <div className="leaderboard-model-switcher">
+              {directory.data.boards.map((board) => (
+                <Link
+                  key={board.modelKey}
+                  className={clsx(
+                    "leaderboard-model-pill",
+                    board.modelKey === data.model.key && "leaderboard-model-pill-active",
+                  )}
+                  to={`/leaderboard/${board.modelKey}`}
+                >
+                  {board.modelName}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
       <Panel title="Ranked relay rows" kicker="Natural ranking">
         <div className="data-table">
           <table className="w-full text-left">

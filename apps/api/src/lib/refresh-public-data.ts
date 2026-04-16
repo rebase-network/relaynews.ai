@@ -8,6 +8,7 @@ import {
 } from "@relaynews/shared";
 import { sql, type Kysely } from "kysely";
 
+import { orderLeaderboardModels } from "./leaderboard-order";
 import { BADGE_ORDER, getMethodologyPayload } from "./methodology";
 import { subtractDays } from "./time";
 import type { Database } from "../db/types";
@@ -36,13 +37,6 @@ type LatestRelayAggregate = {
   sampleCount: number;
   statusLabel: string;
 };
-
-const HOME_LEADERBOARD_MODEL_PRIORITY = [
-  "anthropic-claude-sonnet-4.6",
-  "anthropic-claude-opus-4.6",
-  "openai-gpt-5.4",
-  "google-gemini-3.1",
-] as const;
 
 const HOME_LEADERBOARD_LIMIT = 4;
 
@@ -117,16 +111,9 @@ function selectHomeLeaderboardModels(
   latestModelScores: LatestModelScore[],
 ) {
   const availableModelIds = new Set(latestModelScores.map((row) => row.modelId));
-  const rankedModels = models.filter((model) => availableModelIds.has(model.id));
-  const rankedModelLookup = new Map(rankedModels.map((model) => [model.key, model]));
-  const prioritizedKeys = new Set<string>(HOME_LEADERBOARD_MODEL_PRIORITY);
-
-  const prioritizedModels = HOME_LEADERBOARD_MODEL_PRIORITY
-    .map((modelKey) => rankedModelLookup.get(modelKey))
-    .filter((model): model is NonNullable<typeof model> => model !== undefined);
-  const fallbackModels = rankedModels.filter((model) => !prioritizedKeys.has(model.key));
-
-  return [...prioritizedModels, ...fallbackModels].slice(0, HOME_LEADERBOARD_LIMIT);
+  return orderLeaderboardModels(
+    models.filter((model) => availableModelIds.has(model.id)),
+  ).slice(0, HOME_LEADERBOARD_LIMIT);
 }
 
 export async function refreshPublicData(db: Kysely<Database>) {

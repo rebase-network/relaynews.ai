@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   adminRelayUpsertSchema,
   homeSummaryResponseSchema,
+  leaderboardDirectoryResponseSchema,
   leaderboardQuerySchema,
   methodologyResponseSchema,
   probeCompatibilityModeSchema,
@@ -58,6 +59,36 @@ test("home summary example parses", () => {
   });
 
   assert.equal(parsed.hero.totalRelays, 42);
+});
+
+test("leaderboard directory example parses", () => {
+  const parsed = leaderboardDirectoryResponseSchema.parse({
+    boards: [
+      {
+        modelKey: "openai-gpt-5.4",
+        modelName: "GPT 5.4",
+        measuredAt: "2026-04-15T10:00:00.000Z",
+        rows: [
+          {
+            rank: 1,
+            relay: {
+              slug: "sample-relay",
+              name: "Sample Relay",
+            },
+            score: 95.4,
+            availability24h: 0.997,
+            latencyP50Ms: 760,
+            latencyP95Ms: 1410,
+            healthStatus: "healthy",
+            badges: ["high-stability"],
+          },
+        ],
+      },
+    ],
+    measuredAt: "2026-04-15T10:00:00.000Z",
+  });
+
+  assert.equal(parsed.boards[0]?.modelName, "GPT 5.4");
 });
 
 test("query defaults are applied", () => {

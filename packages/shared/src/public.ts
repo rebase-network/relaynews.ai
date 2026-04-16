@@ -13,6 +13,24 @@ import {
   supportStatusSchema,
 } from "./common";
 
+const leaderboardPreviewRowSchema = z.object({
+  rank: z.number().int().positive(),
+  relay: relaySummarySchema,
+  score: z.number().min(0).max(100),
+  availability24h: z.number().min(0).max(1),
+  latencyP50Ms: z.number().int().nonnegative().nullable(),
+  latencyP95Ms: z.number().int().nonnegative().nullable(),
+  healthStatus: healthStatusSchema,
+  badges: z.array(badgeSchema),
+});
+
+const leaderboardPreviewSchema = z.object({
+  modelKey: z.string().min(1),
+  modelName: z.string().min(1),
+  measuredAt: isoTimestampSchema,
+  rows: z.array(leaderboardPreviewRowSchema),
+});
+
 export const homeSummaryResponseSchema = z.object({
   hero: z.object({
     totalRelays: z.number().int().min(0),
@@ -21,25 +39,7 @@ export const homeSummaryResponseSchema = z.object({
     downRelays: z.number().int().min(0),
     measuredAt: isoTimestampSchema,
   }),
-  leaderboards: z.array(
-    z.object({
-      modelKey: z.string().min(1),
-      modelName: z.string().min(1),
-      measuredAt: isoTimestampSchema,
-      rows: z.array(
-        z.object({
-          rank: z.number().int().positive(),
-          relay: relaySummarySchema,
-          score: z.number().min(0).max(100),
-          availability24h: z.number().min(0).max(1),
-          latencyP50Ms: z.number().int().nonnegative().nullable(),
-          latencyP95Ms: z.number().int().nonnegative().nullable(),
-          healthStatus: healthStatusSchema,
-          badges: z.array(badgeSchema),
-        }),
-      ),
-    }),
-  ),
+  leaderboards: z.array(leaderboardPreviewSchema),
   highlights: z.array(
     z.object({
       slug: z.string().min(1),
@@ -49,6 +49,11 @@ export const homeSummaryResponseSchema = z.object({
     }),
   ),
   latestIncidents: z.array(incidentSummarySchema),
+  measuredAt: isoTimestampSchema,
+});
+
+export const leaderboardDirectoryResponseSchema = z.object({
+  boards: z.array(leaderboardPreviewSchema),
   measuredAt: isoTimestampSchema,
 });
 
@@ -194,6 +199,9 @@ export const methodologyResponseSchema = z.object({
 });
 
 export type HomeSummaryResponse = z.infer<typeof homeSummaryResponseSchema>;
+export type LeaderboardDirectoryResponse = z.infer<
+  typeof leaderboardDirectoryResponseSchema
+>;
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
 export type RelayOverviewResponse = z.infer<typeof relayOverviewResponseSchema>;
