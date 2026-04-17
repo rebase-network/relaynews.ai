@@ -15,6 +15,7 @@ service.
 - `ops/manage.sh` - deployment and remote operations helper for the backend API stack
 - `ops/manage-api-edge.sh` - API edge Worker build, preview, and deploy helper
 - `ops/manage-tunnel.sh` - dedicated product tunnel configuration helper
+- `ops/send-telegram.sh` - send a Telegram bot message using values from `.env`
 - `ops/api.env.example` - production environment template for the backend API
 - `ops/docker-compose.api.yml` - isolated runtime definition for the remote Docker deploy
 
@@ -80,3 +81,19 @@ Recommended verification after deploy:
   so it does not depend on or interfere with another PostgreSQL service on the same host.
 - `HOST=0.0.0.0` is required in the production env file so the container can accept
   traffic through the published port.
+
+## Telegram Bot Helper
+
+The repository root `.env` may include:
+
+```bash
+TELEGRAM_BOT_TOKEN="123456:abc"
+TELEGRAM_BOT_CHAT_ID="-1001234567890"
+```
+
+Examples:
+
+```bash
+./ops/send-telegram.sh "Relay 测试完成"
+printf '%s\n' "后台审批已完成" | ./ops/send-telegram.sh
+```
