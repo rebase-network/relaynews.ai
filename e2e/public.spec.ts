@@ -2,6 +2,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const isDeployedRun = process.env.E2E_DEPLOYED === "1";
 const allowDeployedWrites = process.env.E2E_ALLOW_DEPLOYED_WRITES === "1";
+const apiBaseUrl =
+  process.env.API_BASE_URL ?? (isDeployedRun ? "https://api.relaynew.ai" : "http://127.0.0.1:8787");
+const adminUsername = process.env.E2E_ADMIN_USERNAME ?? process.env.ADMIN_AUTH_USERNAME ?? "";
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? process.env.ADMIN_AUTH_PASSWORD ?? "";
 const probeUrl = process.env.API_URL ?? "";
 const probeKey = process.env.API_KEY ?? "";
 const probeConfigured = Boolean(probeUrl && probeKey && probeUrl !== "https://example.com");
@@ -12,6 +16,20 @@ const manualCompatibilityLabels: Record<string, string> = {
   "openai-chat-completions": "OpenAI Chat Completions",
   "anthropic-messages": "Anthropic Messages",
 };
+
+function buildBasicAuthorization(username: string, password: string) {
+  return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+}
+
+function getAdminApiHeaders() {
+  if (!adminUsername || !adminPassword) {
+    return undefined;
+  }
+
+  return {
+    Authorization: buildBasicAuthorization(adminUsername, adminPassword),
+  };
+}
 
 async function gotoHome(page: Page) {
   const heroHeading = page.getByRole("heading", { name: /发现优质中转站点/i });
@@ -67,8 +85,8 @@ async function expectRelayDetailModules(page: Page) {
 
 async function expectLeaderboardRules(page: Page) {
   await expect(page.getByText("当前榜单不含赞助方")).toBeVisible();
-  await expect(page.getByText("本页只呈现当前模型分类下的评测结果")).toBeVisible();
-  await expect(page.getByText("赞助方展示只会出现在独立模块，不会混入排名，也不会影响这里的实测结果。")).toBeVisible();
+  await expect(page.getByText("当前仅展示这个模型分类下的评测结果；赞助方展示不会插入排名。")).toBeVisible();
+  await expect(page.getByText("赞助方只在独立模块展示，不会混入排名，也不会影响实测结果。")).toBeVisible();
 }
 
 async function expectVisibleText(locator: Locator, pattern: RegExp) {
@@ -214,6 +232,86 @@ test("submit flow validates malformed relay URLs before sending", async ({ page 
   await expect(page.getByText("请为每一行填写模型。")).toBeVisible();
   await expect(page.getByText("初始测试需要测试API Key。")).toBeVisible();
   await expect(page.getByText("提交成功，记录 ID：")).toHaveCount(0);
+});
+
+test("relay detail APIs hide unsupported models and their price history", async ({ request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Relay lifecycle writes are skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+
+  const runId = Date.now();
+  const relayName = `Filtered Relay ${runId}`;
+  const relayBaseUrl = `https://example.com/filtered-relay-${runId}`;
+  const removedModelKey = "anthropic-claude-sonnet-4.6";
+
+  const createResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      websiteUrl: "https://example.com",
+      contactInfo: "Telegram: @filtered_ops",
+      description: "用于验证不支持的模型不会继续出现在 Relay 详情公开接口中。",
+      catalogStatus: "active",
+      modelPrices: [
+        {
+          modelKey: "openai-gpt-5.4",
+          inputPricePer1M: 4.6,
+          outputPricePer1M: 15.8,
+        },
+        {
+          modelKey: removedModelKey,
+          inputPricePer1M: 6.2,
+          outputPricePer1M: 24.5,
+        },
+      ],
+      testApiKey: "sk-filtered-check",
+      compatibilityMode: "auto",
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const createdRelay = await createResponse.json();
+
+  const relaysResponse = await request.get(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+  });
+  expect(relaysResponse.ok()).toBeTruthy();
+  const relaysPayload = await relaysResponse.json();
+  const relay = relaysPayload.rows.find((row: { id: string; slug: string }) => row.id === createdRelay.id);
+  expect(relay).toBeTruthy();
+
+  const patchResponse = await request.patch(`${apiBaseUrl}/admin/relays/${createdRelay.id}`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      websiteUrl: "https://example.com",
+      contactInfo: "Telegram: @filtered_ops",
+      description: "用于验证不支持的模型不会继续出现在 Relay 详情公开接口中。",
+      catalogStatus: "active",
+      modelPrices: [
+        {
+          modelKey: "openai-gpt-5.4",
+          inputPricePer1M: 4.6,
+          outputPricePer1M: 15.8,
+        },
+      ],
+      testApiKey: "sk-filtered-check",
+      compatibilityMode: "auto",
+    },
+  });
+  expect(patchResponse.ok()).toBeTruthy();
+
+  const modelsResponse = await request.get(`${apiBaseUrl}/public/relay/${relay.slug}/models`);
+  expect(modelsResponse.ok()).toBeTruthy();
+  const modelsPayload = await modelsResponse.json();
+  expect(modelsPayload.rows.map((row: { modelKey: string }) => row.modelKey)).not.toContain(removedModelKey);
+
+  const pricingResponse = await request.get(`${apiBaseUrl}/public/relay/${relay.slug}/pricing-history`);
+  expect(pricingResponse.ok()).toBeTruthy();
+  const pricingPayload = await pricingResponse.json();
+  expect(pricingPayload.rows.map((row: { modelKey: string }) => row.modelKey)).not.toContain(removedModelKey);
 });
 
 test("public probe flow returns a diagnostic result", async ({ page }) => {

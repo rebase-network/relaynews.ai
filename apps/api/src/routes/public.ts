@@ -328,6 +328,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         "rm.last_verified_at as lastVerifiedAt",
       ])
       .where("rm.relay_id", "=", relay.id)
+      .where("rm.status", "<>", "unsupported")
       .orderBy("m.name", "asc")
       .execute();
 
@@ -366,6 +367,9 @@ export async function registerPublicRoutes(app: FastifyInstance) {
 
     let builder = app.db
       .selectFrom("relay_prices as rp")
+      .innerJoin("relay_models as rm", (join) => join
+        .onRef("rm.relay_id", "=", "rp.relay_id")
+        .onRef("rm.model_id", "=", "rp.model_id"))
       .innerJoin("models as m", "m.id", "rp.model_id")
       .select([
         "m.key as modelKey",
@@ -376,6 +380,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         "rp.source",
       ])
       .where("rp.relay_id", "=", relay.id)
+      .where("rm.status", "<>", "unsupported")
       .orderBy("rp.effective_from", "desc");
 
     if (modelId) {
