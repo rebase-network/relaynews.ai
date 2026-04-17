@@ -3530,7 +3530,7 @@ function SubmitPage() {
             <p className="text-sm leading-6 text-black/72">请提供可用密钥、测试模型和简要说明，方便审核队列完成验证与归类。</p>
           </div>
           <div className="surface-card p-3.5">
-            <p className="kicker !text-black/52">初始探测</p>
+            <p className="kicker !text-black/52">初始测试</p>
             <p className="text-sm leading-6 text-black/72">每次提交都会立即执行一次受限探测，让审核队列直接拿到首个验证快照。</p>
           </div>
         </div>
@@ -3638,7 +3638,7 @@ function SubmitPage() {
             {result.probe ? (
               <>
                 <p className="text-sm leading-6 text-black/72">
-                  初始探测：{result.probe.ok ? "已通过" : "需要复核"} · {formatHealthStatusLabel(result.probe.healthStatus)}
+                  初始测试：{result.probe.ok ? "已通过" : "需要复核"} · {formatHealthStatusLabel(result.probe.healthStatus)}
                   {result.probe.httpStatus ? ` · ${result.probe.httpStatus}` : ""}
                 </p>
                 {result.probe.message ? <p className="text-sm leading-6 text-black/58">{result.probe.message}</p> : null}
