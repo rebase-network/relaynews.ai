@@ -184,6 +184,20 @@ function emptyToNull(value: string | null | undefined) {
   return trimmed ? trimmed : null;
 }
 
+function normalizeSearchText(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function matchesSearchQuery(query: string, values: Array<string | null | undefined>) {
+  const normalizedQuery = normalizeSearchText(query);
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return values.some((value) => normalizeSearchText(value).includes(normalizedQuery));
+}
+
 function isValidHttpUrl(value: string) {
   try {
     const parsed = new URL(value);
@@ -1570,6 +1584,8 @@ function CredentialsPage() {
   const credentials = useLoadable<AdminProbeCredentialsResponse>(() => fetchJson("/admin/probe-credentials"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<AdminProbeCredential["status"] | "all">("all");
   const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
   const [credentialDeleteTarget, setCredentialDeleteTarget] = useState<AdminProbeCredentialDetail | null>(null);
   const [credentialRevokeTarget, setCredentialRevokeTarget] = useState<AdminProbeCredentialDetail | null>(null);
@@ -1604,14 +1620,29 @@ function CredentialsPage() {
     () => (credentials.data?.rows ?? []).filter((row) => row.ownerType === "relay"),
     [credentials.data],
   );
+  const filterActive = trimString(searchQuery).length > 0 || statusFilter !== "all";
+  const filteredRelayCredentials = useMemo(
+    () => relayCredentials.filter((row) =>
+      (statusFilter === "all" || row.status === statusFilter)
+      && matchesSearchQuery(searchQuery, [
+        row.ownerName,
+        row.ownerBaseUrl,
+        row.testModel,
+        row.apiKeyPreview,
+        row.lastMessage,
+      ])),
+    [relayCredentials, searchQuery, statusFilter],
+  );
 
   useEffect(() => {
+    const selectionRows = filterActive ? filteredRelayCredentials : relayCredentials;
+
     if (!relayCredentials.length) {
       setSelectedCredentialId(null);
       return;
     }
 
-    if (requestedCredentialId && relayCredentials.some((row) => row.id === requestedCredentialId)) {
+    if (requestedCredentialId && selectionRows.some((row) => row.id === requestedCredentialId)) {
       if (requestedCredentialId !== selectedCredentialId) {
         setSelectedCredentialId(requestedCredentialId);
       }
@@ -1619,7 +1650,7 @@ function CredentialsPage() {
     }
 
     if (requestedOwnerId && requestedOwnerType === "relay") {
-      const ownerCredential = relayCredentials.find((row) =>
+      const ownerCredential = selectionRows.find((row) =>
         row.ownerId === requestedOwnerId && row.ownerType === "relay",
       );
 
@@ -1636,10 +1667,25 @@ function CredentialsPage() {
       return;
     }
 
-    if (!selectedCredentialId || !relayCredentials.some((row) => row.id === selectedCredentialId)) {
-      setSelectedCredentialId(relayCredentials[0]?.id ?? null);
+    if (!selectionRows.length) {
+      if (selectedCredentialId !== null) {
+        setSelectedCredentialId(null);
+      }
+      return;
     }
-  }, [relayCredentials, requestedCredentialId, requestedOwnerId, requestedOwnerType, selectedCredentialId]);
+
+    if (!selectedCredentialId || !selectionRows.some((row) => row.id === selectedCredentialId)) {
+      setSelectedCredentialId(selectionRows[0]?.id ?? null);
+    }
+  }, [
+    filterActive,
+    filteredRelayCredentials,
+    relayCredentials,
+    requestedCredentialId,
+    requestedOwnerId,
+    requestedOwnerType,
+    selectedCredentialId,
+  ]);
 
   useEffect(() => {
     if (!detail.data) {
@@ -1836,12 +1882,61 @@ function CredentialsPage() {
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           这里仅展示 Relay 自有的监测密钥。待审核提交中的测试密钥会保留在审核队列，不会出现在这里。
         </div>
+        <div className="mb-4 grid gap-2.5 md:grid-cols-[1.2fr_0.8fr_auto]">
+          <label className="field-label">
+            搜索监测密钥
+            <input
+              className="field-input"
+              placeholder="搜索 Relay、Base URL、测试模型"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </label>
+          <label className="field-label">
+            状态筛选
+            <select
+              className="field-input"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as AdminProbeCredential["status"] | "all")}
+            >
+              <option value="all">全部状态</option>
+              <option value="active">生效中</option>
+              <option value="rotated">已轮换</option>
+              <option value="revoked">已撤销</option>
+            </select>
+          </label>
+          {filterActive ? (
+            <button
+              className="pill pill-idle self-end"
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+              }}
+            >
+              清空筛选
+            </button>
+          ) : null}
+        </div>
         <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">监测密钥列表</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">按 Relay 与运行状态快速定位</p>
+            </div>
+            <p className="text-sm text-white/48">
+              {filterActive ? `筛选后 ${filteredRelayCredentials.length} / 共 ${relayCredentials.length}` : `共 ${relayCredentials.length} 条`}
+            </p>
+          </div>
           {relayCredentials.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
               当前还没有 Relay 监测密钥。
             </div>
-          ) : relayCredentials.map((row) => (
+          ) : filteredRelayCredentials.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
+              没有符合筛选条件的监测密钥。
+            </div>
+          ) : filteredRelayCredentials.map((row) => (
               <button
                 key={row.id}
                 className={clsx(

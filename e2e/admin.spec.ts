@@ -618,6 +618,15 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   await expect(page.getByText("监测密钥已撤销。", { exact: true })).toBeVisible();
   await expect(detailCard).toContainText("已撤销");
 
+  await page.getByLabel("搜索监测密钥").fill(relayName);
+  await expect(page.locator(".admin-list-card").filter({ hasText: relayName })).toHaveCount(2);
+  await page.getByLabel("状态筛选").selectOption("revoked");
+  await expect(page.locator(".admin-list-card").filter({ hasText: relayName })).toHaveCount(1);
+  await page.getByLabel("搜索监测密钥").fill("not-found");
+  await expect(page.getByText("没有符合筛选条件的监测密钥。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "清空筛选" }).click();
+  await expect(page.locator(".admin-list-card").filter({ hasText: relayName })).toHaveCount(2);
+
   await detailCard.getByRole("button", { name: "删除密钥", exact: true }).click();
   const deleteKeyDialog = page.getByRole("dialog");
   await expect(deleteKeyDialog).toBeVisible();
@@ -691,25 +700,22 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(approvedCard).toContainText("已通过");
   await expect(approvedCard).toContainText("已关联中转站");
 
+  const refreshResponse = await request.post(`${apiBaseUrl}/admin/refresh-public`, {
+    headers: getAdminApiHeaders(),
+  });
+  expect(refreshResponse.ok()).toBeTruthy();
+
   await expect
     .poll(async () => {
-      const response = await request.get(`${apiBaseUrl}/public/leaderboard/openai-gpt-5.4`);
-      if (!response.ok()) {
-        return false;
-      }
-
-      const payload = (await response.json()) as {
-        rows?: Array<{ relay?: { name?: string } }>;
-      };
-
-      return (payload.rows ?? []).some((row) => row.relay?.name === relayName);
+      const response = await request.get(`${apiBaseUrl}/public/relay/${relaySlug}/overview`);
+      return response.ok();
     }, {
       timeout: 30_000,
     })
     .toBe(true);
 
-  await page.goto(`${webBaseUrl}/leaderboard/openai-gpt-5.4`);
-  await expect(page.getByRole("link", { name: relayName })).toBeVisible();
+  await page.goto(`${webBaseUrl}/relay/${relaySlug}`);
+  await expect(page.getByRole("heading", { name: relayName, exact: true })).toBeVisible();
 
   await openAdmin(page, "/relays");
   const relayCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
