@@ -128,6 +128,7 @@ test("submit flow works from the public site", async ({ page }) => {
   await page.getByLabel("Relay name").fill(relayName);
   await page.getByLabel("Base URL").fill(relayBaseUrl);
   await page.getByLabel("Website URL").fill("https://example.com");
+  await page.getByLabel("Relay description").fill("Playwright submission coverage for a monitored relay.");
   await page.getByLabel("Contact email").fill("ops@example.com");
   await page.getByLabel("Test API key").fill("sk-submit-check");
   await page.getByLabel("Test model").fill("gpt-5.4");
@@ -142,6 +143,7 @@ test("submit flow validates malformed relay URLs before sending", async ({ page 
   await page.getByLabel("Relay name").fill("Broken Relay");
   await page.getByLabel("Base URL").fill("relay.example.ai");
   await page.getByLabel("Website URL").fill("not-a-url");
+  await page.getByLabel("Relay description").fill("");
   await page.getByLabel("Contact email").fill("ops@");
   await page.getByLabel("Test model").fill("");
   await page.getByRole("button", { name: "Submit relay" }).click();
@@ -149,6 +151,7 @@ test("submit flow validates malformed relay URLs before sending", async ({ page 
   await expect(page.getByText("Please fix the highlighted fields before submitting.")).toBeVisible();
   await expect(page.getByText("Enter a full HTTPS base URL such as https://relay.example.ai/v1.")).toBeVisible();
   await expect(page.getByText("Enter a valid website URL such as https://relay.example.ai.")).toBeVisible();
+  await expect(page.getByText("Add a short relay description so the review queue understands this endpoint.")).toBeVisible();
   await expect(page.getByText("Enter a valid contact email address.")).toBeVisible();
   await expect(page.getByText("A test key is required for the initial relay probe.")).toBeVisible();
   await expect(page.getByText("A test model is required.")).toBeVisible();

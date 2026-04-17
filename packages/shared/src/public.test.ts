@@ -185,6 +185,7 @@ test("public submission and admin relay inputs parse", () => {
     relayName: "Northwind Relay",
     baseUrl: "https://northwind.example.ai/v1",
     websiteUrl: "https://northwind.example.ai",
+    description: "Stable relay focused on low-latency OpenAI-compatible traffic.",
     submitterEmail: "ops@example.com",
     testApiKey: "sk-monitoring",
     testModel: "gpt-5.4",
@@ -207,6 +208,7 @@ test("public submission and admin relay inputs normalize blank optional fields",
     relayName: "Northwind Relay",
     baseUrl: " https://northwind.example.ai/v1 ",
     websiteUrl: "",
+    description: "  Stable relay focused on low-latency OpenAI-compatible traffic.  ",
     submitterEmail: "",
     notes: "   ",
     testApiKey: " sk-monitoring ",
@@ -225,6 +227,7 @@ test("public submission and admin relay inputs normalize blank optional fields",
 
   assert.equal(submission.baseUrl, "https://northwind.example.ai/v1");
   assert.equal(submission.websiteUrl, undefined);
+  assert.equal(submission.description, "Stable relay focused on low-latency OpenAI-compatible traffic.");
   assert.equal(submission.submitterEmail, undefined);
   assert.equal(submission.testApiKey, "sk-monitoring");
   assert.equal(submission.testModel, "gpt-5.4");

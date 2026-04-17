@@ -262,7 +262,7 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem 1.1rem;
+  gap: 0.85rem 1rem;
 }
 
 .site-footer-mark-link,
@@ -283,7 +283,7 @@ textarea {
 .site-footer-mark-image {
   display: block;
   width: auto;
-  height: 1.28rem;
+  height: 1.2rem;
 }
 
 .site-footer-github {
@@ -297,8 +297,8 @@ textarea {
 
 .site-footer-github-icon {
   display: block;
-  width: 1.08rem;
-  height: 1.08rem;
+  width: 1.18rem;
+  height: 1.18rem;
 }
 
 .site-footer-mark-link:hover,
@@ -1148,12 +1148,116 @@ textarea {
   flex-direction: column;
 }
 
+.leaderboard-preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.leaderboard-preview-title {
+  font-size: 2.5rem;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+}
+
+.leaderboard-preview-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(31, 31, 31, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.6rem 0.82rem;
+  font-family: var(--font-mono);
+  font-size: 0.61rem;
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.leaderboard-preview-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(250, 82, 15, 0.24);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    rgba(127, 99, 21, 0.12) 0 14px 28px,
+    rgba(250, 82, 15, 0.07) 0 0 0 1px inset;
+}
+
+.leaderboard-preview-stack {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
 .leaderboard-preview-row {
-  min-height: 5.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  min-height: 4.45rem;
+  padding: 0.82rem 0.9rem;
+}
+
+.leaderboard-preview-main .signal-chip {
+  max-width: 100%;
+}
+
+.leaderboard-preview-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.leaderboard-preview-badges {
+  margin-top: 0.45rem;
 }
 
 .leaderboard-preview-score {
+  min-width: 7.9rem;
+  text-align: right;
   align-self: center;
+}
+
+.leaderboard-preview-scoreline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  font-size: 0.63rem;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.62);
+}
+
+.leaderboard-preview-metrics {
+  margin-top: 0.22rem;
+  font-size: 0.66rem;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.48);
+}
+
+.leaderboard-preview-snapshot {
+  margin-top: auto;
+  padding-top: 0.85rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.44);
 }
 
 @media (max-width: 767px) {
@@ -1219,12 +1323,17 @@ textarea {
     align-items: flex-start;
     flex-direction: column;
     min-height: 0;
+    padding: 0.9rem;
   }
 
   .leaderboard-preview-score {
     align-self: flex-start;
     min-width: 0;
     text-align: left;
+  }
+
+  .leaderboard-preview-scoreline {
+    justify-content: flex-start;
   }
 }
 

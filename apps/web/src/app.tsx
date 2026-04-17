@@ -75,7 +75,7 @@ const PROBE_COMPATIBILITY_LABELS: Record<ProbeResolvedCompatibilityMode, string>
   "anthropic-messages": "Anthropic Messages",
 };
 
-const GITHUB_REPOSITORY_URL = "https://github.com/rebase-network/relaynews.ai";
+const GITHUB_REPOSITORY_URL = "https://github.com/rebase.network";
 const REBASE_NETWORK_URL = "https://rebase.network";
 
 const HEALTH_STATUS_COPY: Record<string, string> = {
@@ -730,6 +730,7 @@ type SubmitFormState = {
   relayName: string;
   baseUrl: string;
   websiteUrl: string;
+  description: string;
   submitterEmail: string;
   testApiKey: string;
   testModel: string;
@@ -743,6 +744,7 @@ function validateSubmitForm(state: SubmitFormState) {
   const relayName = state.relayName.trim();
   const baseUrl = state.baseUrl.trim();
   const websiteUrl = state.websiteUrl.trim();
+  const description = state.description.trim();
   const submitterEmail = state.submitterEmail.trim();
   const testApiKey = state.testApiKey.trim();
   const testModel = state.testModel.trim();
@@ -759,6 +761,10 @@ function validateSubmitForm(state: SubmitFormState) {
 
   if (websiteUrl && !isValidHttpUrl(websiteUrl)) {
     errors.websiteUrl = "Enter a valid website URL such as https://relay.example.ai.";
+  }
+
+  if (!description) {
+    errors.description = "Add a short relay description so the review queue understands this endpoint.";
   }
 
   if (submitterEmail && !isValidEmail(submitterEmail)) {
@@ -779,6 +785,7 @@ function validateSubmitForm(state: SubmitFormState) {
       relayName,
       baseUrl,
       websiteUrl: websiteUrl || undefined,
+      description,
       submitterEmail: submitterEmail || undefined,
       testApiKey,
       testModel,
@@ -1733,40 +1740,40 @@ function LeaderboardPreviewCard({
 
   return (
     <section className="panel leaderboard-preview-card h-full">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="leaderboard-preview-header">
         <div>
-          <h2 className="text-3xl leading-[0.94] tracking-[-0.05em]">{board.modelName}</h2>
+          <h2 className="leaderboard-preview-title">{board.modelName}</h2>
         </div>
-        <Link className="signal-chip" to={getLeaderboardPath(board.modelKey)}>
+        <Link className="leaderboard-preview-link" to={getLeaderboardPath(board.modelKey)}>
           Open full board
         </Link>
       </div>
-      <div className="mt-4 space-y-2">
+      <div className="leaderboard-preview-stack">
         {rows.map((row) => (
           <Link
             key={row.relay.slug}
-            className="surface-link leaderboard-preview-row flex items-center justify-between gap-4 p-3"
+            className="surface-link leaderboard-preview-row"
             to={`/relay/${row.relay.slug}`}
           >
-            <div className="min-w-0">
+            <div className="leaderboard-preview-main min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <p className="text-[0.65rem] uppercase tracking-[0.18em] text-black/50">#{row.rank}</p>
-                <p className="truncate text-[1.08rem] leading-tight tracking-[-0.03em]">{row.relay.name}</p>
+                <p className="leaderboard-preview-name">{row.relay.name}</p>
               </div>
-              <CompactBadgeList badges={row.badges} className="mt-2" limit={1} />
+              <CompactBadgeList badges={row.badges} className="leaderboard-preview-badges" limit={1} />
             </div>
-            <div className="leaderboard-preview-score min-w-[8.75rem] text-right text-sm">
-              <div className="flex items-center justify-end gap-2 text-[0.66rem] uppercase tracking-[0.15em] text-black/62">
+            <div className="leaderboard-preview-score">
+              <div className="leaderboard-preview-scoreline">
                 <StatusDot status={row.healthStatus} /> {row.healthStatus} · {row.score.toFixed(1)}
               </div>
-              <p className="mt-1 text-[0.68rem] uppercase tracking-[0.16em] text-black/48">
+              <p className="leaderboard-preview-metrics">
                 {formatAvailability(row.availability24h)} · {formatLatency(row.latencyP50Ms)}
               </p>
             </div>
           </Link>
         ))}
       </div>
-      <p className="mt-4 text-[0.68rem] uppercase tracking-[0.18em] text-black/46">
+      <p className="leaderboard-preview-snapshot">
         Snapshot {new Date(board.measuredAt).toLocaleString()}
       </p>
     </section>
@@ -1880,9 +1887,9 @@ function HomePage() {
       </section>
 
       <Panel title="Featured boards" kicker="Model lanes">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <p className="max-w-3xl text-sm leading-6 text-black/68">
-            Four model lanes from the directory, each showing the current top relays before you jump into the full board.
+        <div className="mb-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <p className="max-w-2xl text-xs uppercase tracking-[0.16em] text-black/48">
+            Four tracked lanes with the strongest current rows.
           </p>
           <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
             All model lanes
@@ -1913,33 +1920,35 @@ function HomePage() {
         </div>
       </section>
 
-      <section className="panel">
-        <div className="mb-4 space-y-2">
-          <p className="kicker">Sponsored placement</p>
-          <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">Sponsors</h2>
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {data.highlights.map((relay) => (
-            <Link
-              key={relay.slug}
-              to={`/relay/${relay.slug}`}
-              className="surface-link flex h-full items-center justify-between gap-4 p-3.5"
-            >
-              <div className="min-w-0">
-                <p className="text-[1.22rem] tracking-[-0.03em]">{relay.name}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="signal-chip">{relay.badge}</span>
+      {data.highlights.length > 0 ? (
+        <section className="panel">
+          <div className="mb-4 space-y-2">
+            <p className="kicker">Sponsored placement</p>
+            <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">Sponsors</h2>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {data.highlights.map((relay) => (
+              <Link
+                key={relay.slug}
+                to={`/relay/${relay.slug}`}
+                className="surface-link flex h-full items-center justify-between gap-4 p-3.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-[1.22rem] tracking-[-0.03em]">{relay.name}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="signal-chip">{relay.badge}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <div className="flex items-center justify-end gap-2 text-sm uppercase tracking-[0.12em]">
-                  <StatusDot status={relay.healthStatus} /> {relay.healthStatus}
+                <div className="shrink-0 text-right">
+                  <div className="flex items-center justify-end gap-2 text-sm uppercase tracking-[0.12em]">
+                    <StatusDot status={relay.healthStatus} /> {relay.healthStatus}
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -2937,6 +2946,7 @@ function SubmitPage() {
     relayName: "",
     baseUrl: "",
     websiteUrl: "",
+    description: "",
     submitterEmail: "",
     testApiKey: "",
     testModel: "gpt-5.4",
@@ -2975,6 +2985,7 @@ function SubmitPage() {
         relayName: "",
         baseUrl: "",
         websiteUrl: "",
+        description: "",
         submitterEmail: "",
         testApiKey: "",
         testModel: "gpt-5.4",
@@ -3001,7 +3012,7 @@ function SubmitPage() {
           </div>
           <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Verification input</p>
-            <p className="text-sm leading-6 text-black/72">Provide a working key and test model so the review queue can verify the relay against a real request.</p>
+            <p className="text-sm leading-6 text-black/72">Provide a working key, test model, and a short introduction so the review queue can verify and classify the relay correctly.</p>
           </div>
           <div className="surface-card p-3.5">
             <p className="kicker !text-black/52">Initial probe</p>
@@ -3044,6 +3055,17 @@ function SubmitPage() {
             onChange={(event) => updateField("websiteUrl", event.target.value)}
           />
           {fieldErrors.websiteUrl ? <span className="field-error">{fieldErrors.websiteUrl}</span> : null}
+        </label>
+        <label className="form-field">
+          Relay description
+          <textarea
+            className="input-shell mt-2 min-h-28"
+            placeholder="Explain what this relay is optimized for, who operates it, and anything the review queue should know before testing."
+            required
+            value={state.description}
+            onChange={(event) => updateField("description", event.target.value)}
+          />
+          {fieldErrors.description ? <span className="field-error">{fieldErrors.description}</span> : null}
         </label>
         <label className="form-field">
           Contact email

@@ -78,6 +78,7 @@ export interface SubmissionsTable {
   relay_name: string;
   base_url: string;
   website_url: string | null;
+  description: string | null;
   notes: string | null;
   status: string;
   review_notes: string | null;

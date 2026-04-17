@@ -238,6 +238,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   const inputPrice = "0.33";
   const outputPrice = "1.22";
   const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+  const submissionDescription = "Playwright intake description for review queue coverage.";
 
   await openAdmin(page, "/intake");
 
@@ -264,6 +265,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
       relayName,
       baseUrl: relayBaseUrl,
       websiteUrl: "https://example.com",
+      description: submissionDescription,
       submitterEmail: "ops@example.com",
       notes: "Created by deployed Playwright admin coverage.",
       testApiKey: "sk-playwright-submit",
@@ -280,6 +282,7 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(submissionCard).toContainText("Credential");
   await expect(submissionCard).toContainText("Probe");
   await expect(submissionCard).toContainText("gpt-5.4");
+  await expect(submissionCard).toContainText(submissionDescription);
   await submissionCard.getByRole("button", { name: "Approve & activate" }).click();
   await expect(page.getByText(/Relay activated, credential moved, and monitoring started\./)).toBeVisible();
   await expect(submissionCard).toContainText(/approved/i);

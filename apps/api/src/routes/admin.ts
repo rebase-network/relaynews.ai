@@ -69,6 +69,7 @@ async function resolveApprovedRelay(
     relayName: string;
     baseUrl: string;
     websiteUrl: string | null;
+    description: string | null;
     approvedRelayId: string | null;
   },
 ) {
@@ -104,7 +105,7 @@ async function resolveApprovedRelay(
       name: submission.relayName,
       base_url: submission.baseUrl,
       provider_name: null,
-      description: null,
+      description: submission.description,
       website_url: submission.websiteUrl,
       docs_url: null,
       status: "active",
@@ -502,6 +503,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         "relay_name as relayName",
         "base_url as baseUrl",
         "website_url as websiteUrl",
+        "description",
         "submitter_name as submitterName",
         "submitter_email as submitterEmail",
         "notes",
@@ -601,6 +603,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           relayName: row.relayName,
           baseUrl: row.baseUrl,
           websiteUrl: row.websiteUrl,
+          description: row.description,
           submitterName: row.submitterName,
           submitterEmail: row.submitterEmail,
           notes: row.notes,
@@ -777,6 +780,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           relay_name: body.relayName,
           base_url: body.baseUrl,
           website_url: body.websiteUrl ?? null,
+          description: body.description,
           submitter_name: body.submitterName ?? null,
           submitter_email: body.submitterEmail ?? null,
           notes: body.notes ?? null,
@@ -853,6 +857,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           "relay_name as relayName",
           "base_url as baseUrl",
           "website_url as websiteUrl",
+          "description",
           "approved_relay_id as approvedRelayId",
         ])
         .where("id", "=", params.id)
@@ -867,12 +872,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         const relayUpdate: {
           status: "active";
           website_url?: string | null;
+          description?: string | null;
         } = {
           status: "active",
         };
 
         if (submission.websiteUrl) {
           relayUpdate.website_url = submission.websiteUrl;
+        }
+
+        if (submission.description) {
+          relayUpdate.description = submission.description;
         }
 
         await trx

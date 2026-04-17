@@ -1015,6 +1015,12 @@ function IntakePage() {
                   <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
                   <p className="mt-1 text-sm text-white/60">{row.baseUrl}</p>
                   <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.status} · {new Date(row.createdAt).toLocaleString()}</p>
+                  {row.description ? (
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">Relay description</p>
+                      <p className="mt-2 text-sm leading-6 text-white/72">{row.description}</p>
+                    </div>
+                  ) : null}
                   {row.probeCredential ? (
                     <div className="mt-3 space-y-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/65">
                       <p>
@@ -1062,6 +1068,7 @@ function IntakePage() {
                     <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
                     <p className="mt-1 text-sm text-white/60">{row.baseUrl}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.status} · {new Date(row.createdAt).toLocaleString()}</p>
+                    {row.description ? <p className="mt-3 text-sm leading-6 text-white/64">{row.description}</p> : null}
                     {row.approvedRelay ? <p className="mt-2 text-sm text-emerald-300/80">Linked relay · {row.approvedRelay.name}</p> : null}
                     {row.probeCredential ? (
                       <p className="mt-3 text-sm text-white/55">

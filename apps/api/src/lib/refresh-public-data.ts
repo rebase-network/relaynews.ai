@@ -135,6 +135,21 @@ export async function refreshPublicData(db: Kysely<Database>) {
     .orderBy("name", "asc")
     .execute();
 
+  const activeSponsorRelays = await db
+    .selectFrom("sponsors as s")
+    .innerJoin("relays as r", "r.id", "s.relay_id")
+    .select([
+      "r.id",
+      "r.slug",
+      "r.name",
+    ])
+    .where("s.status", "=", "active")
+    .where("r.status", "=", "active")
+    .where("s.start_at", "<=", measuredAt)
+    .where("s.end_at", ">=", measuredAt)
+    .orderBy("s.start_at", "desc")
+    .execute();
+
   const models = await db
     .selectFrom("models")
     .select(["id", "key", "name", "vendor"])
@@ -465,9 +480,10 @@ export async function refreshPublicData(db: Kysely<Database>) {
       measuredAt,
     },
     leaderboards: previewRows,
-    highlights: activeRelays
-      .filter((relay) => relay.is_featured)
-      .slice(0, 3)
+    highlights: Array.from(
+      new Map(activeSponsorRelays.map((relay) => [relay.id, relay])).values(),
+    )
+      .slice(0, 4)
       .map((relay) => {
         const score = latestRelayScores.get(relay.id);
         return {
