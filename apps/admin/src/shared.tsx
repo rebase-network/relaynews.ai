@@ -22,7 +22,6 @@ import {
 import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { InfoTip } from "./components/info-tip";
 
 export { clsx, createPortal, Link, Navigate, NavLink, Route, Routes, useEffect, useLocation, useMemo, useNavigate, useParams, useSearchParams, useState };
 export type {
@@ -885,7 +884,6 @@ export function AdminShell({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-lg leading-tight tracking-[-0.05em] md:text-[1.45rem]">运营后台</h1>
-                <InfoTip content="审批通过后的记录直接进入 Relay 列表；只有 active Relay 会参与自动测试、目录展示和榜单排行。" />
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2.5">

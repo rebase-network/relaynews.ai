@@ -1,6 +1,5 @@
 import * as Shared from "../shared";
 import { AdminDrawer } from "./admin-drawer";
-import { InfoTip } from "./info-tip";
 import { RelayEditorForm } from "./relay-editor-form";
 import { StatusBadge } from "./status-badge";
 import { WorkflowDetailGrid, WorkflowPriceTable, WorkflowSection } from "./relay-workflow";
@@ -185,7 +184,6 @@ export function RelayInspectorDrawer({
               <StatusBadge tone={statusToneForCatalogStatus(presentedRelay.catalogStatus)}>
                 {formatCatalogStatus(presentedRelay.catalogStatus)}
               </StatusBadge>
-              <InfoTip content="右侧抽屉用于集中查看详情和编辑，不再跳转到独立页面。" />
             </div>
             <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{presentedRelay.slug}</p>
             <p className="mt-1 truncate text-sm text-white/56">{presentedRelay.baseUrl}</p>
@@ -205,7 +203,7 @@ export function RelayInspectorDrawer({
 
         {mode === "detail" ? (
           <div className="space-y-3">
-            <WorkflowSection title="概要信息" tip="这里保留站点最关键的运营信息，便于先判断是否需要继续编辑。">
+            <WorkflowSection title="概要信息">
               <WorkflowDetailGrid
                 items={[
                   { label: "Base URL", value: presentedRelay.baseUrl },

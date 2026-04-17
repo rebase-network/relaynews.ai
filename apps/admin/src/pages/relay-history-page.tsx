@@ -53,21 +53,15 @@ export function RelayHistoryPage() {
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-white/72">当前归档 Relay</p>
-            <InfoTip content="归档后的 Relay 不会参与自动测试，也不会出现在公开目录和榜单中；如有需要，可以在右侧抽屉中重新激活或编辑资料。" />
+            <InfoTip content="归档后的 Relay 不会参与自动测试，也不会出现在公开目录和榜单中" />
             <div className="flex flex-wrap gap-2 sm:ml-2">
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
                 共 {archivedRelays.length} 条
               </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
-                选中 {selectedRelay ? 1 : 0}
-              </span>
             </div>
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 历史</p>
-              <InfoTip content="点击某条归档 Relay 的“查看 / 编辑”后，会在右侧抽屉中展示详情和编辑界面。" />
-            </div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 历史</p>
           </div>
         </div>
 
@@ -114,7 +108,6 @@ export function RelayHistoryPage() {
                   <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">归档信息</p>
                   <p className="mt-1.5 text-sm text-white/72">最近更新 {formatDateTime(relay.updatedAt)}</p>
                   <p className="mt-1 text-sm text-white/58">{relay.contactInfo ?? "未填写联系方式"}</p>
-                  <p className="mt-1 text-xs text-white/46">可在抽屉中查看详情、编辑资料或重新激活。</p>
                 </div>
 
                 <div className="flex justify-end xl:justify-center">

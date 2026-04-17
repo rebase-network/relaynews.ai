@@ -1,5 +1,4 @@
 import * as Shared from "../shared";
-import { InfoTip } from "../components/info-tip";
 import { StatusBadge } from "../components/status-badge";
 
 const {
@@ -119,9 +118,7 @@ export function ModelsPage() {
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-white/72">共 {models.data.rows.length} 条</p>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">启用 {activeCount}</span>
-              <InfoTip content="列表只保留模型键值、推导出的提供方和价格单位等关键信息；模型名称与分类不再重复展示。" />
             </div>
-            <p className="text-sm text-white/48">模型键值是主信息，名称与分类由键值自动推导，不再单独维护。</p>
           </div>
 
           <div className="mt-3 space-y-2">

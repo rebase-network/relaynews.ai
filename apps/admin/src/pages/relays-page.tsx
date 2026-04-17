@@ -1,6 +1,5 @@
 import * as Shared from "../shared";
 import { AdminDrawer } from "../components/admin-drawer";
-import { InfoTip } from "../components/info-tip";
 import { RelayEditorForm } from "../components/relay-editor-form";
 import { RelayInspectorDrawer } from "../components/relay-inspector-drawer";
 import { StatusBadge } from "../components/status-badge";
@@ -186,7 +185,6 @@ export function RelaysPage() {
               <p className="text-sm text-white/72">共 {currentRelays.length} 条</p>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">启用中 {activeCount}</span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">已暂停 {pausedCount}</span>
-              <InfoTip content="当前数据量不大，列表不再提供搜索；点击某条 Relay 后，会在右侧抽屉中查看详情或继续编辑。" />
             </div>
             <div className="flex flex-wrap items-end gap-2.5">
               <label className="field-label w-[8.5rem]">
