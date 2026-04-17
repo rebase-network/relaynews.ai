@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document defines the initial PostgreSQL schema for the relay monitoring website.
+This document defines the current PostgreSQL schema for the relay monitoring website.
 
 The goal is to support:
 - relay catalog and model coverage
@@ -40,14 +40,21 @@ For MVP, the intended catalog lifecycle values are:
 - `retired`
 - `archived`
 
-## Initial Migration Notes
+## Current Migration Notes
 
-The first executable migration lives at `apps/api/db/migrations/0001_initial.sql`.
+The current executable schema is built by these migrations, in order:
+
+- `apps/api/db/migrations/0001_initial.sql`
+- `apps/api/db/migrations/0002_probe_credentials.sql`
+- `apps/api/db/migrations/0003_submission_description.sql`
 
 Concrete choices in that migration:
 - UUID primary keys use `gen_random_uuid()`, so the database enables `pgcrypto`
 - mutable tables use `updated_at` triggers
 - `probe_region` is concrete in the schema and defaults to `global`
+- current shared API contracts only expose the `global` region; additional regions
+  should not be treated as public MVP surface until the contracts and snapshot jobs
+  are expanded together
 - aggregation tables use surrogate UUID primary keys plus unique indexes, because
   `model_id` can be nullable and cannot safely participate in a normal composite
   primary key
@@ -173,6 +180,7 @@ Suggested columns:
 - `relay_name` text not null
 - `base_url` text not null
 - `website_url` text null
+- `description` text null
 - `notes` text null
 - `status` text not null default 'pending'
 - `review_notes` text null
@@ -187,6 +195,11 @@ Indexes:
 Notes:
 - `submissions` stays as the review queue and audit trail, not the long-term source of truth
 - once approved, the operational relay record lives in `relays`, and `approved_relay_id` links the review record back to that catalog entry
+- the current public submission contract requires `description` even though the
+  column was added in a follow-up migration for compatibility with earlier rows
+- `POST /public/submissions` is the review-flow entry point and persists the
+  submitter-provided test credential into `probe_credentials` for immediate
+  verification and later review follow-up
 
 ### probe_credentials
 Rotation-friendly monitoring credentials for either a pending submission or an approved relay.
@@ -219,6 +232,11 @@ Notes:
 - exactly one owner should be present on each row: either `submission_id` or `relay_id`
 - key rotation should create a new active row and mark the previous row as `rotated` or `revoked`
 - initial submit-time probes should write their latest verification snapshot back to this table
+- `POST /public/probe/check` is the separate self-check route and should not
+  persist user-supplied probe keys by default
+- when a submission is approved, the active monitoring credential should move from
+  the submission owner to the approved relay owner, either by transferring the row
+  or by rotating into a new `relay_id`-owned credential record
 
 ### sponsors
 Paid placement records kept separate from ranking logic.
@@ -456,6 +474,10 @@ Suggested `snapshot_key` examples:
 - `leaderboard:openai-gpt-4.1:global`
 - `leaderboard:claude-4-sonnet:global`
 
+Notes:
+- this snapshot table powers both model leaderboard pages and the
+  `/public/leaderboard-directory` preview payload used by the directory page
+
 ### relay_overview_snapshots
 Stores one fast summary row per relay for the detail page.
 
@@ -492,6 +514,8 @@ Notes:
   boundary before being exposed as one public page payload
 - `latestIncidents` inside the homepage payload should use the incident summary shape
   defined in `docs/API_CONTRACT_V1.md`
+- `latestIncidents` remains part of the homepage snapshot contract even when the
+  current homepage UI does not render a dedicated incidents block
 
 ## Retention And Jobs
 
@@ -514,6 +538,9 @@ MVP execution assumption:
 - `GET /public/home-summary`
   - source: `home_summary_snapshots`
   - key: `home:full-page`
+- `GET /public/leaderboard-directory`
+  - source: `leaderboard_snapshots`
+  - read model: aggregate the top preview rows per tracked model from current global snapshots
 - `GET /public/leaderboard/:modelKey`
   - source: `leaderboard_snapshots`
 - `GET /public/relay/:slug/overview`

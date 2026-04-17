@@ -3,6 +3,10 @@
 Use this checklist when wiring `relaynews-web` and `relaynews-admin` to GitHub
 through Cloudflare Workers Builds.
 
+Production deployments for `relaynews-web` and `relaynews-admin` must happen only
+through GitHub-triggered Workers Builds after committed changes are pushed. Do not
+publish either frontend through local `wrangler` commands or ops scripts.
+
 This document is intentionally operational and copy-paste friendly. The broader
 deployment context still lives in `docs/DEPLOYMENT.md`.
 
@@ -145,11 +149,11 @@ tsconfig.base.json
 
 After saving the configuration:
 
-1. trigger a manual build from the Cloudflare dashboard
-2. confirm the build succeeds
-3. confirm the Worker still owns the expected custom domain
-4. push a tiny commit to a non-production branch and verify preview behavior
-5. push or merge to `main` and verify production auto-deploy behavior
+1. confirm the Worker still owns the expected custom domain
+2. push a tiny committed change to a non-production branch and verify preview behavior
+3. push or merge a committed change to `main` and verify production auto-deploy behavior
+4. confirm the successful build entries are Git-triggered Workers Builds, not ad hoc
+   local frontend deploys
 
 ## Current Script Mapping
 
@@ -162,10 +166,10 @@ build:web:prod
 build:admin:prod
 ```
 
-## Recommended Operating Model
+## Required Operating Model
 
-- `relaynews-web` -> GitHub auto-deploy enabled; do not deploy it with any ops script
-- `relaynews-admin` -> GitHub auto-deploy enabled; do not deploy it with any ops script
+- `relaynews-web` -> GitHub auto-deploy enabled; use this as the only production deploy path
+- `relaynews-admin` -> GitHub auto-deploy enabled; use this as the only production deploy path
 - `relaynews-api-edge` -> manual deploy `./ops/manage-api-edge.sh deploy`
 - `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
 

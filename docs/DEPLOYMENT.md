@@ -16,7 +16,7 @@ This document describes the current deployment shape for the MVP.
 
 - `pnpm`
 - `Docker` for local validation and E2E
-- `wrangler` for Cloudflare deploys
+- `wrangler` for `api-edge` deploys and Cloudflare preview/tunnel checks
 - SSH access to `rebase@rebase.host` for API operations
 - Cloudflare account target: `5abb6d6f38eb7d3dabf8a5adf095c5f7`
 
@@ -58,8 +58,8 @@ repository build scripts:
 - `pnpm run build:web:prod` -> `relaynew.ai` + `api.relaynew.ai`
 - `pnpm run build:admin:prod` -> `admin.relaynew.ai` + `relaynew.ai` + `api.relaynew.ai`
 
-That means the normal GitHub -> Cloudflare Workers Builds path does not need
-dashboard-level `VITE_*` production URL variables.
+That means the required GitHub -> Cloudflare Workers Builds production path does
+not need dashboard-level `VITE_*` production URL variables.
 
 For local `api-edge` build or preview checks, plus manual `api-edge` deploys,
 `./ops/manage-api-edge.sh` accepts:
@@ -68,6 +68,8 @@ For local `api-edge` build or preview checks, plus manual `api-edge` deploys,
 
 The helper is reserved for `relaynews-api-edge` only. Frontend production host
 mapping stays in the repository build scripts and GitHub-connected Workers Builds.
+Do not use local `wrangler deploy` or any ops wrapper to publish `relaynews-web`
+or `relaynews-admin`.
 
 ## API Service Deploy Flow
 
@@ -172,7 +174,8 @@ Before the first production deploy, make sure:
   ./ops/manage-tunnel.sh apply
   ```
 
-1. Authenticate Wrangler if the local machine has not been set up yet:
+1. Authenticate Wrangler if the local machine has not been set up yet and you need
+   to work on `api-edge` locally:
 
    ```bash
    pnpm exec wrangler login
@@ -180,6 +183,7 @@ Before the first production deploy, make sure:
 
 2. Connect `relaynews-web` and `relaynews-admin` to GitHub through Workers Builds.
    Use the exact dashboard values documented in `docs/CLOUDFLARE_WORKERS_BUILDS.md`.
+   This setup is mandatory for production frontend deploys.
 
 3. Validate the API edge deploy config without publishing when you want a manual
    preflight check:
@@ -194,11 +198,13 @@ Before the first production deploy, make sure:
    ./ops/manage-api-edge.sh deploy
    ```
 
-5. Deploy `relaynews-web` and `relaynews-admin` only by pushing committed changes
-   to GitHub so Cloudflare Workers Builds runs automatically.
+5. Deploy `relaynews-web` and `relaynews-admin` only by committing and pushing
+   changes to the GitHub branch watched by Workers Builds so Cloudflare runs the
+   production publish automatically.
 
 Do not use any ops script to deploy `relaynews-web` or `relaynews-admin` in normal
-production flow.
+production flow. Do not run ad hoc local frontend production deploys outside the
+GitHub-triggered Workers Builds path.
 
 ## Cloudflare Worker Inventory
 
@@ -239,13 +245,13 @@ pnpm exec wrangler delete relaynews-api
 
 ## Cloudflare Git Auto-Deploy For `web` And `admin`
 
-The public site and admin site can be connected directly to GitHub through Workers
-Builds so pushes to the production branch deploy automatically.
+The public site and admin site must be connected directly to GitHub through
+Workers Builds so pushes to the production branch deploy automatically.
 
 For a shorter dashboard-oriented checklist, see
 `docs/CLOUDFLARE_WORKERS_BUILDS.md`.
 
-### Recommended Worker Mapping
+### Required Worker Mapping
 
 - `relaynews-web` -> `apps/web/wrangler.jsonc` -> `relaynew.ai`
 - `relaynews-admin` -> `apps/admin/wrangler.jsonc` -> `admin.relaynew.ai`
@@ -263,6 +269,9 @@ For each Worker, connect the same GitHub repository and set:
 ### Build Commands
 
 Set these commands in the Cloudflare dashboard under `Settings -> Builds`.
+They describe the GitHub-triggered Workers Builds pipeline; they are not a
+replacement for the rule that frontend production releases happen only after a
+commit is pushed to GitHub.
 
 For `relaynews-web`:
 
@@ -333,10 +342,10 @@ Notes:
 - Cloudflare can create and manage a build API token automatically, so a custom
   `CLOUDFLARE_API_TOKEN` is optional unless you want to manage it yourself
 
-### Recommended Operating Model
+### Required Operating Model
 
-- `relaynews-web` -> GitHub auto-deploy enabled
-- `relaynews-admin` -> GitHub auto-deploy enabled
+- `relaynews-web` -> GitHub auto-deploy enabled and used as the only production publish path
+- `relaynews-admin` -> GitHub auto-deploy enabled and used as the only production publish path
 - `relaynews-api-edge` -> manual deploy through `./ops/manage-api-edge.sh deploy`
 - `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
 

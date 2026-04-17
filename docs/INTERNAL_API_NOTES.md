@@ -37,9 +37,14 @@ Rules:
 Rules:
 
 - these routes are public-facing, but they are not cacheable content reads
+- `POST /public/probe/check` is owned by `apps/api/src/routes/probe.ts`
 - `POST /public/probe/check` remains isolated for SSRF-sensitive self-check logic
+  and does not persist user-supplied probe keys by default
+- `POST /public/submissions` is owned by `apps/api/src/routes/public.ts`
 - `POST /public/submissions` belongs to the public boundary and is no longer owned
   by the admin route module
+- `POST /public/submissions` persists the submitter-provided `testApiKey` and
+  `testModel` into `probe_credentials` for the review workflow
 - shared schemas for public submissions live in `packages/shared/src/submissions.ts`
 
 ### Admin APIs
@@ -69,6 +74,12 @@ Rules:
   - admin-only contracts
 - `packages/shared/src/probe.ts`
   - probe compatibility and probe diagnostic contracts
+
+## Current Internal Surface
+
+- the current repo does not expose a standalone `/internal/*` HTTP route surface yet
+- internal-only responsibilities currently live in background jobs, shared service
+  modules, and admin-triggered workflows rather than a separate transport boundary
 
 ## Operational Reminder
 
