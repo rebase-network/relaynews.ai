@@ -2203,6 +2203,7 @@ function SponsorsPage() {
   const sponsors = useLoadable<AdminSponsorsResponse>(() => fetchJson("/admin/sponsors"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedSponsorIds, setSelectedSponsorIds] = useState<string[]>([]);
   const [sponsorDeleteTarget, setSponsorDeleteTarget] = useState<AdminSponsorsResponse["rows"][number] | null>(null);
   const [form, setForm] = useState<SponsorFormState>(createDefaultSponsorFormState);
   const [fieldErrors, setFieldErrors] = useState<SponsorFormErrors>({});
@@ -2215,6 +2216,16 @@ function SponsorsPage() {
     setForm(createDefaultSponsorFormState());
     setFieldErrors({});
     setMutation({ pending: false, error: null, success: null });
+  }
+
+  function toggleSponsorSelection(id: string, checked: boolean) {
+    setSelectedSponsorIds((current) => {
+      if (checked) {
+        return current.includes(id) ? current : [...current, id];
+      }
+
+      return current.filter((value) => value !== id);
+    });
   }
 
   function beginEditingSponsor(row: AdminSponsorsResponse["rows"][number]) {
@@ -2284,14 +2295,116 @@ function SponsorsPage() {
     }
   }
 
+  async function bulkUpdateSponsorStatus(status: SponsorFormState["status"]) {
+    const selectedRows = sponsors.data?.rows.filter((row) => selectedSponsorIds.includes(row.id)) ?? [];
+
+    if (selectedRows.length === 0) {
+      return;
+    }
+
+    setMutation({ pending: true, error: null, success: null });
+    try {
+      for (const row of selectedRows) {
+        await fetchJson(`/admin/sponsors/${row.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            relayId: row.relayId,
+            name: row.name,
+            placement: row.placement,
+            status,
+            startAt: row.startAt,
+            endAt: row.endAt,
+          }),
+        });
+      }
+
+      if (editingId && selectedSponsorIds.includes(editingId)) {
+        setEditingId(null);
+        setForm(createDefaultSponsorFormState());
+        setFieldErrors({});
+        setSponsorDeleteTarget(null);
+      }
+
+      setSelectedSponsorIds([]);
+      setMutation({
+        pending: false,
+        error: null,
+        success: `已批量更新 ${selectedRows.length} 条赞助位状态。`,
+      });
+      await sponsors.reload();
+    } catch (reason) {
+      setMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "无法批量更新赞助位状态。",
+        success: null,
+      });
+    }
+  }
+
   if (sponsors.loading || relays.loading) return <LoadingCard />;
   if (sponsors.error || !sponsors.data || relays.error || !relays.data) return <ErrorCard message={sponsors.error ?? relays.error ?? "无法加载赞助位。"} />;
+
+  const sponsorRows = sponsors.data.rows;
+  const allSelected = sponsorRows.length > 0 && selectedSponsorIds.length === sponsorRows.length;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
       <Card title="赞助位列表" kicker="投放时间窗口">
         <div className="space-y-2.5">
-          {sponsors.data.rows.map((row) => (
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
+            支持勾选多条记录后批量调整投放状态，适合活动结束、统一暂停或重新启用时集中处理。
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">批量操作</p>
+              <p className="mt-1 text-sm text-white/62">
+                已选择 {selectedSponsorIds.length} 条 / 共 {sponsorRows.length} 条
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <label className="inline-flex items-center gap-2 text-sm text-white/70">
+                <input
+                  checked={allSelected}
+                  onChange={(event) =>
+                    setSelectedSponsorIds(event.target.checked ? sponsorRows.map((row) => row.id) : [])
+                  }
+                  type="checkbox"
+                />
+                全选本页
+              </label>
+              <button
+                className="pill pill-idle"
+                disabled={mutation.pending || selectedSponsorIds.length === 0}
+                onClick={() => {
+                  void bulkUpdateSponsorStatus("active");
+                }}
+                type="button"
+              >
+                批量设为投放中
+              </button>
+              <button
+                className="pill pill-idle"
+                disabled={mutation.pending || selectedSponsorIds.length === 0}
+                onClick={() => {
+                  void bulkUpdateSponsorStatus("paused");
+                }}
+                type="button"
+              >
+                批量暂停
+              </button>
+              <button
+                className="pill pill-idle"
+                disabled={mutation.pending || selectedSponsorIds.length === 0}
+                onClick={() => {
+                  void bulkUpdateSponsorStatus("ended");
+                }}
+                type="button"
+              >
+                批量结束
+              </button>
+            </div>
+          </div>
+          {sponsorRows.map((row) => (
             <div
               key={row.id}
               className={clsx(
@@ -2299,7 +2412,16 @@ function SponsorsPage() {
                 row.id === editingId ? "border-[#ffd06a]/70 bg-white/10" : "border-white/10 bg-white/5",
               )}
             >
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start justify-between gap-4">
+                <label className="inline-flex items-center gap-2 pt-1 text-sm text-white/70">
+                  <input
+                    aria-label={`选择赞助位 ${row.name}`}
+                    checked={selectedSponsorIds.includes(row.id)}
+                    onChange={(event) => toggleSponsorSelection(row.id, event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="sr-only">{row.name}</span>
+                </label>
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.name}</p>
                   <p className="mt-1 text-sm text-white/60">{row.placement}</p>

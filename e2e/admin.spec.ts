@@ -321,6 +321,68 @@ test("admin can edit sponsors and unbind relay after reload", async ({ page, req
   await expect(page.locator(".admin-list-card").filter({ hasText: updatedSponsorName })).toHaveCount(0);
 });
 
+test("admin can bulk update sponsor statuses", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Bulk sponsor updates are skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const relaySlug = `bulk-sponsor-relay-${runId}`;
+  const relayName = `Bulk Sponsor Relay ${runId}`;
+  const sponsorNameA = `Bulk Sponsor A ${runId}`;
+  const sponsorNameB = `Bulk Sponsor B ${runId}`;
+  const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+
+  const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      slug: relaySlug,
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      providerName: "Bulk Sponsor Ops",
+      websiteUrl: "https://example.com",
+      catalogStatus: "active",
+      isFeatured: false,
+      isSponsored: false,
+      description: "Created for bulk sponsor status coverage.",
+      docsUrl: `https://example.com/docs/${relaySlug}`,
+      notes: "Playwright bulk sponsor verification",
+    },
+  });
+  expect(relayResponse.ok()).toBeTruthy();
+  const relayPayload = (await relayResponse.json()) as { id: string };
+
+  for (const name of [sponsorNameA, sponsorNameB]) {
+    const sponsorResponse = await request.post(`${apiBaseUrl}/admin/sponsors`, {
+      headers: getAdminApiHeaders(),
+      data: {
+        relayId: relayPayload.id,
+        name,
+        placement: "leaderboard-spotlight",
+        status: "active",
+        startAt: "2026-04-01T00:00:00.000Z",
+        endAt: "2026-05-01T00:00:00.000Z",
+      },
+    });
+    expect(sponsorResponse.ok()).toBeTruthy();
+  }
+
+  await openAdmin(page, "/sponsors");
+  await page.getByLabel(`选择赞助位 ${sponsorNameA}`).check();
+  await page.getByLabel(`选择赞助位 ${sponsorNameB}`).check();
+  await page.getByRole("button", { name: "批量暂停" }).click();
+
+  await expect(page.getByText("已批量更新 2 条赞助位状态。", { exact: true })).toBeVisible();
+  const sponsorCardA = page.locator(".admin-list-card").filter({ hasText: sponsorNameA }).first();
+  const sponsorCardB = page.locator(".admin-list-card").filter({ hasText: sponsorNameB }).first();
+  await expect(sponsorCardA).toContainText("已暂停");
+  await expect(sponsorCardB).toContainText("已暂停");
+
+  await page.reload();
+  await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameA }).first()).toContainText("已暂停");
+  await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameB }).first()).toContainText("已暂停");
+});
+
 test("admin can edit and delete price records after reload", async ({ page, request }) => {
   test.skip(
     isDeployedRun && !allowDeployedWrites,
