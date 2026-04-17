@@ -151,6 +151,51 @@ test("admin can create a relay", async ({ page }) => {
   expect(after.relays).toBe(before.relays + 1);
 });
 
+test("admin can soft delete a relay without removing its row", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Relay soft delete is skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const before = await readOverviewTotals(page);
+  const relaySlug = `soft-delete-${Date.now()}`;
+  const relayName = `Soft Delete ${Date.now()}`;
+  const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+
+  const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      slug: relaySlug,
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      providerName: "Soft Delete Ops",
+      websiteUrl: "https://example.com",
+      catalogStatus: "active",
+      isFeatured: false,
+      isSponsored: false,
+      description: "Created to verify relay soft deletion.",
+      docsUrl: `https://example.com/docs/${relaySlug}`,
+      notes: "Playwright relay soft delete verification",
+    },
+  });
+  expect(relayResponse.ok()).toBeTruthy();
+
+  await openAdmin(page, "/relays");
+  const relayCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await expect(relayCard).toBeVisible();
+  await relayCard.getByRole("button", { name: "Soft delete" }).click();
+  await expect(page.getByText("Relay archived. The row stays in Postgres and drops out of public surfaces.")).toBeVisible();
+  await expect(relayCard).toContainText(/archived/i);
+  await expect(relayCard.getByRole("button", { name: "Soft delete" })).toHaveCount(0);
+  await expect(relayCard.getByText("Archived", { exact: true })).toBeVisible();
+
+  await page.reload();
+  const archivedCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await expect(archivedCard).toContainText(/archived/i);
+
+  const after = await readOverviewTotals(page);
+  expect(after.relays).toBe(before.relays + 1);
+});
+
 test("admin can create and manage probe credentials", async ({ page, request }) => {
   test.skip(
     isDeployedRun && !allowDeployedWrites,

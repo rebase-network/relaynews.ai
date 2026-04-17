@@ -754,6 +754,30 @@ function RelaysPage() {
     setFieldErrors({});
   }
 
+  async function softDeleteRelay(relay: AdminRelaysResponse["rows"][number]) {
+    setMutation({ pending: true, error: null, success: null });
+    try {
+      await fetchJson<{ ok: true }>(`/admin/relays/${relay.id}`, {
+        method: "DELETE",
+      });
+      if (editingId === relay.id) {
+        resetForm();
+      }
+      setMutation({
+        pending: false,
+        error: null,
+        success: "Relay archived. The row stays in Postgres and drops out of public surfaces.",
+      });
+      await relays.reload();
+    } catch (reason) {
+      setMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "Unable to archive relay.",
+        success: null,
+      });
+    }
+  }
+
   async function submit() {
     const { errors, payload } = validateRelayForm(form);
     setFieldErrors(errors);
@@ -801,8 +825,8 @@ function RelaysPage() {
       <Card title="Relay catalog" kicker="Current rows">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           This is the fastest post-approval checkpoint. You can confirm catalog status, see whether
-          a monitoring key is attached, and jump straight into key rotation without hunting through
-          multiple pages.
+          a monitoring key is attached, jump straight into key rotation, or soft delete a relay
+          without removing its database row.
         </div>
         <div className="space-y-2.5">
           {relays.data.rows.map((relay) => (
@@ -851,14 +875,28 @@ function RelaysPage() {
                       >
                         {credential ? "Manage key" : "Add key"}
                       </Link>
-                      <a
-                        className="pill pill-ghost"
-                        href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        Public page
-                      </a>
+                      {relay.catalogStatus !== "archived" ? (
+                        <a
+                          className="pill pill-ghost"
+                          href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          Public page
+                        </a>
+                      ) : null}
+                      {relay.catalogStatus !== "archived" ? (
+                        <button
+                          className="pill pill-ghost"
+                          disabled={mutation.pending}
+                          onClick={() => softDeleteRelay(relay)}
+                          type="button"
+                        >
+                          Soft delete
+                        </button>
+                      ) : (
+                        <span className="pill pill-ghost opacity-60">Archived</span>
+                      )}
                     </div>
                   </>
                 );

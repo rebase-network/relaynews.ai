@@ -193,6 +193,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         "ros.measured_at as measuredAt",
       ])
       .where("r.slug", "=", params.slug)
+      .where("r.status", "<>", "archived")
       .executeTakeFirst();
 
     if (!row) {
@@ -228,6 +229,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         .selectFrom("relays")
         .select(["id", "slug", "name"])
         .where("slug", "=", params.slug)
+        .where("status", "<>", "archived")
         .executeTakeFirst(),
     );
 
@@ -299,6 +301,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         .selectFrom("relays")
         .select(["id", "slug", "name"])
         .where("slug", "=", params.slug)
+        .where("status", "<>", "archived")
         .executeTakeFirst(),
     );
 
@@ -338,6 +341,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         .selectFrom("relays")
         .select(["id", "slug", "name"])
         .where("slug", "=", params.slug)
+        .where("status", "<>", "archived")
         .executeTakeFirst(),
     );
 
@@ -386,6 +390,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
         .selectFrom("relays")
         .select(["id", "slug", "name"])
         .where("slug", "=", params.slug)
+        .where("status", "<>", "archived")
         .executeTakeFirst(),
     );
 

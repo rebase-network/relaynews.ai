@@ -495,6 +495,32 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.delete("/admin/relays/:id", async (request) => {
+    const params = request.params as { id: string };
+    const relay = await app.db
+      .selectFrom("relays")
+      .select(["id"])
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    if (!relay) {
+      throw app.httpErrors.notFound("Relay not found");
+    }
+
+    await app.db
+      .updateTable("relays")
+      .set({
+        status: "archived",
+        is_featured: false,
+        is_sponsored: false,
+      })
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    await refreshPublicData(app.db);
+    return { ok: true };
+  });
+
   app.get("/admin/submissions", async () => {
     const rows = await app.db
       .selectFrom("submissions")
