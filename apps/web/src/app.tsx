@@ -3594,7 +3594,7 @@ function SubmitPage() {
           {fieldErrors.submitterEmail ? <span className="field-error">{fieldErrors.submitterEmail}</span> : null}
         </label>
         <label className="form-field">
-          测试 API 密钥
+          测试API Key
           <input
             className="input-shell mt-2"
             type="password"
