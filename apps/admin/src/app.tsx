@@ -266,8 +266,116 @@ function buildCredentialRoute(params: {
   return suffix ? `/credentials?${suffix}` : "/credentials";
 }
 
+const zhDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  hour12: false,
+});
+
+const zhDateFormatter = new Intl.DateTimeFormat("zh-CN", {
+  dateStyle: "medium",
+});
+
+const zhTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  timeStyle: "short",
+  hour12: false,
+});
+
+function formatDateTime(value: string) {
+  return zhDateTimeFormatter.format(new Date(value));
+}
+
+function formatDate(value: string) {
+  return zhDateFormatter.format(new Date(value));
+}
+
+function formatTime(value: string) {
+  return zhTimeFormatter.format(new Date(value));
+}
+
+function formatCatalogStatus(status: string) {
+  const labels: Record<string, string> = {
+    pending: "待处理",
+    active: "启用中",
+    paused: "已暂停",
+    retired: "已退役",
+    archived: "已归档",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatSubmissionStatus(status: string) {
+  const labels: Record<string, string> = {
+    pending: "待审核",
+    approved: "已通过",
+    rejected: "已拒绝",
+    archived: "已归档",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatCredentialStatus(status: string) {
+  const labels: Record<string, string> = {
+    active: "生效中",
+    rotated: "已轮换",
+    revoked: "已撤销",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatSponsorStatus(status: string) {
+  const labels: Record<string, string> = {
+    draft: "草稿",
+    active: "投放中",
+    paused: "已暂停",
+    ended: "已结束",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatHealthStatus(status: string | null | undefined) {
+  if (!status) {
+    return "未知";
+  }
+
+  const labels: Record<string, string> = {
+    healthy: "健康",
+    degraded: "降级",
+    down: "不可用",
+    unknown: "未知",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatCompatibilityMode(mode: ProbeCompatibilityMode) {
+  const labels: Record<ProbeCompatibilityMode, string> = {
+    auto: "自动检测",
+    "openai-responses": "OpenAI Responses",
+    "openai-chat-completions": "OpenAI Chat Completions",
+    "anthropic-messages": "Anthropic Messages",
+  };
+
+  return labels[mode];
+}
+
+function formatOverviewMetricLabel(label: string) {
+  const labels: Record<string, string> = {
+    relays: "中转站总数",
+    pendingSubmissions: "待审核提交",
+    activeSponsors: "投放中赞助位",
+    priceRecords: "价格记录",
+  };
+
+  return labels[label] ?? label;
+}
+
 function getRelayOptionLabel(relay: AdminRelaysResponse["rows"][number]) {
-  return relay.catalogStatus === "archived" ? `${relay.name} · archived` : relay.name;
+  return relay.catalogStatus === "archived" ? `${relay.name} · 已归档` : relay.name;
 }
 
 function buildRelaySelectOptions(
@@ -296,25 +404,25 @@ function validateRelayForm(form: AdminRelayUpsert) {
   const errors: RelayFormErrors = {};
 
   if (!payload.slug) {
-    errors.slug = "Slug is required.";
+    errors.slug = "请输入 Slug。";
   }
 
   if (!payload.name) {
-    errors.name = "Name is required.";
+    errors.name = "请输入名称。";
   }
 
   if (!payload.baseUrl) {
-    errors.baseUrl = "Base URL is required.";
+    errors.baseUrl = "请输入基础 URL。";
   } else if (!isValidHttpUrl(payload.baseUrl)) {
-    errors.baseUrl = "Enter a full base URL such as https://relay.example.ai/v1.";
+    errors.baseUrl = "请输入完整的基础 URL，例如 https://relay.example.ai/v1。";
   }
 
   if (payload.websiteUrl && !isValidHttpUrl(payload.websiteUrl)) {
-    errors.websiteUrl = "Enter a valid website URL such as https://relay.example.ai.";
+    errors.websiteUrl = "请输入有效的网站 URL，例如 https://relay.example.ai。";
   }
 
   if (payload.docsUrl && !isValidHttpUrl(payload.docsUrl)) {
-    errors.docsUrl = "Enter a valid docs URL such as https://relay.example.ai/docs.";
+    errors.docsUrl = "请输入有效的文档 URL，例如 https://relay.example.ai/docs。";
   }
 
   return { errors, payload };
@@ -332,27 +440,27 @@ function validateSponsorForm(form: SponsorFormState) {
   const errors: SponsorFormErrors = {};
 
   if (!payload.name) {
-    errors.name = "Sponsor name is required.";
+    errors.name = "请输入赞助名称。";
   }
 
   if (!payload.placement) {
-    errors.placement = "Placement is required.";
+    errors.placement = "请输入投放位标识。";
   }
 
   if (!payload.startAt) {
-    errors.startAt = "Start time is required.";
+    errors.startAt = "请输入开始时间。";
   } else if (!isValidTimestamp(payload.startAt)) {
-    errors.startAt = "Enter a valid ISO timestamp.";
+    errors.startAt = "请输入有效的 ISO 时间。";
   }
 
   if (!payload.endAt) {
-    errors.endAt = "End time is required.";
+    errors.endAt = "请输入结束时间。";
   } else if (!isValidTimestamp(payload.endAt)) {
-    errors.endAt = "Enter a valid ISO timestamp.";
+    errors.endAt = "请输入有效的 ISO 时间。";
   }
 
   if (!errors.startAt && !errors.endAt && new Date(payload.endAt) <= new Date(payload.startAt)) {
-    errors.endAt = "End time must be later than the start time.";
+    errors.endAt = "结束时间必须晚于开始时间。";
   }
 
   return { errors, payload };
@@ -373,30 +481,30 @@ function validatePriceForm(form: PriceFormState) {
   const errors: PriceFormErrors = {};
 
   if (!payload.relayId) {
-    errors.relayId = "Select a relay.";
+    errors.relayId = "请选择中转站。";
   }
 
   if (!payload.modelId) {
-    errors.modelId = "Select a model.";
+    errors.modelId = "请选择模型。";
   }
 
   if (parsedInputPricePer1M !== null && (Number.isNaN(parsedInputPricePer1M) || parsedInputPricePer1M < 0)) {
-    errors.inputPricePer1M = "Input price must be a non-negative number.";
+    errors.inputPricePer1M = "输入价必须是大于或等于 0 的数字。";
   }
 
   if (parsedOutputPricePer1M !== null && (Number.isNaN(parsedOutputPricePer1M) || parsedOutputPricePer1M < 0)) {
-    errors.outputPricePer1M = "Output price must be a non-negative number.";
+    errors.outputPricePer1M = "输出价必须是大于或等于 0 的数字。";
   }
 
   if (parsedInputPricePer1M === null && parsedOutputPricePer1M === null) {
-    errors.inputPricePer1M = "Provide at least one price field.";
-    errors.outputPricePer1M = "Provide at least one price field.";
+    errors.inputPricePer1M = "至少填写一个价格字段。";
+    errors.outputPricePer1M = "至少填写一个价格字段。";
   }
 
   if (!payload.effectiveFrom) {
-    errors.effectiveFrom = "Effective time is required.";
+    errors.effectiveFrom = "请输入生效时间。";
   } else if (!isValidTimestamp(payload.effectiveFrom)) {
-    errors.effectiveFrom = "Enter a valid ISO timestamp.";
+    errors.effectiveFrom = "请输入有效的 ISO 时间。";
   }
 
   return { errors, payload };
@@ -413,15 +521,15 @@ function validateProbeCredentialForm(form: ProbeCredentialFormState) {
   const errors: ProbeCredentialFormErrors = {};
 
   if (!payload.ownerId) {
-    errors.ownerId = `Select a ${payload.ownerType}.`;
+    errors.ownerId = payload.ownerType === "relay" ? "请选择中转站。" : "请选择归属对象。";
   }
 
   if (!payload.apiKey) {
-    errors.apiKey = "API key is required.";
+    errors.apiKey = "请输入 API Key。";
   }
 
   if (!payload.testModel) {
-    errors.testModel = "Test model is required.";
+    errors.testModel = "请输入测试模型。";
   }
 
   return { errors, payload };
@@ -445,7 +553,7 @@ function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
       })
       .catch((reason: unknown) => {
         if (active) {
-          setError(reason instanceof Error ? reason.message : "Unknown error");
+          setError(reason instanceof Error ? reason.message : "发生未知错误");
         }
       })
       .finally(() => {
@@ -477,12 +585,12 @@ function AdminShell({
   onLogout: () => void;
 }) {
   const items = [
-    ["/", "Overview"],
-    ["/relays", "Relays"],
-    ["/intake", "Intake"],
-    ["/credentials", "Keys"],
-    ["/sponsors", "Sponsors"],
-    ["/prices", "Prices"],
+    ["/", "概览"],
+    ["/relays", "中转站"],
+    ["/intake", "审核队列"],
+    ["/credentials", "密钥"],
+    ["/sponsors", "赞助位"],
+    ["/prices", "价格"],
   ] as const;
 
   return (
@@ -498,12 +606,12 @@ function AdminShell({
                   <span className="bg-[#fb6424]" />
                   <span className="bg-[#fa520f]" />
                 </div>
-                relaynew.ai admin
+                relaynew.ai 管理台
               </div>
               <div>
-                <h1 className="text-3xl tracking-[-0.05em] md:text-4xl">Operate the relay catalog, sponsorships, and pricing lanes.</h1>
+                <h1 className="text-3xl tracking-[-0.05em] md:text-4xl">统一管理中转站目录、赞助位与价格记录。</h1>
                 <p className="mt-2.5 max-w-2xl text-sm leading-6 text-white/60">
-                  Review relay inventory, approve inbound submissions, and keep sponsor and pricing operations on a dedicated control deck.
+                  在一个中文化控制台里处理提交审核、目录维护、赞助投放和价格更新。
                 </p>
               </div>
             </div>
@@ -522,11 +630,11 @@ function AdminShell({
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2.5">
                 <a className="pill pill-ghost" href={PUBLIC_SITE_URL} target="_blank" rel="noreferrer">
-                  Public site
+                  前台站点
                 </a>
                 {showLogout ? (
                   <button className="pill pill-idle" type="button" onClick={onLogout}>
-                    Sign out
+                    退出登录
                   </button>
                 ) : null}
               </div>
@@ -599,12 +707,12 @@ function ConfirmDialog({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <p className="eyebrow">Confirm action</p>
+        <p className="eyebrow">请确认操作</p>
         <h3 className="text-2xl tracking-[-0.04em]">{title}</h3>
         <p className="mt-3 text-sm leading-6 text-white/64">{message}</p>
         <div className="mt-5 flex flex-wrap justify-end gap-2.5">
           <button className="pill pill-idle" disabled={pending} onClick={onCancel} type="button">
-            Cancel
+            取消
           </button>
           <button className="pill pill-active" disabled={pending} onClick={onConfirm} type="button">
             {pending ? confirmPendingLabel : confirmLabel}
@@ -616,7 +724,7 @@ function ConfirmDialog({
 }
 
 function LoadingCard() {
-  return <div className="card text-sm uppercase tracking-[0.16em] text-white/55">Loading...</div>;
+  return <div className="card text-sm uppercase tracking-[0.16em] text-white/55">加载中...</div>;
 }
 
 function ErrorCard({ message }: { message: string }) {
@@ -653,9 +761,9 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
       onAuthenticated(authorization);
     } catch (reason) {
       if (reason instanceof ApiRequestError && reason.statusCode === 401) {
-        setError("Invalid admin credentials.");
+        setError("管理员账号或密码不正确。");
       } else {
-        setError(reason instanceof Error ? reason.message : "Unable to sign in.");
+        setError(reason instanceof Error ? reason.message : "登录失败，请稍后重试。");
       }
     } finally {
       setPending(false);
@@ -666,14 +774,14 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
     <div className="admin-shell min-h-screen bg-[var(--bg)] text-white">
       <main className="admin-main mx-auto flex min-h-screen max-w-7xl items-center justify-center px-5 lg:px-10">
         <section className="card w-full max-w-md">
-          <p className="eyebrow">Admin auth</p>
-          <h1 className="text-3xl tracking-[-0.04em] md:text-[2rem]">Sign in to continue</h1>
+          <p className="eyebrow">管理员认证</p>
+          <h1 className="text-3xl tracking-[-0.04em] md:text-[2rem]">登录后继续</h1>
           <p className="mt-3 text-sm leading-6 text-white/62">
-            The admin UI now requires credentials before it can load intake, relay, sponsor, or pricing operations.
+            管理后台需要先完成身份验证，才能访问审核队列、中转站、赞助位和价格管理。
           </p>
           <form className="mt-5 grid gap-3" onSubmit={handleSubmit}>
             <label className="field-label">
-              Username
+              用户名
               <input
                 autoComplete="username"
                 className="field-input"
@@ -685,7 +793,7 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
               />
             </label>
             <label className="field-label">
-              Password
+              密码
               <input
                 autoComplete="current-password"
                 className="field-input"
@@ -698,7 +806,7 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
             </label>
             {error ? <p className="text-sm text-[#ffb59c]">{error}</p> : null}
             <button className="pill pill-active justify-center" disabled={pending} type="submit">
-              {pending ? "Checking..." : "Sign in"}
+              {pending ? "验证中..." : "登录"}
             </button>
           </form>
         </section>
@@ -710,43 +818,43 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
 function OverviewPage() {
   const { data, loading, error } = useLoadable<AdminOverviewResponse>(() => fetchJson("/admin/overview"), []);
   if (loading) return <LoadingCard />;
-  if (error || !data) return <ErrorCard message={error ?? "Unable to load admin overview."} />;
+  if (error || !data) return <ErrorCard message={error ?? "无法加载管理概览。"} />;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Object.entries(data.totals).map(([label, value]) => (
-          <Card key={label} title={String(value)} kicker={label.replace(/[A-Z]/g, (match) => ` ${match.toLowerCase()}`)}>
-            <p className="text-sm text-white/60">Measured at {new Date(data.measuredAt).toLocaleTimeString()}</p>
+          <Card key={label} title={String(value)} kicker={formatOverviewMetricLabel(label)}>
+            <p className="text-sm text-white/60">统计时间：{formatTime(data.measuredAt)}</p>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card title="Primary flow" kicker="Daily operator path">
+        <Card title="核心流程" kicker="运营日常路径">
           <div className="grid gap-3 md:grid-cols-3">
             {[
               {
                 step: "1",
-                title: "Review intake",
-                text: "Start with the intake queue. Pending rows already include the initial probe snapshot and submitter key preview.",
-                action: { href: "/intake", label: "Open intake" },
+                title: "先看审核队列",
+                text: "先处理审核队列。待审核记录已经带有初始 Probe 快照和提交密钥预览。",
+                action: { href: "/intake", label: "打开审核队列" },
               },
               {
                 step: "2",
-                title: "Approve & activate",
-                text: "Approval links or creates the relay, moves the active key, and starts the first relay-owned monitoring probe.",
-                action: { href: "/intake", label: "Approve queue" },
+                title: "批准并启用",
+                text: "批准后会关联或创建中转站、迁移启用中的密钥，并启动首次 Relay 自有监测。",
+                action: { href: "/intake", label: "处理待审核项" },
               },
               {
                 step: "3",
-                title: "Operate later",
-                text: "Use relays for catalog edits and use credentials only when a monitoring key needs rotation, deletion, or repair.",
-                action: { href: "/relays", label: "Open relays" },
+                title: "后续运营维护",
+                text: "目录信息在 Relay 页面维护；密钥页只处理轮换、删除或修复等后续操作。",
+                action: { href: "/relays", label: "打开 Relay 页面" },
               },
             ].map((item) => (
               <div key={item.step} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">Step {item.step}</p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">步骤 {item.step}</p>
                 <p className="mt-2 text-lg tracking-[-0.03em]">{item.title}</p>
                 <p className="mt-2 text-sm leading-6 text-white/62">{item.text}</p>
                 <Link className="pill pill-idle mt-4 inline-flex" to={item.action.href}>
@@ -757,19 +865,19 @@ function OverviewPage() {
           </div>
         </Card>
 
-        <Card title="Where to go" kicker="Fast lanes">
+        <Card title="快捷入口" kicker="常用页面">
           <div className="grid gap-3">
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/intake">
-              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Intake</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Work pending intake first</p>
+              <p className="text-sm uppercase tracking-[0.16em] text-white/42">审核队列</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">优先处理待审核提交</p>
             </Link>
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/relays">
-              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Catalog</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Check relay status and metadata</p>
+              <p className="text-sm uppercase tracking-[0.16em] text-white/42">目录管理</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">查看 Relay 状态与元数据</p>
             </Link>
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/credentials">
-              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Relay keys</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Rotate or recover monitoring keys</p>
+              <p className="text-sm uppercase tracking-[0.16em] text-white/42">Relay 密钥</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">轮换或恢复监测密钥</p>
             </Link>
           </div>
         </Card>
@@ -840,14 +948,14 @@ function RelaysPage() {
       setMutation({
         pending: false,
         error: null,
-        success: "Relay archived. It is hidden from relay operations but stays in Postgres.",
+        success: "中转站已归档。它会从运营视图中隐藏，但仍保留在 Postgres 中。",
       });
       await relays.reload();
     } catch (reason) {
       setRelayDeleteTarget(null);
       setMutation({
         pending: false,
-        error: reason instanceof Error ? reason.message : "Unable to archive relay.",
+        error: reason instanceof Error ? reason.message : "无法归档中转站。",
         success: null,
       });
     }
@@ -857,7 +965,7 @@ function RelaysPage() {
     const { errors, payload } = validateRelayForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setMutation({ pending: false, error: "Please fix the highlighted relay fields before saving.", success: null });
+      setMutation({ pending: false, error: "请先修正高亮字段，再保存中转站。", success: null });
       return;
     }
 
@@ -868,11 +976,11 @@ function RelaysPage() {
         method: editingId ? "PATCH" : "POST",
         body: JSON.stringify(payload),
       });
-      setMutation({ pending: false, error: null, success: editingId ? "Relay updated." : "Relay created." });
+      setMutation({ pending: false, error: null, success: editingId ? "中转站已更新。" : "中转站已创建。" });
       resetForm();
       await relays.reload();
     } catch (reason) {
-      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to save relay.", success: null });
+      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法保存中转站。", success: null });
     }
   }
 
@@ -892,30 +1000,29 @@ function RelaysPage() {
 
   if (relays.loading || credentials.loading) return <LoadingCard />;
   if (relays.error || credentials.error || !relays.data || !credentials.data) {
-    return <ErrorCard message={relays.error ?? credentials.error ?? "Unable to load relays."} />;
+    return <ErrorCard message={relays.error ?? credentials.error ?? "无法加载中转站列表。"} />;
   }
 
   const visibleRelays = relays.data.rows.filter((relay) => relay.catalogStatus !== "archived");
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <Card title="Relay catalog" kicker="Current rows">
+      <Card title="中转站目录" kicker="当前记录">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
-          This is the fastest post-approval checkpoint. You can confirm catalog status, see whether
-          a monitoring key is attached, jump straight into key rotation, or soft delete a relay
-          without removing its database row.
+          这里是审核通过后的最快检查点。你可以确认目录状态、查看是否已绑定监测密钥，直接进入密钥轮换，
+          也可以在不删除数据库记录的前提下归档一个中转站。
         </div>
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay rows</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Active and editable relays</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">中转站列表</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">当前可编辑的启用记录</p>
             </div>
-            <p className="text-sm text-white/48">{visibleRelays.length} rows</p>
+            <p className="text-sm text-white/48">共 {visibleRelays.length} 条</p>
           </div>
           {visibleRelays.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-              No relay rows available right now.
+              当前还没有可展示的中转站记录。
             </div>
           ) : visibleRelays.map((relay) => (
             <div
@@ -925,11 +1032,11 @@ function RelaysPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">{relay.slug} · {relay.catalogStatus}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">{relay.slug} · {formatCatalogStatus(relay.catalogStatus)}</p>
                 </div>
                 <div className="text-right text-xs uppercase tracking-[0.14em] text-white/50">
-                  <p>{relay.isFeatured ? "featured" : "standard"}</p>
-                  <p>{relay.isSponsored ? "sponsor hint" : "organic"}</p>
+                  <p>{relay.isFeatured ? "精选展示" : "标准展示"}</p>
+                  <p>{relay.isSponsored ? "带赞助提示" : "自然位"}</p>
                 </div>
               </div>
               {(() => {
@@ -939,19 +1046,19 @@ function RelaysPage() {
                   <>
                     <p className="mt-3 text-sm text-white/62">{relay.baseUrl}</p>
                     <p className={clsx("mt-3 text-sm", credential ? "text-white/72" : "text-[#ffd06a]")}>
-                      {credential ? `Monitoring key · ${credential.status}` : "Monitoring key missing"}
+                      {credential ? `监测密钥 · ${formatCredentialStatus(credential.status)}` : "缺少监测密钥"}
                     </p>
                     <p className="mt-1 text-sm text-white/55">
                       {credential
-                        ? `${credential.testModel} · ${credential.lastHealthStatus ?? "unknown"}${credential.lastHttpStatus ? ` · ${credential.lastHttpStatus}` : ""}`
-                        : "Attach a relay-owned key so scheduled probe runs can start."}
+                        ? `${credential.testModel} · ${formatHealthStatus(credential.lastHealthStatus)}${credential.lastHttpStatus ? ` · ${credential.lastHttpStatus}` : ""}`
+                        : "请先绑定中转站自有监测密钥，定时 Probe 才能开始运行。"}
                       {credential?.lastVerifiedAt
-                        ? ` · ${new Date(credential.lastVerifiedAt).toLocaleString()}`
+                        ? ` · ${formatDateTime(credential.lastVerifiedAt)}`
                         : ""}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button className="pill pill-active" onClick={() => beginEditingRelay(relay)} type="button">
-                        Edit relay
+                        编辑中转站
                       </button>
                       <Link
                         className="pill pill-idle"
@@ -961,7 +1068,7 @@ function RelaysPage() {
                           ownerId: relay.id,
                         })}
                       >
-                        {credential ? "Manage key" : "Add key"}
+                        {credential ? "管理密钥" : "添加密钥"}
                       </Link>
                       <a
                         className="pill pill-ghost"
@@ -969,7 +1076,7 @@ function RelaysPage() {
                         rel="noreferrer"
                         target="_blank"
                       >
-                        Public page
+                        前台详情页
                       </a>
                       <button
                         className="pill pill-ghost"
@@ -977,7 +1084,7 @@ function RelaysPage() {
                         onClick={() => setRelayDeleteTarget(relay)}
                         type="button"
                       >
-                        Soft delete
+                        归档
                       </button>
                     </div>
                   </>
@@ -987,11 +1094,11 @@ function RelaysPage() {
           ))}
         </div>
         <ConfirmDialog
-          confirmLabel="Archive relay"
-          confirmPendingLabel="Archiving..."
+          confirmLabel="归档中转站"
+          confirmPendingLabel="归档中..."
           message={
             relayDeleteTarget
-              ? `${relayDeleteTarget.name} will be archived and hidden from relay operations. The row still stays in Postgres.`
+              ? `${relayDeleteTarget.name} 将被归档并从运营列表中隐藏，但记录仍会保留在 Postgres 中。`
               : ""
           }
           onCancel={() => setRelayDeleteTarget(null)}
@@ -1002,17 +1109,17 @@ function RelaysPage() {
           }}
           open={Boolean(relayDeleteTarget)}
           pending={mutation.pending}
-          title={relayDeleteTarget ? `Archive ${relayDeleteTarget.name}?` : ""}
+          title={relayDeleteTarget ? `确认归档 ${relayDeleteTarget.name}？` : ""}
         />
       </Card>
-      <Card title={editingId ? "Edit relay" : "Create relay"} kicker="Write path">
+      <Card title={editingId ? "编辑中转站" : "创建中转站"} kicker="写入操作">
         <div className="grid gap-2.5">
           {([
-            { label: "Slug", key: "slug", placeholder: "northwind-relay", type: "text" },
-            { label: "Name", key: "name", placeholder: "Northwind Relay", type: "text" },
-            { label: "Base URL", key: "baseUrl", placeholder: "https://northwind.example.ai/v1", type: "url" },
-            { label: "Provider", key: "providerName", placeholder: "Northwind Labs", type: "text" },
-            { label: "Website", key: "websiteUrl", placeholder: "https://northwind.example.ai", type: "url" },
+            { label: "标识 Slug", key: "slug", placeholder: "northwind-relay", type: "text" },
+            { label: "名称", key: "name", placeholder: "北风中转站", type: "text" },
+            { label: "基础 URL", key: "baseUrl", placeholder: "https://northwind.example.ai/v1", type: "url" },
+            { label: "提供方", key: "providerName", placeholder: "Northwind Labs", type: "text" },
+            { label: "官网地址", key: "websiteUrl", placeholder: "https://northwind.example.ai", type: "url" },
           ] as const).map(({ label, key, placeholder, type }) => (
             <label key={key} className="field-label">
               {label}
@@ -1035,20 +1142,20 @@ function RelaysPage() {
             </label>
           ))}
           <label className="field-label">
-            Catalog status
+            目录状态
             <select className="field-input" value={form.catalogStatus} onChange={(event) => setForm((current) => ({ ...current, catalogStatus: event.target.value as AdminRelayUpsert["catalogStatus"] }))}>
-              <option value="active">active</option>
-              <option value="paused">paused</option>
-              <option value="pending">pending</option>
-              <option value="retired">retired</option>
-              <option value="archived">archived</option>
+              <option value="active">启用中</option>
+              <option value="paused">已暂停</option>
+              <option value="pending">待处理</option>
+              <option value="retired">已退役</option>
+              <option value="archived">已归档</option>
             </select>
           </label>
-          <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isFeatured} onChange={(event) => setForm((current) => ({ ...current, isFeatured: event.target.checked }))} /> Featured</label>
-          <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isSponsored} onChange={(event) => setForm((current) => ({ ...current, isSponsored: event.target.checked }))} /> Sponsor hint</label>
+          <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isFeatured} onChange={(event) => setForm((current) => ({ ...current, isFeatured: event.target.checked }))} /> 设为精选</label>
+          <label className="inline-flex items-center gap-3 text-sm text-white/70"><input type="checkbox" checked={form.isSponsored} onChange={(event) => setForm((current) => ({ ...current, isSponsored: event.target.checked }))} /> 显示赞助提示</label>
           <div className="flex gap-2.5">
-            <button className="pill pill-active" disabled={mutation.pending} onClick={submit} type="button">{mutation.pending ? "Saving..." : editingId ? "Update" : "Create"}</button>
-            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>Clear</button> : null}
+            <button className="pill pill-active" disabled={mutation.pending} onClick={submit} type="button">{mutation.pending ? "保存中..." : editingId ? "更新" : "创建"}</button>
+            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>清空</button> : null}
           </div>
           <Notice state={mutation} />
         </div>
@@ -1075,12 +1182,12 @@ function IntakePage() {
         error: null,
         success:
           status === "approved"
-            ? "Submission approved. Relay activated, credential moved, and monitoring started."
-            : `Submission ${status}.`,
+            ? "提交已通过，Relay 已启用，密钥已迁移，并已启动监测。"
+            : `提交已标记为${formatSubmissionStatus(status)}。`,
       });
       await submissions.reload();
     } catch (reason) {
-      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to review submission.", success: null });
+      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法处理提交记录。", success: null });
     }
   }
 
@@ -1096,7 +1203,7 @@ function IntakePage() {
 
   if (submissions.loading || relays.loading) return <LoadingCard />;
   if (submissions.error || relays.error || !submissions.data || !relays.data) {
-    return <ErrorCard message={submissions.error ?? relays.error ?? "Unable to load submissions."} />;
+    return <ErrorCard message={submissions.error ?? relays.error ?? "无法加载提交记录。"} />;
   }
 
   const pendingRows = submissions.data.rows.filter((row) => row.status === "pending");
@@ -1105,30 +1212,28 @@ function IntakePage() {
   const needsAttention = pendingRows.filter((row) => row.probeCredential?.lastProbeOk === false).length;
 
   return (
-    <Card title="Intake queue" kicker="Review lane">
+    <Card title="审核队列" kicker="审核操作">
       <div className="space-y-3">
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white/68">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">Approval flow</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">批准流程</p>
           <p className="mt-2 text-white/78">
-            Approve now handles the full intake handoff in one step: create or link the relay,
-            move the test credential, activate the relay, run the first monitoring probe, and
-            refresh the public snapshots.
+            现在点击批准即可一次完成完整交接：创建或关联中转站、迁移测试密钥、启用 Relay、执行首次监测，并刷新公开快照。
           </p>
           <p className="mt-2 text-white/54">
-            Use the credentials page later for rotation, deletion, or recovery work.
+            后续轮换、删除或恢复操作请到密钥页面处理。
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Pending</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">待审核</p>
             <p className="mt-2 text-3xl tracking-[-0.04em]">{pendingRows.length}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Approved</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">已通过</p>
             <p className="mt-2 text-3xl tracking-[-0.04em]">{approvedRows.length}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Needs attention</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">需关注</p>
             <p className="mt-2 text-3xl tracking-[-0.04em]">{needsAttention}</p>
           </div>
         </div>
@@ -1136,15 +1241,15 @@ function IntakePage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Pending intake</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">Review these first</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">待审核提交</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">优先处理这些记录</p>
             </div>
-            <p className="text-sm text-white/48">{pendingRows.length} pending</p>
+            <p className="text-sm text-white/48">共 {pendingRows.length} 条待审核</p>
           </div>
 
           {pendingRows.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-              No pending submissions right now.
+              当前没有待审核提交。
             </div>
           ) : pendingRows.map((row) => (
             <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
@@ -1152,39 +1257,39 @@ function IntakePage() {
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
                   <p className="mt-1 text-sm text-white/60">{row.baseUrl}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.status} · {new Date(row.createdAt).toLocaleString()}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{formatSubmissionStatus(row.status)} · {formatDateTime(row.createdAt)}</p>
                   {row.description ? (
                     <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
-                      <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">Relay description</p>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">Relay 说明</p>
                       <p className="mt-2 text-sm leading-6 text-white/72">{row.description}</p>
                     </div>
                   ) : null}
                   {row.probeCredential ? (
                     <div className="mt-3 space-y-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/65">
                       <p>
-                        Credential · {row.probeCredential.status} · {row.probeCredential.apiKeyPreview}
+                        关联密钥 · {formatCredentialStatus(row.probeCredential.status)} · {row.probeCredential.apiKeyPreview}
                       </p>
                       <p>
-                        Probe · {row.probeCredential.testModel} · {row.probeCredential.lastHealthStatus ?? "unknown"}
+                        Probe · {row.probeCredential.testModel} · {formatHealthStatus(row.probeCredential.lastHealthStatus)}
                         {row.probeCredential.lastHttpStatus ? ` · ${row.probeCredential.lastHttpStatus}` : ""}
                         {row.probeCredential.lastVerifiedAt
-                          ? ` · ${new Date(row.probeCredential.lastVerifiedAt).toLocaleString()}`
+                          ? ` · ${formatDateTime(row.probeCredential.lastVerifiedAt)}`
                           : ""}
                       </p>
                       {row.probeCredential.lastMessage ? <p className="text-white/48">{row.probeCredential.lastMessage}</p> : null}
                     </div>
                   ) : null}
                   <p className="mt-3 text-sm text-white/48">
-                    Approval will activate this relay immediately and start public monitoring.
+                    批准后会立即启用该 Relay，并开始公开监测。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button className="pill pill-active" type="button" onClick={() => review(row.id, "approved")}>Approve &amp; activate</button>
-                  <button className="pill pill-idle" type="button" onClick={() => review(row.id, "rejected")}>Reject</button>
-                  <button className="pill pill-ghost" type="button" onClick={() => review(row.id, "archived")}>Archive</button>
+                  <button className="pill pill-active" type="button" onClick={() => review(row.id, "approved")}>批准并启用</button>
+                  <button className="pill pill-idle" type="button" onClick={() => review(row.id, "rejected")}>拒绝</button>
+                  <button className="pill pill-ghost" type="button" onClick={() => review(row.id, "archived")}>归档</button>
                 </div>
               </div>
-              <textarea className="field-input mt-3 min-h-24" placeholder="Review notes" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
+              <textarea className="field-input mt-3 min-h-24" placeholder="审核备注" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
             </div>
           ))}
         </div>
@@ -1193,10 +1298,10 @@ function IntakePage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Activated relays</p>
-                <p className="mt-1 text-lg tracking-[-0.03em]">Recently approved handoffs</p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">已启用 Relay</p>
+                <p className="mt-1 text-lg tracking-[-0.03em]">最近完成的交接</p>
               </div>
-              <p className="text-sm text-white/48">{approvedRows.length} approved</p>
+              <p className="text-sm text-white/48">共 {approvedRows.length} 条已通过</p>
             </div>
 
             {approvedRows.slice(0, 8).map((row) => (
@@ -1205,14 +1310,14 @@ function IntakePage() {
                   <div>
                     <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
                     <p className="mt-1 text-sm text-white/60">{row.baseUrl}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.status} · {new Date(row.createdAt).toLocaleString()}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{formatSubmissionStatus(row.status)} · {formatDateTime(row.createdAt)}</p>
                     {row.description ? <p className="mt-3 text-sm leading-6 text-white/64">{row.description}</p> : null}
-                    {row.approvedRelay ? <p className="mt-2 text-sm text-emerald-300/80">Linked relay · {row.approvedRelay.name}</p> : null}
+                    {row.approvedRelay ? <p className="mt-2 text-sm text-emerald-300/80">已关联中转站 · {row.approvedRelay.name}</p> : null}
                     {row.probeCredential ? (
                       <p className="mt-3 text-sm text-white/55">
-                        Intake credential snapshot · {row.probeCredential.testModel} · {row.probeCredential.lastHealthStatus ?? "unknown"}
+                        审核快照 · {row.probeCredential.testModel} · {formatHealthStatus(row.probeCredential.lastHealthStatus)}
                         {row.probeCredential.lastVerifiedAt
-                          ? ` · ${new Date(row.probeCredential.lastVerifiedAt).toLocaleString()}`
+                          ? ` · ${formatDateTime(row.probeCredential.lastVerifiedAt)}`
                           : ""}
                       </p>
                     ) : null}
@@ -1235,11 +1340,11 @@ function IntakePage() {
                               })(),
                             )}
                           >
-                            Manage key
+                            管理密钥
                           </Link>
                         ) : null}
                         <Link className="pill pill-idle" to="/relays">
-                          Open relay ops
+                          打开 Relay 运营页
                         </Link>
                         <a
                           className="pill pill-ghost"
@@ -1247,13 +1352,13 @@ function IntakePage() {
                           rel="noreferrer"
                           target="_blank"
                         >
-                          Open public page
+                          打开前台页面
                         </a>
                       </>
                     ) : null}
                   </div>
                 </div>
-                <textarea className="field-input mt-3 min-h-24" placeholder="Review notes" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
+                <textarea className="field-input mt-3 min-h-24" placeholder="审核备注" value={notes[row.id] ?? row.reviewNotes ?? ""} onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))} />
               </div>
             ))}
           </div>
@@ -1262,13 +1367,13 @@ function IntakePage() {
         {closedRows.length > 0 ? (
           <details className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
             <summary className="cursor-pointer list-none text-sm uppercase tracking-[0.16em] text-white/45">
-              Closed items · {closedRows.length}
+              已关闭记录 · {closedRows.length}
             </summary>
             <div className="mt-3 space-y-2.5">
               {closedRows.slice(0, 8).map((row) => (
                 <div key={row.id} className="rounded-2xl border border-white/10 bg-black/10 px-3 py-3 text-sm text-white/60">
                   <p className="text-white/78">{row.relayName}</p>
-                  <p className="mt-1">{row.status} · {new Date(row.createdAt).toLocaleString()}</p>
+                  <p className="mt-1">{formatSubmissionStatus(row.status)} · {formatDateTime(row.createdAt)}</p>
                 </div>
               ))}
             </div>
@@ -1418,15 +1523,15 @@ function CredentialsPage() {
         pending: false,
         error: null,
         success: response.probe
-          ? `Monitoring key attached. Initial probe ${response.probe.ok ? "passed" : "needs review"}.`
-          : "Monitoring key attached.",
+          ? `监测密钥已绑定。初始 Probe ${response.probe.ok ? "通过" : "需要人工复核"}。`
+          : "监测密钥已绑定。",
       });
       setCreateForm((current) => ({ ...current, ownerId: "", apiKey: "" }));
       setFieldErrors({});
       setSelectedCredentialId(response.id);
       await reloadCredentialViews(response.id);
     } catch (reason) {
-      setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to attach key.", success: null });
+      setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法绑定监测密钥。", success: null });
     }
   }
 
@@ -1444,12 +1549,12 @@ function CredentialsPage() {
         pending: false,
         error: null,
         success: response.probe
-          ? `Probe rerun complete: ${response.probe.healthStatus}${response.probe.httpStatus ? ` · ${response.probe.httpStatus}` : ""}.`
-          : "Probe rerun complete.",
+          ? `Probe 重跑完成：${formatHealthStatus(response.probe.healthStatus)}${response.probe.httpStatus ? ` · ${response.probe.httpStatus}` : ""}。`
+          : "Probe 重跑完成。",
       });
       await reloadCredentialViews(detail.data.id);
     } catch (reason) {
-      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rerun probe.", success: null });
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法重新执行 Probe。", success: null });
     }
   }
 
@@ -1461,7 +1566,7 @@ function CredentialsPage() {
     const { errors, payload } = validateProbeCredentialForm(rotateForm);
     setRotateErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setActionMutation({ pending: false, error: "Please fix the highlighted rotation fields before saving.", success: null });
+      setActionMutation({ pending: false, error: "请先修正高亮字段，再保存轮换信息。", success: null });
       return;
     }
 
@@ -1479,13 +1584,13 @@ function CredentialsPage() {
         pending: false,
         error: null,
         success: response.probe
-          ? `Monitoring key rotated. New probe ${response.probe.ok ? "passed" : "needs review"}.`
-          : "Monitoring key rotated.",
+          ? `监测密钥已轮换。新的 Probe ${response.probe.ok ? "通过" : "需要人工复核"}。`
+          : "监测密钥已轮换。",
       });
       setSelectedCredentialId(response.id);
       await reloadCredentialViews(response.id);
     } catch (reason) {
-      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to rotate key.", success: null });
+      setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法轮换监测密钥。", success: null });
     }
   }
 
@@ -1497,13 +1602,13 @@ function CredentialsPage() {
       });
       setCredentialDeleteTarget(null);
       setSelectedCredentialId(null);
-      setActionMutation({ pending: false, error: null, success: "Monitoring key deleted." });
+      setActionMutation({ pending: false, error: null, success: "监测密钥已删除。" });
       await credentials.reload();
     } catch (reason) {
       setCredentialDeleteTarget(null);
       setActionMutation({
         pending: false,
-        error: reason instanceof Error ? reason.message : "Unable to delete key.",
+        error: reason instanceof Error ? reason.message : "无法删除监测密钥。",
         success: null,
       });
     }
@@ -1516,25 +1621,24 @@ function CredentialsPage() {
 
     await navigator.clipboard.writeText(detail.data.apiKey);
     setCopiedKey(true);
-    setActionMutation((current) => ({ ...current, success: "Credential key copied." }));
+    setActionMutation((current) => ({ ...current, success: "密钥已复制。" }));
   }
 
   if (credentials.loading || relays.loading) return <LoadingCard />;
   if (credentials.error || relays.error || !credentials.data || !relays.data) {
-    return <ErrorCard message={credentials.error ?? relays.error ?? "Unable to load credentials."} />;
+    return <ErrorCard message={credentials.error ?? relays.error ?? "无法加载监测密钥。"} />;
   }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-      <Card title="Relay monitoring keys" kicker="Monitoring ops">
+      <Card title="Relay 监测密钥" kicker="监测操作">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
-          This lane is only for relay-owned monitoring keys. Pending submission keys stay attached
-          to intake review and do not appear here.
+          这里仅展示 Relay 自有的监测密钥。待审核提交中的测试密钥会保留在审核队列，不会出现在这里。
         </div>
         <div className="space-y-2.5">
           {relayCredentials.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-              No relay monitoring keys yet.
+              当前还没有 Relay 监测密钥。
             </div>
           ) : relayCredentials.map((row) => (
               <button
@@ -1552,14 +1656,14 @@ function CredentialsPage() {
                   <div>
                     <p className="text-lg tracking-[-0.03em]">{row.ownerName}</p>
                     <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
-                      {row.status} · {row.apiKeyPreview}
+                      {formatCredentialStatus(row.status)} · {row.apiKeyPreview}
                     </p>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-white/45">{row.compatibilityMode}</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/45">{formatCompatibilityMode(row.compatibilityMode)}</p>
                 </div>
                 <p className="mt-2 text-sm text-white/62">{row.ownerBaseUrl}</p>
                 <p className="mt-2 text-sm text-white/70">
-                  {row.testModel} · {row.lastHealthStatus ?? "unknown"}
+                  {row.testModel} · {formatHealthStatus(row.lastHealthStatus)}
                   {row.lastHttpStatus ? ` · ${row.lastHttpStatus}` : ""}
                 </p>
                 {row.lastMessage ? <p className="mt-2 text-sm text-white/45">{row.lastMessage}</p> : null}
@@ -1569,19 +1673,18 @@ function CredentialsPage() {
       </Card>
 
       <div className="space-y-4">
-        <Card title="Attach monitoring key" kicker="Relay-owned credential">
+        <Card title="绑定监测密钥" kicker="Relay 自有凭据">
           {requestedOwnerId && requestedOwnerType === "relay" ? (
             <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
-              This form is prefilled from the previous page so you can attach a monitoring key
-              without reselecting the relay.
+              表单已从上一页带入 Relay 信息，你可以直接绑定监测密钥，无需再次选择。
             </div>
           ) : null}
           <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
-            Use this only when an approved relay does not currently have an active monitoring key.
+            仅在已批准的 Relay 当前没有可用监测密钥时使用该表单。
           </div>
           <div className="grid gap-2.5">
             <label className="field-label">
-              Relay
+              中转站
               <select
                 className="field-input"
                 value={createForm.ownerId}
@@ -1591,7 +1694,7 @@ function CredentialsPage() {
                   setCreateMutation((current) => ({ ...current, error: null }));
                 }}
               >
-                <option value="">Select relay</option>
+                <option value="">请选择中转站</option>
                 {relayOwnerOptions.map((owner) => (
                   <option key={owner.id} value={owner.id}>
                     {getRelayOptionLabel(owner)}
@@ -1601,7 +1704,7 @@ function CredentialsPage() {
               <FieldError message={fieldErrors.ownerId} />
             </label>
             <label className="field-label">
-              API key
+              API Key
               <input
                 className="field-input"
                 type="password"
@@ -1616,7 +1719,7 @@ function CredentialsPage() {
               <FieldError message={fieldErrors.apiKey} />
             </label>
             <label className="field-label">
-              Test model
+              测试模型
               <input
                 className="field-input"
                 placeholder="gpt-5.4"
@@ -1630,52 +1733,52 @@ function CredentialsPage() {
               <FieldError message={fieldErrors.testModel} />
             </label>
             <label className="field-label">
-              API type
+              兼容协议
               <select
                 className="field-input"
                 value={createForm.compatibilityMode}
                 onChange={(event) => setCreateForm((current) => ({ ...current, compatibilityMode: event.target.value as ProbeCompatibilityMode }))}
               >
-                <option value="auto">auto</option>
+                <option value="auto">自动检测</option>
                 <option value="openai-responses">openai-responses</option>
                 <option value="openai-chat-completions">openai-chat-completions</option>
                 <option value="anthropic-messages">anthropic-messages</option>
               </select>
             </label>
             <button className="pill pill-active" disabled={createMutation.pending} onClick={createCredential} type="button">
-              {createMutation.pending ? "Attaching..." : "Attach monitoring key"}
+              {createMutation.pending ? "绑定中..." : "绑定监测密钥"}
             </button>
             <Notice state={createMutation} />
           </div>
         </Card>
 
-        <Card title="Monitoring key detail" kicker={detail.data ? detail.data.ownerName : "Select a key"}>
+        <Card title="监测密钥详情" kicker={detail.data ? detail.data.ownerName : "请选择一条密钥"}>
           {!selectedCredentialId ? (
-            <p className="text-sm text-white/55">No key selected.</p>
+            <p className="text-sm text-white/55">尚未选择密钥。</p>
           ) : detail.loading ? (
-            <p className="text-sm text-white/55">Loading key detail...</p>
+            <p className="text-sm text-white/55">正在加载密钥详情...</p>
           ) : detail.error || !detail.data ? (
-            <p className="text-sm text-[#ffb59c]">{detail.error ?? "Unable to load key detail."}</p>
+            <p className="text-sm text-[#ffb59c]">{detail.error ?? "无法加载密钥详情。"}</p>
           ) : (
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/45">{detail.data.status}</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/45">{formatCredentialStatus(detail.data.status)}</p>
                 <p className="mt-2 text-sm text-white/72">{detail.data.ownerBaseUrl}</p>
                 <p className="mt-2 text-sm text-white/65">
-                  {detail.data.testModel} · {detail.data.compatibilityMode}
+                  {detail.data.testModel} · {formatCompatibilityMode(detail.data.compatibilityMode)}
                 </p>
                 <p className="mt-2 break-all font-mono text-sm text-[#ffd06a]">
                   {revealedKey ? detail.data.apiKey : detail.data.apiKeyPreview}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button className="pill pill-idle" type="button" onClick={() => setRevealedKey((current) => !current)}>
-                    {revealedKey ? "Hide key" : "Reveal key"}
+                    {revealedKey ? "隐藏密钥" : "显示密钥"}
                   </button>
                   <button className="pill pill-idle" type="button" onClick={copySelectedKey}>
-                    {copiedKey ? "Copied" : "Copy key"}
+                    {copiedKey ? "已复制" : "复制密钥"}
                   </button>
                   <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={reprobeSelected}>
-                    {actionMutation.pending ? "Running..." : "Re-run probe"}
+                    {actionMutation.pending ? "执行中..." : "重新运行 Probe"}
                   </button>
                   <button
                     className="pill pill-ghost"
@@ -1683,25 +1786,25 @@ function CredentialsPage() {
                     type="button"
                     onClick={() => setCredentialDeleteTarget(detail.data)}
                   >
-                    Delete key
+                    删除密钥
                   </button>
                 </div>
                 <div className="mt-3 space-y-1 text-sm text-white/55">
                   <p>
-                    Last probe · {detail.data.lastHealthStatus ?? "unknown"}
+                    最近一次 Probe · {formatHealthStatus(detail.data.lastHealthStatus)}
                     {detail.data.lastHttpStatus ? ` · ${detail.data.lastHttpStatus}` : ""}
-                    {detail.data.lastVerifiedAt ? ` · ${new Date(detail.data.lastVerifiedAt).toLocaleString()}` : ""}
+                    {detail.data.lastVerifiedAt ? ` · ${formatDateTime(detail.data.lastVerifiedAt)}` : ""}
                   </p>
-                  {detail.data.lastDetectionMode ? <p>Detection · {detail.data.lastDetectionMode}</p> : null}
-                  {detail.data.lastUsedUrl ? <p className="break-all">Used URL · {detail.data.lastUsedUrl}</p> : null}
+                  {detail.data.lastDetectionMode ? <p>检测方式 · {detail.data.lastDetectionMode === "manual" ? "手动指定" : detail.data.lastDetectionMode === "auto" ? "自动检测" : detail.data.lastDetectionMode}</p> : null}
+                  {detail.data.lastUsedUrl ? <p className="break-all">实际探测地址 · {detail.data.lastUsedUrl}</p> : null}
                   {detail.data.lastMessage ? <p>{detail.data.lastMessage}</p> : null}
                 </div>
               </div>
 
               <div className="grid gap-2.5">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Rotate key</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/45">轮换密钥</p>
                 <label className="field-label">
-                  New API key
+                  新的 API Key
                   <input
                     className="field-input"
                     type="password"
@@ -1716,7 +1819,7 @@ function CredentialsPage() {
                   <FieldError message={rotateErrors.apiKey} />
                 </label>
                 <label className="field-label">
-                  New test model
+                  新的测试模型
                   <input
                     className="field-input"
                     value={rotateForm.testModel}
@@ -1729,20 +1832,20 @@ function CredentialsPage() {
                   <FieldError message={rotateErrors.testModel} />
                 </label>
                 <label className="field-label">
-                  New API type
+                  新的兼容协议
                   <select
                     className="field-input"
                     value={rotateForm.compatibilityMode}
                     onChange={(event) => setRotateForm((current) => ({ ...current, compatibilityMode: event.target.value as ProbeCompatibilityMode }))}
                   >
-                    <option value="auto">auto</option>
+                    <option value="auto">自动检测</option>
                     <option value="openai-responses">openai-responses</option>
                     <option value="openai-chat-completions">openai-chat-completions</option>
                     <option value="anthropic-messages">anthropic-messages</option>
                   </select>
                 </label>
                 <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={rotateSelected}>
-                  {actionMutation.pending ? "Rotating..." : "Rotate key"}
+                  {actionMutation.pending ? "轮换中..." : "轮换密钥"}
                 </button>
                 <Notice state={actionMutation} />
               </div>
@@ -1751,11 +1854,11 @@ function CredentialsPage() {
         </Card>
       </div>
       <ConfirmDialog
-        confirmLabel="Delete key"
-        confirmPendingLabel="Deleting..."
+        confirmLabel="删除密钥"
+        confirmPendingLabel="删除中..."
         message={
           credentialDeleteTarget
-            ? `${credentialDeleteTarget.ownerName} will lose this monitoring key record. Delete it only when the key should be removed from the system.`
+            ? `${credentialDeleteTarget.ownerName} 将失去这条监测密钥记录。只有在确定要从系统中移除该密钥时才执行删除。`
             : ""
         }
         onCancel={() => setCredentialDeleteTarget(null)}
@@ -1766,7 +1869,7 @@ function CredentialsPage() {
         }}
         open={Boolean(credentialDeleteTarget)}
         pending={actionMutation.pending}
-        title={credentialDeleteTarget ? `Delete key for ${credentialDeleteTarget.ownerName}?` : ""}
+        title={credentialDeleteTarget ? `确认删除 ${credentialDeleteTarget.ownerName} 的密钥？` : ""}
       />
     </div>
   );
@@ -1791,27 +1894,27 @@ function SponsorsPage() {
     const { errors, payload } = validateSponsorForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setMutation({ pending: false, error: "Please fix the highlighted sponsor fields before saving.", success: null });
+      setMutation({ pending: false, error: "请先修正高亮字段，再保存赞助位。", success: null });
       return;
     }
 
     setMutation({ pending: true, error: null, success: null });
     try {
       await fetchJson("/admin/sponsors", { method: "POST", body: JSON.stringify(payload) });
-      setMutation({ pending: false, error: null, success: "Sponsor placement created." });
+      setMutation({ pending: false, error: null, success: "赞助位已创建。" });
       setFieldErrors({});
       await sponsors.reload();
     } catch (reason) {
-      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create sponsor.", success: null });
+      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法创建赞助位。", success: null });
     }
   }
 
   if (sponsors.loading || relays.loading) return <LoadingCard />;
-  if (sponsors.error || !sponsors.data || relays.error || !relays.data) return <ErrorCard message={sponsors.error ?? relays.error ?? "Unable to load sponsors."} />;
+  if (sponsors.error || !sponsors.data || relays.error || !relays.data) return <ErrorCard message={sponsors.error ?? relays.error ?? "无法加载赞助位。"} />;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-      <Card title="Sponsor placements" kicker="Active windows">
+      <Card title="赞助位列表" kicker="投放时间窗口">
         <div className="space-y-2.5">
           {sponsors.data.rows.map((row) => (
             <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
@@ -1820,22 +1923,22 @@ function SponsorsPage() {
                   <p className="text-xl tracking-[-0.03em]">{row.name}</p>
                   <p className="mt-1 text-sm text-white/60">{row.placement}</p>
                 </div>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/40">{row.status}</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/40">{formatSponsorStatus(row.status)}</p>
               </div>
-              <p className="mt-2 text-sm text-white/60">{row.relay ? `${row.relay.name} · ` : "No relay binding · "}{new Date(row.startAt).toLocaleDateString()} → {new Date(row.endAt).toLocaleDateString()}</p>
+              <p className="mt-2 text-sm text-white/60">{row.relay ? `${row.relay.name} · ` : "未绑定中转站 · "}{formatDate(row.startAt)} 至 {formatDate(row.endAt)}</p>
             </div>
           ))}
         </div>
       </Card>
-      <Card title="Create placement" kicker="Sales operations">
+      <Card title="创建赞助位" kicker="商务操作">
         <div className="grid gap-2.5">
-          <label className="field-label">Name<input className="field-input" placeholder="Homepage spotlight" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "name")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.name} /></label>
-          <label className="field-label">Placement<input className="field-input" placeholder="homepage-spotlight" value={form.placement} onChange={(event) => { setForm((current) => ({ ...current, placement: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "placement")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.placement} /></label>
-          <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => setForm((current) => ({ ...current, relayId: event.target.value }))}><option value="">Unbound sponsor</option>{relayOptions.map((relay) => <option key={relay.id} value={relay.id}>{getRelayOptionLabel(relay)}</option>)}</select></label>
-          <label className="field-label">Status<select className="field-input" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SponsorFormState["status"] }))}><option value="active">active</option><option value="draft">draft</option><option value="paused">paused</option><option value="ended">ended</option></select></label>
-          <label className="field-label">Start<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.startAt} onChange={(event) => { setForm((current) => ({ ...current, startAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "startAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.startAt} /></label>
-          <label className="field-label">End<input className="field-input" placeholder="2026-05-16T00:00:00.000Z" value={form.endAt} onChange={(event) => { setForm((current) => ({ ...current, endAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "endAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.endAt} /></label>
-          <button className="pill pill-active" disabled={mutation.pending} onClick={createSponsor} type="button">{mutation.pending ? "Saving..." : "Create placement"}</button>
+          <label className="field-label">名称<input className="field-input" placeholder="首页焦点位" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "name")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.name} /></label>
+          <label className="field-label">投放位标识<input className="field-input" placeholder="homepage-spotlight" value={form.placement} onChange={(event) => { setForm((current) => ({ ...current, placement: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "placement")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.placement} /></label>
+          <label className="field-label">关联中转站<select className="field-input" value={form.relayId} onChange={(event) => setForm((current) => ({ ...current, relayId: event.target.value }))}><option value="">不绑定中转站</option>{relayOptions.map((relay) => <option key={relay.id} value={relay.id}>{getRelayOptionLabel(relay)}</option>)}</select></label>
+          <label className="field-label">状态<select className="field-input" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SponsorFormState["status"] }))}><option value="active">投放中</option><option value="draft">草稿</option><option value="paused">已暂停</option><option value="ended">已结束</option></select></label>
+          <label className="field-label">开始时间<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.startAt} onChange={(event) => { setForm((current) => ({ ...current, startAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "startAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.startAt} /></label>
+          <label className="field-label">结束时间<input className="field-input" placeholder="2026-05-16T00:00:00.000Z" value={form.endAt} onChange={(event) => { setForm((current) => ({ ...current, endAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "endAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.endAt} /></label>
+          <button className="pill pill-active" disabled={mutation.pending} onClick={createSponsor} type="button">{mutation.pending ? "保存中..." : "创建赞助位"}</button>
           <Notice state={mutation} />
         </div>
       </Card>
@@ -1864,27 +1967,27 @@ function PricesPage() {
     const { errors, payload } = validatePriceForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setMutation({ pending: false, error: "Please fix the highlighted price fields before saving.", success: null });
+      setMutation({ pending: false, error: "请先修正高亮字段，再保存价格记录。", success: null });
       return;
     }
 
     setMutation({ pending: true, error: null, success: null });
     try {
       await fetchJson("/admin/prices", { method: "POST", body: JSON.stringify(payload) });
-      setMutation({ pending: false, error: null, success: "Price record created." });
+      setMutation({ pending: false, error: null, success: "价格记录已创建。" });
       setFieldErrors({});
       await prices.reload();
     } catch (reason) {
-      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "Unable to create price record.", success: null });
+      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法创建价格记录。", success: null });
     }
   }
 
   if (prices.loading || relays.loading || models.loading) return <LoadingCard />;
-  if (prices.error || relays.error || models.error || !prices.data || !relays.data || !models.data) return <ErrorCard message={prices.error ?? relays.error ?? models.error ?? "Unable to load prices."} />;
+  if (prices.error || relays.error || models.error || !prices.data || !relays.data || !models.data) return <ErrorCard message={prices.error ?? relays.error ?? models.error ?? "无法加载价格记录。"} />;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-      <Card title="Price history" kicker="Recorded schedules">
+      <Card title="价格历史" kicker="已记录的价格计划">
         <div className="space-y-2.5">
           {prices.data.rows.map((row) => (
             <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
@@ -1895,19 +1998,19 @@ function PricesPage() {
                 </div>
                 <p className="text-sm text-white/60">{row.inputPricePer1M ?? "-"} / {row.outputPricePer1M ?? "-"}</p>
               </div>
-              <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.source} · {new Date(row.effectiveFrom).toLocaleDateString()}</p>
+              <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{row.source === "manual" ? "手动录入" : row.source} · {formatDate(row.effectiveFrom)}</p>
             </div>
           ))}
         </div>
       </Card>
-      <Card title="Create price record" kicker="Pricing ops">
+      <Card title="创建价格记录" kicker="价格操作">
         <div className="grid gap-2.5">
-          <label className="field-label">Relay<select className="field-input" value={form.relayId} onChange={(event) => { setForm((current) => ({ ...current, relayId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "relayId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select relay</option>{relayOptions.map((relay) => <option key={relay.id} value={relay.id}>{getRelayOptionLabel(relay)}</option>)}</select><FieldError message={fieldErrors.relayId} /></label>
-          <label className="field-label">Model<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">Select model</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
-          <label className="field-label">Input price<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, inputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "inputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.inputPricePer1M} /></label>
-          <label className="field-label">Output price<input className="field-input" type="number" min="0" step="0.01" value={form.outputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, outputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "outputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.outputPricePer1M} /></label>
-          <label className="field-label">Effective from<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.effectiveFrom} onChange={(event) => { setForm((current) => ({ ...current, effectiveFrom: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "effectiveFrom")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.effectiveFrom} /></label>
-          <button className="pill pill-active" disabled={mutation.pending} onClick={createPrice} type="button">{mutation.pending ? "Saving..." : "Create price"}</button>
+          <label className="field-label">中转站<select className="field-input" value={form.relayId} onChange={(event) => { setForm((current) => ({ ...current, relayId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "relayId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">请选择中转站</option>{relayOptions.map((relay) => <option key={relay.id} value={relay.id}>{getRelayOptionLabel(relay)}</option>)}</select><FieldError message={fieldErrors.relayId} /></label>
+          <label className="field-label">模型<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">请选择模型</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
+          <label className="field-label">输入价<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, inputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "inputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.inputPricePer1M} /></label>
+          <label className="field-label">输出价<input className="field-input" type="number" min="0" step="0.01" value={form.outputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, outputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "outputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.outputPricePer1M} /></label>
+          <label className="field-label">生效时间<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.effectiveFrom} onChange={(event) => { setForm((current) => ({ ...current, effectiveFrom: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "effectiveFrom")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.effectiveFrom} /></label>
+          <button className="pill pill-active" disabled={mutation.pending} onClick={createPrice} type="button">{mutation.pending ? "保存中..." : "创建价格记录"}</button>
           <Notice state={mutation} />
         </div>
       </Card>
@@ -1997,7 +2100,7 @@ export function App() {
 
         setAuthState({
           status: "error",
-          message: reason instanceof Error ? reason.message : "Unable to reach the admin API.",
+          message: reason instanceof Error ? reason.message : "无法连接管理 API。",
         });
       }
     }
@@ -2041,8 +2144,8 @@ export function App() {
   if (authState.status === "checking") {
     return (
       <AdminBootstrapCard
-        title="Checking admin access"
-        message="Verifying whether the admin API needs credentials before loading the control deck."
+        title="正在检查管理权限"
+        message="正在确认管理 API 是否需要登录凭据，然后再加载控制台。"
       />
     );
   }
@@ -2050,9 +2153,9 @@ export function App() {
   if (authState.status === "error") {
     return (
       <AdminBootstrapCard
-        title="Admin API unavailable"
+        title="管理 API 暂时不可用"
         message={authState.message}
-        actionLabel="Retry"
+        actionLabel="重试"
         onAction={() => window.location.reload()}
       />
     );
