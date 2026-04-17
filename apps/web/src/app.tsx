@@ -3518,7 +3518,7 @@ function SubmitPage() {
     <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
       <div className="panel hero-panel min-h-0">
         <p className="kicker">提交 Relay</p>
-        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">把你的 relay 提交到监测、排名或赞助审核流程中。</h1>
+        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可</h1>
         <p className="mt-4 max-w-xl text-black/70">通过表单把 relay 送入审核队列。运营审批与赞助展示会独立处理，不会影响自然排名逻辑。</p>
         <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
           <div className="surface-card p-3.5">
