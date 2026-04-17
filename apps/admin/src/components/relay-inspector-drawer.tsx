@@ -1,12 +1,10 @@
 import * as Shared from "../shared";
-import { RelayEditorForm } from "../components/relay-editor-form";
-import { WorkflowDetailGrid, WorkflowPriceTable, WorkflowSection } from "../components/relay-workflow";
+import { AdminDrawer } from "./admin-drawer";
+import { InfoTip } from "./info-tip";
+import { RelayEditorForm } from "./relay-editor-form";
+import { WorkflowDetailGrid, WorkflowPriceTable, WorkflowSection } from "./relay-workflow";
 
 const {
-  Card,
-  ErrorCard,
-  Link,
-  LoadingCard,
   PUBLIC_SITE_URL,
   buildRelayFormState,
   createRelayPriceRowFormState,
@@ -16,35 +14,40 @@ const {
   formatDateTime,
   formatHealthStatus,
   useEffect,
-  useLoadable,
   useMutationState,
-  useNavigate,
-  useParams,
   useState,
   validateRelayForm,
   withoutFieldError,
 } = Shared;
 
-export function RelayEditPage() {
-  const navigate = useNavigate();
-  const params = useParams();
-  const relayId = params.relayId ?? "";
-  const relays = useLoadable<Shared.AdminRelaysResponse>(() => fetchJson("/admin/relays"), [relayId]);
+export function RelayInspectorDrawer({
+  open,
+  relay,
+  initialMode = "detail",
+  onClose,
+  onReload,
+}: {
+  open: boolean;
+  relay: Shared.AdminRelaysResponse["rows"][number] | null;
+  initialMode?: "detail" | "edit";
+  onClose: () => void;
+  onReload: () => Promise<unknown>;
+}) {
+  const [mode, setMode] = useState<"detail" | "edit">(initialMode);
   const [form, setForm] = useState<Shared.RelayFormState>(() => buildRelayFormState());
   const [fieldErrors, setFieldErrors] = useState<Shared.RelayFormErrors>({});
   const [mutation, setMutation] = useMutationState();
 
-  const relay = relays.data?.rows.find((row) => row.id === relayId) ?? null;
-
   useEffect(() => {
-    if (!relay) {
+    if (!open || !relay) {
       return;
     }
 
+    setMode(initialMode);
     setForm(buildRelayFormState(relay));
     setFieldErrors({});
     setMutation({ pending: false, error: null, success: null });
-  }, [relay]);
+  }, [initialMode, open, relay]);
 
   function updateForm<Key extends keyof Shared.RelayFormState>(key: Key, value: Shared.RelayFormState[Key]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -108,8 +111,8 @@ export function RelayEditPage() {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
+      await onReload();
       setMutation({ pending: false, error: null, success: "Relay 已更新。" });
-      await relays.reload();
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法保存 Relay。", success: null });
     }
@@ -130,6 +133,7 @@ export function RelayEditPage() {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
+      await onReload();
       setMutation({
         pending: false,
         error: null,
@@ -140,81 +144,67 @@ export function RelayEditPage() {
               ? `${relay.name} 已暂停。`
               : `${relay.name} 已重新激活。`,
       });
-      await relays.reload();
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法更新 Relay 状态。", success: null });
     }
   }
 
-  if (relays.loading) {
-    return <LoadingCard />;
-  }
-
-  if (relays.error || !relays.data) {
-    return <ErrorCard message={relays.error ?? "无法加载 Relay 详情。"} />;
-  }
-
   if (!relay) {
-    return (
-      <Card title="未找到 Relay" kicker="Relay 编辑页">
-        <p className="text-sm leading-6 text-white/62">这个 Relay 可能已经被删除，或链接中的标识不正确。</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link className="pill pill-active" to="/relays">返回 Relay 列表</Link>
-        </div>
-      </Card>
-    );
+    return null;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 编辑页</p>
-          <h2 className="mt-2 text-3xl tracking-[-0.05em] md:text-4xl">{relay.name}</h2>
-          <p className="mt-2 text-sm leading-6 text-white/60">在这里完整编辑站点资料、模型价格、测试 Key 和公开状态。</p>
+    <AdminDrawer open={open} title={relay.name} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 抽屉</p>
+              <InfoTip content="右侧抽屉用于集中查看详情和编辑，不再跳转到独立页面。" />
+              <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                {formatCatalogStatus(relay.catalogStatus)}
+              </span>
+            </div>
+            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>
+            <p className="mt-1 truncate text-sm text-white/56">{relay.baseUrl}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className={mode === "detail" ? "pill pill-active" : "pill pill-idle"} onClick={() => setMode("detail")} type="button">
+              概览
+            </button>
+            <button className={mode === "edit" ? "pill pill-active" : "pill pill-idle"} onClick={() => setMode("edit")} type="button">
+              编辑
+            </button>
+            <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`} rel="noreferrer" target="_blank">
+              前台详情页
+            </a>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="pill pill-idle" type="button" onClick={() => navigate(-1)}>
-            返回上一页
-          </button>
-          <Link className="pill pill-ghost" to="/relays">Relay 列表</Link>
-          <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`} rel="noreferrer" target="_blank">
-            前台详情页
-          </a>
-        </div>
-      </div>
 
-      <Card title="当前状态与资料概览" kicker="编辑前概览">
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.02fr)_minmax(18rem,0.98fr)]">
+        {mode === "detail" ? (
           <div className="space-y-3">
-            <WorkflowSection title="站点资料" description="帮助你在编辑前快速确认当前公开资料。">
-              {relay.description ? <p className="text-sm leading-6 text-white/72">{relay.description}</p> : <p className="text-sm text-white/48">暂未填写站点简介。</p>}
-              <div className="mt-3">
-                <WorkflowDetailGrid
-                  items={[
-                    { label: "状态", value: formatCatalogStatus(relay.catalogStatus) },
-                    {
-                      label: "站点网站",
-                      value: relay.websiteUrl ? (
-                        <a className="underline underline-offset-4 text-white/82" href={relay.websiteUrl} rel="noreferrer" target="_blank">
-                          {relay.websiteUrl}
-                        </a>
-                      ) : "未填写",
-                    },
-                    { label: "联系方式", value: relay.contactInfo ?? "未填写" },
-                    { label: "Base URL", value: relay.baseUrl },
-                  ]}
-                />
+            <WorkflowSection title="概要信息" tip="这里保留站点最关键的运营信息，便于先判断是否需要继续编辑。">
+              <WorkflowDetailGrid
+                items={[
+                  { label: "Base URL", value: relay.baseUrl },
+                  {
+                    label: "站点网站",
+                    value: relay.websiteUrl ? (
+                      <a className="underline underline-offset-4 text-white/82" href={relay.websiteUrl} rel="noreferrer" target="_blank">
+                        {relay.websiteUrl}
+                      </a>
+                    ) : "未填写",
+                  },
+                  { label: "联系方式", value: relay.contactInfo ?? "未填写" },
+                  { label: "模型数量", value: `${relay.modelPrices.length} 个` },
+                ]}
+              />
+              <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm leading-6 text-white/72">
+                {relay.description ?? "暂未填写站点简介。"}
               </div>
             </WorkflowSection>
 
-            <WorkflowSection title="支持模型及价格表" description="这里展示当前已保存的价格信息，保存后会刷新成最新内容。">
-              <WorkflowPriceTable rows={relay.modelPrices} maxRows={8} />
-            </WorkflowSection>
-          </div>
-
-          <div className="space-y-3">
-            <WorkflowSection title="测试状态" description="方便确认当前 Relay 是否具备自动测试条件。">
+            <WorkflowSection title="测试状态" tip="只有 active 且存在可用测试 Key 的 Relay 才会继续自动测试。">
               {relay.probeCredential ? (
                 <WorkflowDetailGrid
                   columns={1}
@@ -240,8 +230,15 @@ export function RelayEditPage() {
               )}
             </WorkflowSection>
 
-            <WorkflowSection title="快捷操作" description="保存资料之外，也可以直接调整 Relay 的公开状态。">
-              <div className="flex flex-wrap gap-2">
+            <WorkflowSection title="支持模型及价格表" tip="这里只展示当前价格信息；需要调整时切到“编辑”即可。">
+              <WorkflowPriceTable rows={relay.modelPrices} />
+            </WorkflowSection>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5">
+              <div className="flex flex-wrap gap-2.5">
+                <button className="pill pill-active" onClick={() => setMode("edit")} type="button">
+                  编辑 Relay
+                </button>
                 {relay.catalogStatus === "active" ? (
                   <button className="pill pill-idle" disabled={mutation.pending} onClick={() => void updateRelayStatus("paused")} type="button">
                     暂停
@@ -255,40 +252,34 @@ export function RelayEditPage() {
                   归档
                 </button>
               </div>
-            </WorkflowSection>
+              <div className="mt-3">
+                <Shared.Notice state={mutation} />
+              </div>
+            </div>
           </div>
-        </div>
-      </Card>
-
-      <Card title="编辑 Relay" kicker="完整表单">
-        <RelayEditorForm
-          mode="edit"
-          form={form}
-          fieldErrors={fieldErrors}
-          mutation={mutation}
-          headerNotice="如不填写新的测试API Key，则保留当前已绑定的 Key；如果填写新的 Key，会直接替换为新的测试凭据。"
-          submitLabel="保存修改"
-          submittingLabel="保存中..."
-          resetLabel="恢复原始内容"
-          extraActions={
-            relay.catalogStatus === "active" ? (
-              <button className="pill pill-ghost" disabled={mutation.pending} onClick={() => void updateRelayStatus("paused")} type="button">
-                暂停 Relay
+        ) : (
+          <RelayEditorForm
+            mode="edit"
+            form={form}
+            fieldErrors={fieldErrors}
+            mutation={mutation}
+            submitLabel="保存修改"
+            submittingLabel="保存中..."
+            resetLabel="恢复原始内容"
+            extraActions={
+              <button className="pill pill-ghost" onClick={() => setMode("detail")} type="button">
+                返回概览
               </button>
-            ) : (
-              <button className="pill pill-ghost" disabled={mutation.pending} onClick={() => void updateRelayStatus("active")} type="button">
-                重新激活
-              </button>
-            )
-          }
-          onSubmit={() => void submitRelay()}
-          onReset={resetForm}
-          onUpdateForm={updateForm}
-          onUpdatePriceRow={updatePriceRow}
-          onAddPriceRow={addPriceRow}
-          onRemovePriceRow={removePriceRow}
-        />
-      </Card>
-    </div>
+            }
+            onSubmit={() => void submitRelay()}
+            onReset={resetForm}
+            onUpdateForm={updateForm}
+            onUpdatePriceRow={updatePriceRow}
+            onAddPriceRow={addPriceRow}
+            onRemovePriceRow={removePriceRow}
+          />
+        )}
+      </div>
+    </AdminDrawer>
   );
 }

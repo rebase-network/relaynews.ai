@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
+import { InfoTip } from "./info-tip";
 
 export type WorkflowPriceRow = {
   modelKey: string;
@@ -11,26 +12,31 @@ export type WorkflowPriceRow = {
 export function WorkflowSection({
   title,
   description,
+  tip,
   actions,
   children,
   className,
 }: {
   title: string;
   description?: string;
+  tip?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <section className={clsx("rounded-2xl border border-white/10 bg-black/10 p-4", className)}>
-      <div className="flex flex-col gap-3 border-b border-white/10 pb-3 md:flex-row md:items-start md:justify-between">
+    <section className={clsx("rounded-2xl border border-white/10 bg-black/10 p-3.5", className)}>
+      <div className="flex flex-col gap-2.5 border-b border-white/10 pb-2.5 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">{title}</p>
+            {tip ? <InfoTip content={tip} /> : null}
+          </div>
           {description ? <p className="mt-1 text-sm leading-6 text-white/58">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
@@ -45,9 +51,9 @@ export function WorkflowMetricCard({
   helper?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">{label}</p>
-      <p className="mt-2 text-3xl tracking-[-0.04em]">{value}</p>
+      <p className="mt-1.5 text-[1.7rem] tracking-[-0.04em]">{value}</p>
       {helper ? <p className="mt-2 text-sm leading-6 text-white/52">{helper}</p> : null}
     </div>
   );
@@ -68,9 +74,9 @@ export function WorkflowDetailGrid({
   return (
     <div className={clsx("grid gap-3", columns === 2 && "md:grid-cols-2")}>
       {visibleItems.map((item) => (
-        <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
+        <div key={item.label} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
           <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">{item.label}</p>
-          <div className="mt-1.5 text-sm leading-6 text-white/74">{item.value}</div>
+          <div className="mt-1 text-sm leading-6 text-white/74">{item.value}</div>
         </div>
       ))}
     </div>
@@ -125,7 +131,7 @@ export function WorkflowPriceTable({
       </div>
       {hiddenCount > 0 ? (
         <div className="border-t border-white/10 px-4 py-3 text-sm text-white/48">
-          还有 {hiddenCount} 行模型价格信息，请进入编辑页查看完整数据。
+          还有 {hiddenCount} 行模型价格信息，请展开编辑查看完整数据。
         </div>
       ) : null}
     </div>

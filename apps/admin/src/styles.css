@@ -83,19 +83,19 @@ button {
 }
 
 .admin-header {
-  padding-top: 0.7rem;
+  padding-top: 0.4rem;
 }
 
 .admin-header-bar {
   display: grid;
-  gap: 1rem;
+  gap: 0.65rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background:
     linear-gradient(135deg, rgba(49, 37, 18, 0.94), rgba(27, 24, 21, 0.98));
   box-shadow:
     rgba(0, 0, 0, 0.34) 0 30px 80px,
     rgba(255, 161, 16, 0.14) 0 1px 0 inset;
-  padding: 1rem;
+  padding: 0.78rem 0.95rem;
 }
 
 .admin-brand {
@@ -124,11 +124,11 @@ button {
 .admin-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .admin-main {
-  padding-top: 1.2rem;
+  padding-top: 0.75rem;
   padding-bottom: 4rem;
 }
 
@@ -139,7 +139,7 @@ button {
   background:
     linear-gradient(180deg, rgba(49, 37, 18, 0.92), rgba(26, 24, 22, 0.96));
   box-shadow: var(--shadow);
-  padding: 1.2rem;
+  padding: 1rem;
 }
 
 .card::before {
@@ -181,7 +181,7 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.72rem 0.86rem;
+  padding: 0.62rem 0.78rem;
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.18em;
@@ -232,8 +232,16 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.06);
   color: var(--ink);
-  padding: 0.82rem 0.88rem;
+  padding: 0.76rem 0.82rem;
   box-shadow: rgba(0, 0, 0, 0.18) 0 12px 24px;
+}
+
+.field-input-compact {
+  margin-top: 0;
+  padding: 0.66rem 0.74rem;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: rgba(0, 0, 0, 0.12) 0 8px 16px;
 }
 
 .field-input::placeholder {
@@ -287,7 +295,7 @@ button {
   .admin-header-bar,
   .card,
   .confirm-dialog {
-    padding: 0.95rem;
+    padding: 0.88rem;
   }
 
   .admin-brand {
@@ -313,12 +321,12 @@ button {
 
 @media (min-width: 1024px) {
   .admin-header {
-    padding-top: 1rem;
+    padding-top: 0.75rem;
   }
 
   .admin-header-bar,
   .card,
   .confirm-dialog {
-    padding: 1.35rem;
+    padding: 1rem;
   }
 }

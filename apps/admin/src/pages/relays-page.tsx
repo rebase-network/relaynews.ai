@@ -1,7 +1,8 @@
 import * as Shared from "../shared";
 import { AdminDrawer } from "../components/admin-drawer";
+import { InfoTip } from "../components/info-tip";
 import { RelayEditorForm } from "../components/relay-editor-form";
-import { WorkflowDetailGrid, WorkflowMetricCard, WorkflowPriceTable, WorkflowSection } from "../components/relay-workflow";
+import { RelayInspectorDrawer } from "../components/relay-inspector-drawer";
 
 const {
   clsx,
@@ -9,8 +10,6 @@ const {
   ConfirmDialog,
   ErrorCard,
   LoadingCard,
-  Link,
-  PUBLIC_SITE_URL,
   buildRelayFormState,
   createRelayPriceRowFormState,
   fetchJson,
@@ -19,6 +18,7 @@ const {
   formatDateTime,
   formatHealthStatus,
   matchesSearchQuery,
+  useEffect,
   useLoadable,
   useMemo,
   useMutationState,
@@ -30,6 +30,8 @@ const {
 export function RelaysPage() {
   const relays = useLoadable<Shared.AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedRelayId, setSelectedRelayId] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<"detail" | "edit">("detail");
   const [archiveTarget, setArchiveTarget] = useState<Shared.AdminRelaysResponse["rows"][number] | null>(null);
   const [actionMutation, setActionMutation] = useMutationState();
   const [createMutation, setCreateMutation] = useMutationState();
@@ -38,6 +40,42 @@ export function RelaysPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
   const [highlightedRelayId, setHighlightedRelayId] = useState<string | null>(null);
+
+  const currentRelays = (relays.data?.rows ?? []).filter((relay) => relay.catalogStatus === "active" || relay.catalogStatus === "paused");
+  const selectedRelay = currentRelays.find((relay) => relay.id === selectedRelayId) ?? null;
+  const activeCount = currentRelays.filter((relay) => relay.catalogStatus === "active").length;
+  const pausedCount = currentRelays.filter((relay) => relay.catalogStatus === "paused").length;
+  const filteredRelays = useMemo(
+    () =>
+      currentRelays.filter((relay) => {
+        if (statusFilter !== "all" && relay.catalogStatus !== statusFilter) {
+          return false;
+        }
+
+        return matchesSearchQuery(searchQuery, [
+          relay.name,
+          relay.slug,
+          relay.baseUrl,
+          relay.websiteUrl,
+          relay.contactInfo,
+          relay.description,
+          ...relay.modelPrices.map((row) => row.modelName ?? row.modelKey),
+          ...relay.modelPrices.map((row) => row.modelKey),
+        ]);
+      }),
+    [currentRelays, searchQuery, statusFilter],
+  );
+  const hasFilters = searchQuery.trim().length > 0 || statusFilter !== "all";
+
+  useEffect(() => {
+    if (!selectedRelayId || relays.loading) {
+      return;
+    }
+
+    if (!selectedRelay) {
+      setSelectedRelayId(null);
+    }
+  }, [relays.loading, selectedRelay, selectedRelayId]);
 
   function resetCreateForm() {
     setForm(buildRelayFormState());
@@ -53,6 +91,16 @@ export function RelaysPage() {
   function closeCreateDrawer() {
     setCreateOpen(false);
     resetCreateForm();
+  }
+
+  function openRelayDrawer(relayId: string, mode: "detail" | "edit") {
+    setSelectedRelayId(relayId);
+    setSelectedMode(mode);
+  }
+
+  function closeRelayDrawer() {
+    setSelectedRelayId(null);
+    setSelectedMode("detail");
   }
 
   function updateForm<Key extends keyof Shared.RelayFormState>(key: Key, value: Shared.RelayFormState[Key]) {
@@ -126,6 +174,7 @@ export function RelaysPage() {
         body: JSON.stringify(payload),
       });
       setArchiveTarget(null);
+      await relays.reload();
       setActionMutation({
         pending: false,
         error: null,
@@ -136,37 +185,11 @@ export function RelaysPage() {
               ? `${relay.name} 已暂停，后续不会参与自动测试和公开展示。`
               : `${relay.name} 已重新激活。`,
       });
-      await relays.reload();
     } catch (reason) {
       setArchiveTarget(null);
       setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法更新 Relay 状态。", success: null });
     }
   }
-
-  const currentRelays = (relays.data?.rows ?? []).filter((relay) => relay.catalogStatus === "active" || relay.catalogStatus === "paused");
-  const activeCount = currentRelays.filter((relay) => relay.catalogStatus === "active").length;
-  const pausedCount = currentRelays.filter((relay) => relay.catalogStatus === "paused").length;
-  const filteredRelays = useMemo(
-    () =>
-      currentRelays.filter((relay) => {
-        if (statusFilter !== "all" && relay.catalogStatus !== statusFilter) {
-          return false;
-        }
-
-        return matchesSearchQuery(searchQuery, [
-          relay.name,
-          relay.slug,
-          relay.baseUrl,
-          relay.websiteUrl,
-          relay.contactInfo,
-          relay.description,
-          ...relay.modelPrices.map((row) => row.modelName ?? row.modelKey),
-          ...relay.modelPrices.map((row) => row.modelKey),
-        ]);
-      }),
-    [currentRelays, matchesSearchQuery, searchQuery, statusFilter],
-  );
-  const hasFilters = searchQuery.trim().length > 0 || statusFilter !== "all";
 
   if (relays.loading) {
     return <LoadingCard />;
@@ -179,33 +202,34 @@ export function RelaysPage() {
   return (
     <>
       <Card title="Relay 列表" kicker="当前运营中的站点">
-        <div className="flex flex-col gap-3 border-b border-white/10 pb-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="max-w-3xl text-sm leading-6 text-white/62">
-              这里专门用来看当前 Relay 列表。审批通过后的 Relay 会直接进入这里；只有 <span className="text-white/82">active</span> 状态的 Relay
-              才参与自动测试、目录展示和榜单排行。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+        <div className="space-y-3 border-b border-white/10 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-white/72">当前 active / paused Relay</p>
+              <InfoTip content="列表只保留概要信息；选择某个 Relay 后，详细信息与编辑操作会在右侧抽屉中完成。" />
+              <div className="flex flex-wrap gap-2 sm:ml-2">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
+                  共 {currentRelays.length} 条
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
+                  active {activeCount}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
+                  paused {pausedCount}
+                </span>
+              </div>
+            </div>
             <button className="pill pill-active" type="button" onClick={openCreateDrawer}>
               手动添加 Relay
             </button>
-            <Link className="pill pill-ghost" to="/relays/history">查看 Relay 历史</Link>
           </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <WorkflowMetricCard label="当前 Relay" value={currentRelays.length} helper="当前列表只展示 active 和 paused。" />
-          <WorkflowMetricCard label="激活中" value={activeCount} helper="会继续参与自动测试、目录与排行榜。" />
-          <WorkflowMetricCard label="已暂停" value={pausedCount} helper="保留资料，但不会公开展示。" />
-        </div>
-
-        <div className="mt-5 space-y-3">
-          <div className="flex flex-col gap-3 border-b border-white/10 pb-4 xl:flex-row xl:items-end xl:justify-between">
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">当前 Relay</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">面向运营的站点清单</p>
-              <p className="mt-2 text-sm text-white/48">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">当前 Relay</p>
+                <InfoTip content="支持按名称、Base URL、联系方式、模型搜索，也可以按 active / paused 过滤。" />
+              </div>
+              <p className="text-sm text-white/52">
                 {hasFilters ? `筛选后显示 ${filteredRelays.length} / ${currentRelays.length} 条` : `共 ${currentRelays.length} 条`}
               </p>
             </div>
@@ -222,11 +246,7 @@ export function RelaysPage() {
               </label>
               <label className="field-label">
                 状态筛选
-                <select
-                  className="field-input"
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "paused")}
-                >
+                <select className="field-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "paused")}>
                   <option value="all">全部</option>
                   <option value="active">active</option>
                   <option value="paused">paused</option>
@@ -248,107 +268,85 @@ export function RelaysPage() {
               ) : null}
             </div>
           </div>
+        </div>
 
+        <div className="mt-4 space-y-2.5">
           {currentRelays.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-              当前还没有 Relay。你可以点击右上角“手动添加 Relay”，或去提交记录中批准一个待审核站点。
+              当前还没有 Relay。你可以先手动添加 Relay，或去提交记录中批准一个待审核站点。
             </div>
           ) : filteredRelays.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-5 text-sm text-white/56">
-              当前筛选条件下没有匹配的 Relay。你可以尝试清空搜索词或切换状态筛选。
+              当前筛选条件下没有匹配的 Relay。
             </div>
           ) : filteredRelays.map((relay) => (
             <div
               key={relay.id}
               className={clsx(
-                "admin-list-card border bg-white/5 p-4",
+                "admin-list-card border bg-white/5 p-3.5",
                 relay.id === highlightedRelayId
                   ? "border-[#ffd06a]/45 bg-white/[0.07] shadow-[rgba(255,208,106,0.16)_0_0_0_1px]"
                   : "border-white/10",
               )}
             >
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
-                      <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
-                        {formatCatalogStatus(relay.catalogStatus)}
-                      </span>
-                      {relay.id === highlightedRelayId ? <span className="pill pill-ghost !bg-[#ffd06a]/14 !text-[#ffe6a7]">刚创建</span> : null}
-                    </div>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>
-                    <p className="mt-3 text-sm break-all text-white/64">{relay.baseUrl}</p>
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)_auto] xl:items-center">
+                <button className="min-w-0 text-left" type="button" onClick={() => openRelayDrawer(relay.id, "detail")}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-lg tracking-[-0.03em]">{relay.name}</p>
+                    <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                      {formatCatalogStatus(relay.catalogStatus)}
+                    </span>
+                    {relay.id === highlightedRelayId ? <span className="pill pill-ghost !bg-[#ffd06a]/14 !text-[#ffe6a7]">刚创建</span> : null}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link className="pill pill-active" to={`/relays/${relay.id}`}>编辑 Relay</Link>
-                    {relay.catalogStatus === "active" ? (
-                      <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "paused")} type="button">
-                        暂停
-                      </button>
-                    ) : (
-                      <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "active")} type="button">
-                        重新激活
-                      </button>
-                    )}
-                    <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`} rel="noreferrer" target="_blank">
-                      前台详情页
-                    </a>
-                    <button className="pill pill-ghost" disabled={actionMutation.pending} onClick={() => setArchiveTarget(relay)} type="button">
-                      归档
-                    </button>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>
+                  <p className="mt-2 truncate text-sm text-white/64">{relay.baseUrl}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/58">
+                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">模型 {relay.modelPrices.length}</span>
+                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">
+                      {relay.contactInfo ? "已填联系方式" : "未填联系方式"}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">
+                      {relay.websiteUrl ? "已填网站" : "未填网站"}
+                    </span>
                   </div>
+                </button>
+
+                <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">测试状态</p>
+                  {relay.probeCredential ? (
+                    <>
+                      <p className="mt-1.5 text-sm text-white/72">
+                        {formatCredentialStatus(relay.probeCredential.status)} · {formatHealthStatus(relay.probeCredential.lastHealthStatus)}
+                      </p>
+                      <p className="mt-1 truncate text-sm text-white/58">{relay.probeCredential.testModel}</p>
+                      <p className="mt-1 text-xs text-white/46">
+                        {relay.probeCredential.lastVerifiedAt ? formatDateTime(relay.probeCredential.lastVerifiedAt) : "尚未完成验证"}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-1.5 text-sm text-[#ffd892]">没有可用测试 Key</p>
+                  )}
                 </div>
 
-                <div className="grid gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(16rem,0.92fr)_minmax(16rem,0.92fr)]">
-                  <WorkflowSection title="站点资料" description="目录展示和运营判断会优先参考这里的信息。">
-                    {relay.description ? <p className="text-sm leading-6 text-white/72">{relay.description}</p> : <p className="text-sm text-white/48">暂未填写站点简介。</p>}
-                    <div className="mt-3">
-                      <WorkflowDetailGrid
-                        items={[
-                          {
-                            label: "站点网站",
-                            value: relay.websiteUrl ? (
-                              <a className="underline underline-offset-4 text-white/82" href={relay.websiteUrl} rel="noreferrer" target="_blank">
-                                {relay.websiteUrl}
-                              </a>
-                            ) : "未填写",
-                          },
-                          { label: "联系方式", value: relay.contactInfo ?? "未填写" },
-                        ]}
-                      />
-                    </div>
-                  </WorkflowSection>
-
-                  <WorkflowSection title="支持模型及价格表" description="快速查看当前公开价格配置。">
-                    <WorkflowPriceTable rows={relay.modelPrices} maxRows={4} />
-                  </WorkflowSection>
-
-                  <WorkflowSection title="测试状态" description="方便快速判断这个 Relay 是否具备持续测试条件。">
-                    {relay.probeCredential ? (
-                      <WorkflowDetailGrid
-                        columns={1}
-                        items={[
-                          {
-                            label: "测试凭据",
-                            value: `${relay.probeCredential.apiKeyPreview} · ${formatCredentialStatus(relay.probeCredential.status)}`,
-                          },
-                          {
-                            label: "测试模型",
-                            value: `${relay.probeCredential.testModel} · ${formatHealthStatus(relay.probeCredential.lastHealthStatus)}${relay.probeCredential.lastHttpStatus ? ` · ${relay.probeCredential.lastHttpStatus}` : ""}`,
-                          },
-                          {
-                            label: "最近验证",
-                            value: relay.probeCredential.lastVerifiedAt ? formatDateTime(relay.probeCredential.lastVerifiedAt) : "尚未完成验证",
-                          },
-                        ]}
-                      />
-                    ) : (
-                      <div className="rounded-2xl border border-[#ffd06a]/24 bg-[#ffd06a]/8 px-3 py-3 text-sm leading-6 text-[#ffd892]">
-                        当前没有可用的测试 Key，Relay 无法参与自动测试。
-                      </div>
-                    )}
-                  </WorkflowSection>
+                <div className="flex flex-wrap gap-2 xl:flex-col xl:items-end">
+                  <button className="pill pill-idle" type="button" onClick={() => openRelayDrawer(relay.id, "detail")}>
+                    查看
+                  </button>
+                  <button className="pill pill-active" type="button" onClick={() => openRelayDrawer(relay.id, "edit")}>
+                    编辑
+                  </button>
+                  {relay.catalogStatus === "active" ? (
+                    <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "paused")} type="button">
+                      暂停
+                    </button>
+                  ) : (
+                    <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "active")} type="button">
+                      重新激活
+                    </button>
+                  )}
+                  <button className="pill pill-ghost" disabled={actionMutation.pending} onClick={() => setArchiveTarget(relay)} type="button">
+                    归档
+                  </button>
                 </div>
               </div>
             </div>
@@ -375,18 +373,12 @@ export function RelaysPage() {
         title={archiveTarget ? `确认归档 ${archiveTarget.name}？` : ""}
       />
 
-      <AdminDrawer
-        open={createOpen}
-        title="手动添加 Relay"
-        description="新增 Relay 会直接进入当前列表；你可以在这里一次性填写站点资料、价格表和测试信息。"
-        onClose={closeCreateDrawer}
-      >
+      <AdminDrawer open={createOpen} title="手动添加 Relay" onClose={closeCreateDrawer}>
         <RelayEditorForm
           mode="create"
           form={form}
           fieldErrors={fieldErrors}
           mutation={createMutation}
-          headerNotice="手动新增适合运营人员直接录入 Relay。创建完成后，站点会按状态决定是否参与自动测试与前台展示。"
           submitLabel="创建 Relay"
           submittingLabel="创建中..."
           resetLabel="清空表单"
@@ -398,6 +390,8 @@ export function RelaysPage() {
           onRemovePriceRow={removePriceRow}
         />
       </AdminDrawer>
+
+      <RelayInspectorDrawer open={Boolean(selectedRelay)} relay={selectedRelay} initialMode={selectedMode} onClose={closeRelayDrawer} onReload={relays.reload} />
     </>
   );
 }

@@ -21,9 +21,10 @@ import {
 } from "@relaynews/shared";
 import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, Navigate, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { InfoTip } from "./components/info-tip";
 
-export { clsx, createPortal, Link, Navigate, NavLink, Route, Routes, useEffect, useMemo, useNavigate, useParams, useSearchParams, useState };
+export { clsx, createPortal, Link, Navigate, NavLink, Route, Routes, useEffect, useLocation, useMemo, useNavigate, useParams, useSearchParams, useState };
 export type {
   AdminModel,
   AdminModelsResponse,
@@ -789,6 +790,7 @@ export function AdminShell({
   showLogout: boolean;
   onLogout: () => void;
 }) {
+  const location = useLocation();
   const items = [
     ["/", "概览"],
     ["/relays", "Relay"],
@@ -799,12 +801,20 @@ export function AdminShell({
     ["/models", "模型"],
   ] as const;
 
+  function isItemActive(path: string) {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+
+    return location.pathname === path;
+  }
+
   return (
     <div className="admin-shell min-h-screen bg-[var(--bg)] text-white">
       <header className="admin-header">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
           <div className="admin-header-bar">
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               <div className="admin-brand">
                 <div className="admin-brand-mark">
                   <span className="bg-[#ffd900]" />
@@ -814,21 +824,19 @@ export function AdminShell({
                 </div>
                 relaynew.ai 管理台
               </div>
-              <div>
-                <h1 className="text-2xl leading-tight tracking-[-0.05em] md:text-4xl">围绕提交记录和 Relay 列表，收敛运营后台的日常工作流。</h1>
-                <p className="mt-2.5 max-w-xl text-sm leading-6 text-white/60">
-                  审批通过后的记录直接进入 Relay 列表；只有 active Relay 会参与自动测试、目录展示和榜单排行。
-                </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg leading-tight tracking-[-0.05em] md:text-[1.45rem]">运营后台</h1>
+                <InfoTip content="审批通过后的记录直接进入 Relay 列表；只有 active Relay 会参与自动测试、目录展示和榜单排行。" />
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               <div className="admin-nav">
                 {items.map(([to, label]) => (
                   <NavLink
                     key={to}
                     to={to}
-                    end={to === "/"}
-                    className={({ isActive }) => clsx("pill", isActive ? "pill-active" : "pill-idle")}
+                    end={false}
+                    className={clsx("pill", isItemActive(to) ? "pill-active" : "pill-idle")}
                   >
                     {label}
                   </NavLink>
@@ -857,8 +865,8 @@ export function Card({ title, kicker, children }: { title: string; kicker?: stri
   return (
     <section className="card">
       {kicker ? <p className="eyebrow">{kicker}</p> : null}
-      <h2 className="text-3xl tracking-[-0.04em] md:text-[2rem]">{title}</h2>
-      <div className="mt-4">{children}</div>
+      <h2 className="text-[1.85rem] tracking-[-0.04em] md:text-[1.9rem]">{title}</h2>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }

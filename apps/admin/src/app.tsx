@@ -17,7 +17,6 @@ import { IntakePage } from "./pages/intake-page";
 import { ModelsPage } from "./pages/models-page";
 import { OverviewPage } from "./pages/overview-page";
 import { PricesPage } from "./pages/prices-page";
-import { RelayEditPage } from "./pages/relay-edit-page";
 import { RelayHistoryPage } from "./pages/relay-history-page";
 import { RelaysPage } from "./pages/relays-page";
 import { SponsorsPage } from "./pages/sponsors-page";
@@ -56,7 +55,7 @@ function AdminRoutes() {
     <Routes>
       <Route path="/" element={<OverviewPage />} />
       <Route path="/relays" element={<RelaysPage />} />
-      <Route path="/relays/:relayId" element={<RelayEditPage />} />
+      <Route path="/relays/:relayId" element={<Navigate replace to="/relays" />} />
       <Route path="/relays/history" element={<RelayHistoryPage />} />
       <Route path="/intake" element={<IntakePage />} />
       <Route path="/intake/history" element={<SubmissionHistoryPage />} />
