@@ -1090,7 +1090,7 @@ function ProbeFormFields({
   showHelpers?: boolean;
 }) {
   const fields = [
-    ["基础 URL", "baseUrl"],
+    ["Base URL", "baseUrl"],
     ["API 密钥", "apiKey"],
     ["目标模型", "model"],
   ] as const;
