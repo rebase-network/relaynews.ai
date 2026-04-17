@@ -187,6 +187,8 @@ export const adminSponsorUpsertSchema = z.object({
 
 export const adminPriceRecordSchema = z.object({
   id: internalIdSchema,
+  relayId: internalIdSchema,
+  modelId: internalIdSchema,
   relay: relaySummarySchema,
   modelKey: z.string().min(1),
   modelName: z.string().min(1),

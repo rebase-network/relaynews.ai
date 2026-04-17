@@ -1022,6 +1022,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .innerJoin("models as m", "m.id", "rp.model_id")
       .select([
         "rp.id",
+        "rp.relay_id as relayId",
+        "rp.model_id as modelId",
         "r.slug",
         "r.name",
         "m.key as modelKey",
@@ -1038,6 +1040,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return adminPricesResponseSchema.parse({
       rows: rows.map((row) => ({
         id: row.id,
+        relayId: row.relayId,
+        modelId: row.modelId,
         relay: {
           slug: row.slug,
           name: row.name,
@@ -1075,6 +1079,40 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     await refreshPublicData(app.db);
     reply.code(201);
     return { ok: true, id: row.id };
+  });
+
+  app.patch("/admin/prices/:id", async (request) => {
+    const params = request.params as { id: string };
+    const body = adminPriceCreateSchema.parse(request.body ?? {});
+
+    await app.db
+      .updateTable("relay_prices")
+      .set({
+        relay_id: body.relayId,
+        model_id: body.modelId,
+        currency: body.currency,
+        input_price_per_1m: body.inputPricePer1M ?? null,
+        output_price_per_1m: body.outputPricePer1M ?? null,
+        effective_from: body.effectiveFrom,
+        source: body.source,
+      })
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    await refreshPublicData(app.db);
+    return { ok: true };
+  });
+
+  app.delete("/admin/prices/:id", async (request) => {
+    const params = request.params as { id: string };
+
+    await app.db
+      .deleteFrom("relay_prices")
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    await refreshPublicData(app.db);
+    return { ok: true };
   });
 
   app.post("/admin/refresh-public", async () => {

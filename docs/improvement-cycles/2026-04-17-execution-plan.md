@@ -371,9 +371,7 @@
   - `apps/api/src/routes/admin.ts`
   - `apps/api/src/app.ts`
   - `packages/shared/src/admin.ts`
-- 已确保文档描述不会误导运营同学去执行当前 UI 尚未提供的操作，例如：
-  - 编辑或删除既有价格记录
 
 遗留问题：
 
-- 如果后续补上更多价格编辑能力或其他后台写操作入口，需同步更新本手册。
+- 如果后续补上密钥 revoke、赞助位删除或其他后台写操作入口，需同步更新本手册。

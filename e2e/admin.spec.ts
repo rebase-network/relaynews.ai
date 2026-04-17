@@ -101,6 +101,13 @@ async function openSponsorForEditing(page: Page, sponsorName: string) {
   return sponsorCard;
 }
 
+async function openPriceForEditing(page: Page, relayName: string) {
+  const priceCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await expect(priceCard).toBeVisible();
+  await priceCard.getByRole("button", { name: "编辑价格记录" }).click();
+  return priceCard;
+}
+
 test("admin overview shows operating totals", async ({ page }) => {
   await openAdmin(page, "/");
   await expect(page.getByText("统一管理中转站目录、赞助位与价格记录。", { exact: true })).toBeVisible();
@@ -293,6 +300,103 @@ test("admin can edit sponsors and unbind relay after reload", async ({ page, req
   await expect(page.getByLabel("状态")).toHaveValue("paused");
   await expect(page.getByLabel("开始时间")).toHaveValue(updatedStartAt);
   await expect(page.getByLabel("结束时间")).toHaveValue(updatedEndAt);
+});
+
+test("admin can edit and delete price records after reload", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Price editing is skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const relaySlug = `price-relay-${runId}`;
+  const relayName = `Price Relay ${runId}`;
+  const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+  const initialInputPrice = 0.11;
+  const initialOutputPrice = 0.88;
+  const updatedInputPrice = "0.55";
+  const updatedOutputPrice = "1.66";
+  const initialEffectiveFrom = "2026-03-01T00:00:00.000Z";
+  const updatedEffectiveFrom = "2026-08-01T00:00:00.000Z";
+
+  const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      slug: relaySlug,
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      providerName: "Price Ops",
+      websiteUrl: "https://example.com",
+      catalogStatus: "active",
+      isFeatured: false,
+      isSponsored: false,
+      description: "Created for price editing coverage.",
+      docsUrl: `https://example.com/docs/${relaySlug}`,
+      notes: "Playwright price editing verification",
+    },
+  });
+  expect(relayResponse.ok()).toBeTruthy();
+  const relayPayload = (await relayResponse.json()) as { id: string };
+
+  const modelsResponse = await request.get(`${apiBaseUrl}/admin/models`, {
+    headers: getAdminApiHeaders(),
+  });
+  expect(modelsResponse.ok()).toBeTruthy();
+  const modelsPayload = (await modelsResponse.json()) as {
+    rows: Array<{ id: string; name: string; key: string }>;
+  };
+  const model = modelsPayload.rows.find((row) => row.name === "GPT-4.1") ?? modelsPayload.rows[0];
+  expect(model).toBeTruthy();
+
+  const priceResponse = await request.post(`${apiBaseUrl}/admin/prices`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      relayId: relayPayload.id,
+      modelId: model.id,
+      currency: "USD",
+      inputPricePer1M: initialInputPrice,
+      outputPricePer1M: initialOutputPrice,
+      effectiveFrom: initialEffectiveFrom,
+      source: "manual",
+    },
+  });
+  expect(priceResponse.ok()).toBeTruthy();
+
+  await openAdmin(page, "/prices");
+  await openPriceForEditing(page, relayName);
+
+  await expect(page.getByLabel("中转站")).not.toHaveValue("");
+  await expect(page.getByLabel("模型")).not.toHaveValue("");
+  await expect(page.getByLabel("货币")).toHaveValue("USD");
+  await expect(page.getByLabel("来源")).toHaveValue("manual");
+
+  await page.getByLabel("输入价").fill(updatedInputPrice);
+  await page.getByLabel("输出价").fill(updatedOutputPrice);
+  await page.getByLabel("来源").selectOption("api");
+  await page.getByLabel("生效时间").fill(updatedEffectiveFrom);
+  await page.getByRole("button", { name: "保存修改" }).click();
+
+  await expect(page.getByText("价格记录已更新。", { exact: true })).toBeVisible();
+  const updatedCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await expect(updatedCard).toBeVisible();
+  await expect(updatedCard).toContainText(model.name);
+  await expect(updatedCard).toContainText(`${updatedInputPrice} / ${updatedOutputPrice}`);
+  await expect(updatedCard).toContainText("api");
+
+  await page.reload();
+  await openPriceForEditing(page, relayName);
+
+  await expect(page.getByLabel("输入价")).toHaveValue(updatedInputPrice);
+  await expect(page.getByLabel("输出价")).toHaveValue(updatedOutputPrice);
+  await expect(page.getByLabel("来源")).toHaveValue("api");
+  await expect(page.getByLabel("生效时间")).toHaveValue(updatedEffectiveFrom);
+
+  const updatedPriceCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  await updatedPriceCard.getByRole("button", { name: "删除价格记录" }).click();
+  const deletePriceDialog = page.getByRole("dialog");
+  await expect(deletePriceDialog).toBeVisible();
+  await deletePriceDialog.getByRole("button", { name: "删除价格记录" }).click();
+  await expect(page.getByText("价格记录已删除。", { exact: true })).toBeVisible();
+  await expect(page.locator(".admin-list-card").filter({ hasText: relayName })).toHaveCount(0);
 });
 
 test("admin can soft delete a relay without removing its row", async ({ page, request }) => {
