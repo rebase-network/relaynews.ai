@@ -314,7 +314,7 @@ Work items:
 - allow operators to inspect and, when necessary, override a relay's stored
   compatibility mode without changing natural ranking logic
 - implement submit flow for relay intake
-- extend the submit form and relay editor so both can express:
+- extend the public `/submit` form and the relay editor so both can express:
   - site name
   - site website
   - contact info
