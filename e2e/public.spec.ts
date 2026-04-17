@@ -50,11 +50,11 @@ async function gotoHome(page: Page) {
 
 async function expectRelayDetailModules(page: Page) {
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "延迟画像" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "延迟" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "状态" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "模型支持" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "价格历史" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "事故时间线" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "价格历史" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "事故时间线" })).toHaveCount(0);
   await expect(page.getByTestId("relay-latency-bar")).toHaveCount(30);
   await expect(page.getByTestId("relay-status-bar")).toHaveCount(30);
   await expect(page.getByTestId("relay-models-table")).toHaveCount(2);
@@ -65,16 +65,6 @@ async function expectRelayDetailModules(page: Page) {
   expect(latencyChartBox).not.toBeNull();
   expect(statusChartBox).not.toBeNull();
   expect(Math.abs(latencyChartBox!.width - statusChartBox!.width)).toBeLessThan(2);
-
-  const pricingSection = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "价格历史" }),
-  }).first();
-  const incidentsSection = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "事故时间线" }),
-  }).first();
-
-  await expect(pricingSection).toContainText(/价格变更次数|当前还没有公开价格历史。/);
-  await expect(incidentsSection).toContainText(/开始：北京时间|近 30 天没有公开事故记录。/);
 
   await page.getByTestId("score-popover-toggle").click();
   await expect(page.getByTestId("score-popover")).toBeVisible();
@@ -473,7 +463,7 @@ test.describe("public metadata smoke", () => {
     await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/relay/aurora-relay",
-      descriptionPattern: /价格历史|事故时间线|Aurora Relay/i,
+      descriptionPattern: /延迟走势|模型支持|当前价格|Aurora Relay/i,
       titlePattern: /Aurora Relay|Relay 详情|relaynew\.ai/i,
     });
   });

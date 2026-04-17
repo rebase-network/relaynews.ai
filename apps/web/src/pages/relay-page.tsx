@@ -97,18 +97,13 @@ export function RelayPage() {
     () => fetchJson(`/public/relay/${slug}/pricing-history`),
     [slug],
   );
-  const incidents = useLoadable<Shared.RelayIncidentsResponse>(
-    `/public/relay/${slug}/incidents?window=30d`,
-    () => fetchJson(`/public/relay/${slug}/incidents?window=30d`),
-    [slug],
-  );
   const relayName = overview.data?.relay.name ?? slug;
   usePageMetadata({
     title: `${relayName} Relay 详情｜relaynew.ai`,
     description:
       overview.data
-        ? `查看 ${overview.data.relay.name} 的 24h 可用性、延迟走势、模型支持、价格历史与近 30 天事故时间线。`
-        : "查看站点的 24h 可用性、延迟走势、模型支持、价格历史与近 30 天事故时间线。",
+        ? `查看 ${overview.data.relay.name} 的 24h 可用性、延迟走势、模型支持与当前价格。`
+        : "查看站点的 24h 可用性、延迟走势、模型支持与当前价格。",
   });
   if (overview.loading) return <RelayPageSkeleton />;
   if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Relay 详情加载失败。"} />;
@@ -133,9 +128,6 @@ export function RelayPage() {
     ...row,
     currentPrice: latestPricingByModelKey.get(row.modelKey) ?? null,
   })) ?? [];
-  const modelNames = Object.fromEntries(
-    (models.data?.rows ?? []).map((row) => [row.modelKey, row.modelName]),
-  );
   const modelRowsPerColumn = Math.ceil(modelPricingRows.length / 2);
   const modelTableColumns: Array<Array<Shared.RelayModelPricingRow | null>> = [
     modelPricingRows.slice(0, modelRowsPerColumn),
@@ -198,7 +190,7 @@ export function RelayPage() {
       <section className="grid gap-4 xl:grid-cols-2">
         <Panel
           className="h-full"
-          title="延迟画像"
+          title="延迟"
           kicker="近 30 天走势"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
@@ -292,38 +284,6 @@ export function RelayPage() {
           )}
         </Panel>
       </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Panel
-          title="价格历史"
-          kicker="最近公开变更"
-          headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
-        >
-          {pricing.error ? (
-            <p className="text-sm text-[#b42318]">{pricing.error}</p>
-          ) : pricing.loading || !pricing.data ? (
-            <p className="text-sm text-black/60">正在加载价格历史...</p>
-          ) : (
-            <RelayPricingHistoryPanel modelNames={modelNames} rows={pricing.data.rows} />
-          )}
-        </Panel>
-        <Panel
-          title="事故时间线"
-          kicker="近 30 天"
-          headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
-        >
-          {incidents.error ? (
-            <p className="text-sm text-[#b42318]">{incidents.error}</p>
-          ) : incidents.loading || !incidents.data ? (
-            <p className="text-sm text-black/60">正在加载事故时间线...</p>
-          ) : (
-            <RelayIncidentTimeline rows={incidents.data.rows} />
-          )}
-        </Panel>
-      </section>
     </div>
   );
 }
-

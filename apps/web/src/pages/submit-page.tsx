@@ -204,7 +204,7 @@ export function SubmitPage() {
 
         <SubmitSection
           title="支持模型及价格表"
-          description="每行填写一个模型及对应的 Input / Output 价格，建议按你对外公开的价格填写。"
+          description="每行填写一个模型及对应的 Input / Output 价格"
           actions={<button className="button-cream !px-4 !py-2" type="button" onClick={addModelPriceRow}>添加一行</button>}
         >
           <div className="space-y-2.5">
