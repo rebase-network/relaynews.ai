@@ -66,8 +66,8 @@ async function expectRelayDetailModules(page: Page) {
 }
 
 async function expectLeaderboardRules(page: Page) {
-  await expect(page.getByText("当前表格不含赞助位")).toBeVisible();
-  await expect(page.getByText("本页只呈现当前模型赛道的自然排序结果")).toBeVisible();
+  await expect(page.getByText("当前榜单不含赞助方")).toBeVisible();
+  await expect(page.getByText("本页只呈现当前模型分类下的评测结果")).toBeVisible();
   await expect(page.getByText("赞助方展示只会出现在独立模块，不会混入排名，也不会影响这里的实测结果。")).toBeVisible();
 }
 
@@ -122,7 +122,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
 
     await page.getByRole("link", { name: "评测方式" }).click();
     await expect(page).toHaveURL(/\/methodology$/);
-    await expect(page.getByText("方法论")).toBeVisible();
+    await expect(page.getByText("评测方式")).toBeVisible();
 
     await page.getByRole("link", { name: "Relay 探测" }).click();
     await expect(page).toHaveURL(/\/probe$/);
@@ -179,7 +179,7 @@ test("submit flow works from the public site", async ({ page }) => {
 
   await page.goto("/submit");
   await expect(page.getByRole("heading", { name: /把你的Relay站点信息提交，收录到站点目录中/i })).toBeVisible();
-  await expect(page.getByText("运营审批与赞助展示会独立处理，不会影响自然排名逻辑。")).toBeVisible();
+  await expect(page.getByText("运营审批与赞助方展示会独立处理，不会影响评测排名逻辑。")).toBeVisible();
   await page.getByLabel("中转站名称").fill(relayName);
   await page.getByLabel("Base URL").fill(relayBaseUrl);
   await page.getByLabel("网站地址").fill("https://example.com");
@@ -314,7 +314,7 @@ test("leaderboard remains readable on mobile", async ({ page }) => {
   await expect(page.getByText("24h 可用性").first()).toBeVisible();
   await expect(page.getByText("P50 延迟").first()).toBeVisible();
   await expectVisibleText(page.locator("main"), /评测排名|评测方式|赞助分离/);
-  await expect(page.getByText("当前表格不含赞助位")).toBeVisible();
+  await expect(page.getByText("当前榜单不含赞助方")).toBeVisible();
 });
 
 test.describe("public metadata smoke", () => {
@@ -322,15 +322,15 @@ test.describe("public metadata smoke", () => {
     await gotoHome(page);
     await expectPageMetadata(page, {
       canonicalPath: "/",
-      descriptionPattern: /relay|榜单|探测/i,
-      titlePattern: /relaynew\.ai|中转站监控|榜单与探测/i,
+      descriptionPattern: /站点榜单|API 测试|提交入口/i,
+      titlePattern: /relaynew\.ai|中转站监控|榜单与测试/i,
     });
 
     await page.goto("/leaderboard?foo=bar#metadata");
     await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/leaderboard",
-      descriptionPattern: /自然排名|赞助展示|relay/i,
+      descriptionPattern: /评测排名|赞助方展示|relay/i,
       titlePattern: /GPT 5\.4|Relay 榜单|relaynew\.ai/i,
     });
 
