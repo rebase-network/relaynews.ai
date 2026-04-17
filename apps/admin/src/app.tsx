@@ -1518,6 +1518,7 @@ function CredentialsPage() {
   const [searchParams] = useSearchParams();
   const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
   const [credentialDeleteTarget, setCredentialDeleteTarget] = useState<AdminProbeCredentialDetail | null>(null);
+  const [credentialRevokeTarget, setCredentialRevokeTarget] = useState<AdminProbeCredentialDetail | null>(null);
   const detail = useLoadable<AdminProbeCredentialDetail | null>(
     () => (selectedCredentialId ? fetchJson(`/admin/probe-credentials/${selectedCredentialId}`) : Promise.resolve(null)),
     [selectedCredentialId],
@@ -1741,6 +1742,25 @@ function CredentialsPage() {
     }
   }
 
+  async function revokeSelectedCredential(credential: AdminProbeCredentialDetail) {
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${credential.id}/revoke`, {
+        method: "POST",
+      });
+      setCredentialRevokeTarget(null);
+      setActionMutation({ pending: false, error: null, success: "监测密钥已撤销。" });
+      await reloadCredentialViews(credential.id);
+    } catch (reason) {
+      setCredentialRevokeTarget(null);
+      setActionMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "无法撤销监测密钥。",
+        success: null,
+      });
+    }
+  }
+
   async function copySelectedKey() {
     if (!detail.data) {
       return;
@@ -1907,6 +1927,16 @@ function CredentialsPage() {
                   <button className="pill pill-active" disabled={actionMutation.pending} type="button" onClick={reprobeSelected}>
                     {actionMutation.pending ? "执行中..." : "重新运行 Probe"}
                   </button>
+                  {detail.data.status === "active" ? (
+                    <button
+                      className="pill pill-idle"
+                      disabled={actionMutation.pending}
+                      type="button"
+                      onClick={() => setCredentialRevokeTarget(detail.data)}
+                    >
+                      撤销密钥
+                    </button>
+                  ) : null}
                   <button
                     className="pill pill-ghost"
                     disabled={actionMutation.pending}
@@ -1997,6 +2027,24 @@ function CredentialsPage() {
         open={Boolean(credentialDeleteTarget)}
         pending={actionMutation.pending}
         title={credentialDeleteTarget ? `确认删除 ${credentialDeleteTarget.ownerName} 的密钥？` : ""}
+      />
+      <ConfirmDialog
+        confirmLabel="撤销密钥"
+        confirmPendingLabel="撤销中..."
+        message={
+          credentialRevokeTarget
+            ? `${credentialRevokeTarget.ownerName} 的这条监测密钥会被标记为已撤销，但记录仍会保留，便于后续追踪和轮换。`
+            : ""
+        }
+        onCancel={() => setCredentialRevokeTarget(null)}
+        onConfirm={() => {
+          if (credentialRevokeTarget) {
+            void revokeSelectedCredential(credentialRevokeTarget);
+          }
+        }}
+        open={Boolean(credentialRevokeTarget)}
+        pending={actionMutation.pending}
+        title={credentialRevokeTarget ? `确认撤销 ${credentialRevokeTarget.ownerName} 的密钥？` : ""}
       />
     </div>
   );

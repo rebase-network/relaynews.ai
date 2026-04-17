@@ -538,6 +538,12 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   await expect(page.getByText(/监测密钥已轮换。/)).toBeVisible();
   await page.getByRole("button", { name: "显示密钥" }).click();
   await expect(page.getByText("sk-credential-rotated")).toBeVisible();
+  await detailCard.getByRole("button", { name: "撤销密钥", exact: true }).click();
+  const revokeKeyDialog = page.getByRole("dialog");
+  await expect(revokeKeyDialog).toBeVisible();
+  await revokeKeyDialog.getByRole("button", { name: "撤销密钥" }).click();
+  await expect(page.getByText("监测密钥已撤销。", { exact: true })).toBeVisible();
+  await expect(detailCard).toContainText("已撤销");
 
   await detailCard.getByRole("button", { name: "删除密钥", exact: true }).click();
   const deleteKeyDialog = page.getByRole("dialog");
