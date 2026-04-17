@@ -1091,7 +1091,7 @@ function ProbeFormFields({
 }) {
   const fields = [
     ["Base URL", "baseUrl"],
-    ["API 密钥", "apiKey"],
+    ["API Key", "apiKey"],
     ["目标模型", "model"],
   ] as const;
 
