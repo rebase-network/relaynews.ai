@@ -37,9 +37,7 @@ const {
   formatTime,
   getModelOptionLabel,
   getRelayOptionLabel,
-  matchesSearchQuery,
   pickPreferredCredential,
-  trimString,
   useLoadable,
   useMutationState,
   validateModelForm,
@@ -54,7 +52,6 @@ export function CredentialsPage() {
   const credentials = useLoadable<Shared.AdminProbeCredentialsResponse>(() => fetchJson("/admin/probe-credentials"), []);
   const relays = useLoadable<Shared.AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [searchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Shared.AdminProbeCredential["status"] | "all">("all");
   const [selectedCredentialIds, setSelectedCredentialIds] = useState<string[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
@@ -91,18 +88,10 @@ export function CredentialsPage() {
     () => (credentials.data?.rows ?? []).filter((row) => row.ownerType === "relay"),
     [credentials.data],
   );
-  const filterActive = trimString(searchQuery).length > 0 || statusFilter !== "all";
+  const filterActive = statusFilter !== "all";
   const filteredRelayCredentials = useMemo(
-    () => relayCredentials.filter((row) =>
-      (statusFilter === "all" || row.status === statusFilter)
-      && matchesSearchQuery(searchQuery, [
-        row.ownerName,
-        row.ownerBaseUrl,
-        row.testModel,
-        row.apiKeyPreview,
-        row.lastMessage,
-      ])),
-    [relayCredentials, searchQuery, statusFilter],
+    () => relayCredentials.filter((row) => statusFilter === "all" || row.status === statusFilter),
+    [relayCredentials, statusFilter],
   );
 
   useEffect(() => {
@@ -438,16 +427,7 @@ export function CredentialsPage() {
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           这里仅展示 Relay 自有的监测密钥。待审核提交中的测试密钥会保留在审核队列，不会出现在这里。
         </div>
-        <div className="mb-4 grid gap-2.5 md:grid-cols-[1.2fr_0.8fr_auto]">
-          <label className="field-label">
-            搜索监测密钥
-            <input
-              className="field-input"
-              placeholder="搜索 Relay、Base URL、测试模型"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-          </label>
+        <div className="mb-4 grid gap-2.5 md:grid-cols-[0.8fr_auto]">
           <label className="field-label">
             状态筛选
             <select
@@ -461,18 +441,7 @@ export function CredentialsPage() {
               <option value="revoked">已撤销</option>
             </select>
           </label>
-          {filterActive ? (
-            <button
-              className="pill pill-idle self-end"
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("all");
-              }}
-            >
-              清空筛选
-            </button>
-          ) : null}
+          {filterActive ? <button className="pill pill-idle self-end" type="button" onClick={() => setStatusFilter("all")}>清空筛选</button> : null}
         </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <div>
@@ -814,4 +783,3 @@ export function CredentialsPage() {
     </div>
   );
 }
-

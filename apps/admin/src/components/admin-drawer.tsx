@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import { createPortal } from "react-dom";
 
 const DRAWER_TRANSITION_MS = 220;
+const DRAWER_ENTER_DELAY_MS = 24;
 
 export function AdminDrawer({
   open,
@@ -17,18 +18,18 @@ export function AdminDrawer({
   onClose: () => void;
   children: ReactNode;
 }) {
-  const [mounted, setMounted] = useState(open);
-  const [active, setActive] = useState(open);
+  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMounted(true);
-      const frame = window.requestAnimationFrame(() => {
+      const timeout = window.setTimeout(() => {
         setActive(true);
-      });
+      }, DRAWER_ENTER_DELAY_MS);
 
       return () => {
-        window.cancelAnimationFrame(frame);
+        window.clearTimeout(timeout);
       };
     }
 

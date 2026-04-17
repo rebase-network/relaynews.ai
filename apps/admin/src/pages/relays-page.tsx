@@ -18,11 +18,9 @@ const {
   formatCredentialStatus,
   formatDateTime,
   formatHealthStatus,
-  matchesSearchQuery,
   statusToneForCatalogStatus,
   useEffect,
   useLoadable,
-  useMemo,
   useMutationState,
   useState,
   validateRelayForm,
@@ -39,7 +37,6 @@ export function RelaysPage() {
   const [createMutation, setCreateMutation] = useMutationState();
   const [form, setForm] = useState<Shared.RelayFormState>(() => buildRelayFormState());
   const [fieldErrors, setFieldErrors] = useState<Shared.RelayFormErrors>({});
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
   const [highlightedRelayId, setHighlightedRelayId] = useState<string | null>(null);
 
@@ -47,26 +44,7 @@ export function RelaysPage() {
   const selectedRelay = currentRelays.find((relay) => relay.id === selectedRelayId) ?? null;
   const activeCount = currentRelays.filter((relay) => relay.catalogStatus === "active").length;
   const pausedCount = currentRelays.filter((relay) => relay.catalogStatus === "paused").length;
-  const filteredRelays = useMemo(
-    () =>
-      currentRelays.filter((relay) => {
-        if (statusFilter !== "all" && relay.catalogStatus !== statusFilter) {
-          return false;
-        }
-
-        return matchesSearchQuery(searchQuery, [
-          relay.name,
-          relay.slug,
-          relay.baseUrl,
-          relay.websiteUrl,
-          relay.contactInfo,
-          relay.description,
-          ...relay.modelPrices.map((row) => row.modelName ?? row.modelKey),
-          ...relay.modelPrices.map((row) => row.modelKey),
-        ]);
-      }),
-    [currentRelays, searchQuery, statusFilter],
-  );
+  const filteredRelays = currentRelays.filter((relay) => statusFilter === "all" || relay.catalogStatus === statusFilter);
 
   useEffect(() => {
     if (!selectedRelayId || relays.loading) {
@@ -152,7 +130,6 @@ export function RelaysPage() {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      setSearchQuery("");
       setStatusFilter("all");
       setHighlightedRelayId(response.id);
       await relays.reload();
@@ -209,19 +186,9 @@ export function RelaysPage() {
               <p className="text-sm text-white/72">共 {currentRelays.length} 条</p>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">启用中 {activeCount}</span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">已暂停 {pausedCount}</span>
-              <InfoTip content="列表只保留概要信息；点击某条 Relay 后，会在右侧抽屉中查看详情或继续编辑。" />
+              <InfoTip content="当前数据量不大，列表不再提供搜索；点击某条 Relay 后，会在右侧抽屉中查看详情或继续编辑。" />
             </div>
             <div className="flex flex-wrap items-end gap-2.5">
-              <label className="field-label w-[15rem]">
-                搜索 Relay
-                <input
-                  className="field-input"
-                  placeholder="名称 / Base URL / 联系方式 / 模型"
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                />
-              </label>
               <label className="field-label w-[8.5rem]">
                 状态
                 <select className="field-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "paused")}>
@@ -236,7 +203,7 @@ export function RelaysPage() {
             </div>
           </div>
           <p className="text-sm text-white/48">
-            {searchQuery.trim() || statusFilter !== "all" ? `筛选后显示 ${filteredRelays.length} / ${currentRelays.length} 条` : "点击列表项即可展开右侧抽屉查看详情。"}
+            {statusFilter !== "all" ? `当前显示 ${filteredRelays.length} / ${currentRelays.length} 条` : "点击列表项即可展开右侧抽屉查看详情。"}
           </p>
         </div>
 
