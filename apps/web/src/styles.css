@@ -1085,6 +1085,14 @@ textarea {
   border-spacing: 0;
 }
 
+.relay-models-table {
+  overflow-x: visible;
+}
+
+.relay-models-table table {
+  min-width: 0;
+}
+
 .data-table thead th {
   font-family: var(--font-mono);
   font-size: 0.7rem;

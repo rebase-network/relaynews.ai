@@ -240,6 +240,10 @@ type DailyHistorySlot = {
   point: RelayHistoryResponse["points"][number] | null;
 };
 
+type RelayModelPricingRow = RelayModelsResponse["rows"][number] & {
+  currentPrice: RelayPricingHistoryResponse["rows"][number] | null;
+};
+
 function getIsoDateKey(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);
 
@@ -1570,7 +1574,7 @@ function RelayPageSkeleton() {
             <SkeletonBlock className="skeleton-kicker max-w-[8rem]" />
             <SkeletonBlock className="skeleton-heading-md max-w-[18rem]" />
           </div>
-          <div className="space-y-2.5 md:hidden">
+          <div className="space-y-2.5 lg:hidden">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="surface-card p-3.5">
                 <div className="space-y-2">
@@ -1584,13 +1588,15 @@ function RelayPageSkeleton() {
               </div>
             ))}
           </div>
-          <div className="hidden md:block">
-            <div className="space-y-2">
-              <SkeletonBlock className="h-9 w-full" />
-              {Array.from({ length: 6 }).map((_, index) => (
-                <SkeletonBlock key={index} className="h-14 w-full" />
-              ))}
-            </div>
+          <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
+            {Array.from({ length: 2 }).map((_, tableIndex) => (
+              <div key={tableIndex} className="space-y-2">
+                <SkeletonBlock className="h-9 w-full" />
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <SkeletonBlock key={index} className="h-14 w-full" />
+                ))}
+              </div>
+            ))}
           </div>
         </section>
       </section>
@@ -2648,6 +2654,48 @@ function StatusHistoryPanel({
   );
 }
 
+function RelayModelsTable({ rows }: { rows: RelayModelPricingRow[] }) {
+  return (
+    <div className="data-table relay-models-table" data-testid="relay-models-table">
+      <table className="w-full table-fixed text-left">
+        <colgroup>
+          <col className="w-[44%]" />
+          <col className="w-[18%]" />
+          <col className="w-[19%]" />
+          <col className="w-[19%]" />
+        </colgroup>
+        <thead>
+          <tr className="border-b border-black/10">
+            <th className="pb-2.5">Model</th>
+            <th className="pb-2.5">Status</th>
+            <th className="pb-2.5 text-right">Input</th>
+            <th className="pb-2.5 text-right">Output</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.modelKey} className="align-top">
+              <td className="border-b border-black/8 py-3 pr-3 last:border-b-0">
+                <p className="text-[0.96rem] leading-5 tracking-[-0.03em]">{row.modelName}</p>
+                <p className="mt-1 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+              </td>
+              <td className="border-b border-black/8 py-3 pr-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/52 last:border-b-0">
+                {row.supportStatus}
+              </td>
+              <td className="border-b border-black/8 py-3 pr-3 text-right text-sm tabular-nums last:border-b-0">
+                {formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
+              </td>
+              <td className="border-b border-black/8 py-3 text-right text-sm tabular-nums last:border-b-0">
+                {formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function RelayPage() {
   const { slug = "aurora-relay" } = useParams();
   const overview = useLoadable<RelayOverviewResponse>(
@@ -2689,10 +2737,15 @@ function RelayPage() {
     }
   }
 
-  const modelPricingRows = models.data?.rows.map((row) => ({
+  const modelPricingRows: RelayModelPricingRow[] = models.data?.rows.map((row) => ({
     ...row,
     currentPrice: latestPricingByModelKey.get(row.modelKey) ?? null,
   })) ?? [];
+  const modelMidpoint = Math.ceil(modelPricingRows.length / 2);
+  const modelTableColumns = [
+    modelPricingRows.slice(0, modelMidpoint),
+    modelPricingRows.slice(modelMidpoint),
+  ].filter((rows) => rows.length > 0);
   const historySlots = history.data ? buildDailyHistorySlots(history.data.points, history.data.measuredAt) : [];
   const measuredHistorySlotCount = historySlots.filter((slot) => slot.point).length;
   const latestMeasuredHistoryPoint = [...historySlots].reverse().find((slot) => slot.point?.latencyP95Ms !== null)?.point ?? null;
@@ -2799,8 +2852,9 @@ function RelayPage() {
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
           {models.loading || !models.data ? <p className="text-sm text-black/60">Loading models...</p> : (
+            modelPricingRows.length === 0 ? <p className="text-sm text-black/60">No models published for this relay yet.</p> : (
             <>
-              <div className="space-y-2.5 md:hidden">
+              <div className="space-y-2.5 lg:hidden">
                 {modelPricingRows.map((row) => (
                   <div key={row.modelKey} className="surface-card p-3.5">
                     <div className="flex items-start justify-between gap-3">
@@ -2824,50 +2878,16 @@ function RelayPage() {
                         </p>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm text-black/65">
-                      stream {row.supportsStream ? "yes" : "no"}
-                      {" · "}
-                      tools {row.supportsTools ? "yes" : "no"}
-                      {" · "}
-                      reasoning {row.supportsReasoning ? "yes" : "no"}
-                    </p>
                   </div>
                 ))}
               </div>
-              <div className="data-table hidden md:block">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-black/10">
-                      <th className="pb-2.5">Model</th>
-                      <th className="pb-2.5">Status</th>
-                      <th className="pb-2.5">Input / 1M</th>
-                      <th className="pb-2.5">Output / 1M</th>
-                      <th className="pb-2.5">Capabilities</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modelPricingRows.map((row) => (
-                      <tr key={row.modelKey} className="align-top">
-                        <td className="py-3">
-                          <p className="text-[1.02rem] tracking-[-0.03em]">{row.modelName}</p>
-                          <p className="mt-1 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
-                        </td>
-                        <td className="py-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/52">{row.supportStatus}</td>
-                        <td className="py-3">{formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}</td>
-                        <td className="py-3">{formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}</td>
-                        <td className="py-3 text-sm text-black/66">
-                          stream {row.supportsStream ? "yes" : "no"}
-                          {" · "}
-                          tools {row.supportsTools ? "yes" : "no"}
-                          {" · "}
-                          reasoning {row.supportsReasoning ? "yes" : "no"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
+                {modelTableColumns.map((rows, index) => (
+                  <RelayModelsTable key={index} rows={rows} />
+                ))}
               </div>
             </>
+            )
           )}
         </Panel>
       </section>
