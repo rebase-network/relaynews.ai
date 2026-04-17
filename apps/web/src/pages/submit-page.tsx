@@ -115,21 +115,21 @@ export function SubmitPage() {
   }
 
   return (
-    <section className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <section className="grid gap-4 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
       <div className="panel hero-panel min-h-0">
         <p className="kicker">提交站点</p>
-        <h1 className="text-[2.4rem] leading-[0.92] tracking-[-0.06em] md:text-[3.3rem]">把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可</h1>
-        <p className="mt-4 max-w-xl text-black/70">请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。</p>
-        <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
-          <div className="surface-card p-3.5">
+        <h1 className="text-[2.2rem] leading-[0.92] tracking-[-0.06em] md:text-[3rem]">把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可</h1>
+        <p className="mt-3.5 max-w-xl text-black/70">请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。</p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          <div className="surface-card p-3">
             <p className="kicker !text-black/52">先审核</p>
             <p className="text-sm leading-6 text-black/72">每个站点都会先进入运营审核队列，确认后才会出现在公开页面。</p>
           </div>
-          <div className="surface-card p-3.5">
+          <div className="surface-card p-3">
             <p className="kicker !text-black/52">整理信息</p>
             <p className="text-sm leading-6 text-black/72">请尽量把站点介绍、支持模型和价格信息填写完整，方便志愿者整理站点说明和价格表。</p>
           </div>
-          <div className="surface-card p-3.5">
+          <div className="surface-card p-3">
             <p className="kicker !text-black/52">初始测试</p>
             <p className="text-sm leading-6 text-black/72">提交后会立即执行一次自动测试，后续会持续测试，请确保测试Key可用性。</p>
           </div>
@@ -207,25 +207,55 @@ export function SubmitPage() {
           description="每行填写一个模型及对应的 Input / Output 价格，建议按你对外公开的价格填写。"
           actions={<button className="button-cream !px-4 !py-2" type="button" onClick={addModelPriceRow}>添加一行</button>}
         >
-          <div className="space-y-3">
+          <div className="space-y-2.5">
+            <div className="hidden grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto] gap-3 px-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/48 md:grid">
+              <span>模型</span>
+              <span>Input价格</span>
+              <span>Output价格</span>
+              <span className="text-right">操作</span>
+            </div>
             {state.modelPrices.map((row, index) => (
-              <div key={row.id} className="grid gap-3 rounded-[1.5rem] border border-black/8 bg-white/80 p-3 md:grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto]">
-                <label className="form-field">
-                  模型
-                  <input className="input-shell mt-2" type="text" placeholder="openai-gpt-5.4" value={row.modelKey} onChange={(event) => updateModelPriceRow(row.id, "modelKey", event.target.value)} />
-                </label>
-                <label className="form-field">
-                  Input价格
-                  <input className="input-shell mt-2" type="number" min="0" step="0.0001" placeholder="4.6" value={row.inputPricePer1M} onChange={(event) => updateModelPriceRow(row.id, "inputPricePer1M", event.target.value)} />
-                </label>
-                <label className="form-field">
-                  Output价格
-                  <input className="input-shell mt-2" type="number" min="0" step="0.0001" placeholder="13.2" value={row.outputPricePer1M} onChange={(event) => updateModelPriceRow(row.id, "outputPricePer1M", event.target.value)} />
-                </label>
-                <div className="flex items-end justify-end">
-                  <button className="button-cream !px-4 !py-2" type="button" onClick={() => removeModelPriceRow(row.id)}>
+              <div key={row.id} className="rounded-[1.4rem] border border-black/8 bg-white/80 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3 md:hidden">
+                  <span className="text-[0.68rem] uppercase tracking-[0.18em] text-black/48">第 {index + 1} 行</span>
+                  <button className="button-cream !px-3.5 !py-1.5" type="button" onClick={() => removeModelPriceRow(row.id)}>
                     {state.modelPrices.length === 1 && index === 0 ? "清空" : "删除"}
                   </button>
+                </div>
+                <div className="grid gap-2.5 md:grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto] md:items-end">
+                  <input
+                    aria-label="模型"
+                    className="input-shell"
+                    type="text"
+                    placeholder="模型，例如 openai-gpt-5.4"
+                    value={row.modelKey}
+                    onChange={(event) => updateModelPriceRow(row.id, "modelKey", event.target.value)}
+                  />
+                  <input
+                    aria-label="Input价格"
+                    className="input-shell"
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    placeholder="Input价格"
+                    value={row.inputPricePer1M}
+                    onChange={(event) => updateModelPriceRow(row.id, "inputPricePer1M", event.target.value)}
+                  />
+                  <input
+                    aria-label="Output价格"
+                    className="input-shell"
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    placeholder="Output价格"
+                    value={row.outputPricePer1M}
+                    onChange={(event) => updateModelPriceRow(row.id, "outputPricePer1M", event.target.value)}
+                  />
+                  <div className="hidden items-end justify-end md:flex">
+                    <button className="button-cream !px-4 !py-2" type="button" onClick={() => removeModelPriceRow(row.id)}>
+                      {state.modelPrices.length === 1 && index === 0 ? "清空" : "删除"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -291,15 +321,15 @@ function SubmitSection({
   children: ReactNode;
 }) {
   return (
-    <div className="surface-card p-4">
-      <div className="flex flex-col gap-3 border-b border-black/8 pb-3 md:flex-row md:items-start md:justify-between">
+    <div className="surface-card p-3.5">
+      <div className="flex flex-col gap-2.5 border-b border-black/8 pb-2.5 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="kicker !mb-0">{title}</p>
           <p className="mt-1 text-sm leading-6 text-black/62">{description}</p>
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-3.5">{children}</div>
     </div>
   );
 }
