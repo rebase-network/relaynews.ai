@@ -2105,7 +2105,7 @@ function HomePage() {
         </div>
       </section>
 
-      <Panel title="重点榜单" kicker="模型赛道">
+      <Panel title="重点榜单">
         <div className="mb-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
           <p className="max-w-2xl text-xs uppercase tracking-[0.16em] text-black/48">
             展示当前表现最突出的 4 个已跟踪模型赛道。
