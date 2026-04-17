@@ -2108,7 +2108,7 @@ function HomePage() {
       <Panel title="站点榜单">
         <div className="mb-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
           <p className="max-w-2xl text-xs uppercase tracking-[0.16em] text-black/48">
-            展示当前表现最突出的 4 个已跟踪模型赛道。
+            展示按照主流模型分类的榜单，每个模型分类取评分前五的站点，每天会根据测试数据重新排行
           </p>
           <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
             查看全部赛道
