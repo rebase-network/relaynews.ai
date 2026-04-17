@@ -43,6 +43,7 @@ These routes live on the dedicated admin hostname. They are not mirrored under
 | `/intake` | Intake review queue for new relay submissions | CSR in admin SPA | `GET /admin/submissions` |
 | `/credentials` | Relay-key operations for rotation, revoke, and reprobe controls | CSR in admin SPA | `GET /admin/probe-credentials` |
 | `/sponsors` | Sponsor placement management | CSR in admin SPA | `GET /admin/sponsors` |
+| `/models` | Model catalog management for activation and price units | CSR in admin SPA | `GET /admin/models` |
 | `/prices` | Price record management | CSR in admin SPA | `GET /admin/prices` |
 
 ### Admin Intake Flow

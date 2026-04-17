@@ -221,6 +221,32 @@ export const adminPriceCreateSchema = z
     },
   );
 
+export const adminModelSchema = z.object({
+  id: internalIdSchema,
+  key: z.string().min(1),
+  vendor: z.string().min(1),
+  name: z.string().min(1),
+  family: z.string().min(1),
+  inputPriceUnit: z.string().nullable(),
+  outputPriceUnit: z.string().nullable(),
+  isActive: z.boolean(),
+  updatedAt: isoTimestampSchema,
+});
+
+export const adminModelsResponseSchema = z.object({
+  rows: z.array(adminModelSchema),
+});
+
+export const adminModelUpsertSchema = z.object({
+  key: requiredNonEmptyStringSchema,
+  vendor: requiredNonEmptyStringSchema,
+  name: requiredNonEmptyStringSchema,
+  family: requiredNonEmptyStringSchema,
+  inputPriceUnit: nullableNonEmptyStringSchema.optional(),
+  outputPriceUnit: nullableNonEmptyStringSchema.optional(),
+  isActive: z.boolean().default(true),
+});
+
 export const adminRelayModelSchema = z.object({
   relayId: internalIdSchema,
   modelId: internalIdSchema,
@@ -249,3 +275,6 @@ export type AdminSponsorUpsert = z.infer<typeof adminSponsorUpsertSchema>;
 export type AdminPriceRecord = z.infer<typeof adminPriceRecordSchema>;
 export type AdminPricesResponse = z.infer<typeof adminPricesResponseSchema>;
 export type AdminPriceCreate = z.infer<typeof adminPriceCreateSchema>;
+export type AdminModel = z.infer<typeof adminModelSchema>;
+export type AdminModelsResponse = z.infer<typeof adminModelsResponseSchema>;
+export type AdminModelUpsert = z.infer<typeof adminModelUpsertSchema>;

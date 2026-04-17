@@ -108,9 +108,16 @@ async function openPriceForEditing(page: Page, relayName: string) {
   return priceCard;
 }
 
+async function openModelForEditing(page: Page, modelName: string) {
+  const modelCard = page.locator(".admin-list-card").filter({ hasText: modelName }).first();
+  await expect(modelCard).toBeVisible();
+  await modelCard.getByRole("button", { name: "编辑模型" }).click();
+  return modelCard;
+}
+
 test("admin overview shows operating totals", async ({ page }) => {
   await openAdmin(page, "/");
-  await expect(page.getByText("统一管理中转站目录、赞助位与价格记录。", { exact: true })).toBeVisible();
+  await expect(page.getByText("统一管理中转站目录、模型、赞助位与价格记录。", { exact: true })).toBeVisible();
   const overviewTotals = await readOverviewTotals(page);
   expect(overviewTotals.pendingSubmissions).toBeGreaterThanOrEqual(0);
 
@@ -129,6 +136,10 @@ test("admin overview shows operating totals", async ({ page }) => {
   await page.getByRole("link", { name: "赞助位", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sponsors$`));
   await expect(page.getByRole("heading", { name: "赞助位列表", exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "模型", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/models$`));
+  await expect(page.getByRole("heading", { name: "模型列表", exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "价格", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${adminBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/prices$`));
@@ -405,6 +416,60 @@ test("admin can edit and delete price records after reload", async ({ page, requ
   await deletePriceDialog.getByRole("button", { name: "删除价格记录" }).click();
   await expect(page.getByText("价格记录已删除。", { exact: true })).toBeVisible();
   await expect(page.locator(".admin-list-card").filter({ hasText: relayName })).toHaveCount(0);
+});
+
+test("admin can create and enable models for price entry", async ({ page }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Model management is skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const modelKey = `custom-model-${runId}`;
+  const modelName = `模型 ${runId}`;
+  const updatedModelName = `模型已启用 ${runId}`;
+
+  await openAdmin(page, "/models");
+  await page.getByLabel("模型键值").fill(modelKey);
+  await page.getByLabel("模型名称").fill(modelName);
+  await page.getByLabel("模型提供方").fill("Community Relay");
+  await page.getByLabel("模型分类").fill("community-model");
+  await page.getByLabel("输入价格单位").fill("USD / 1M tokens");
+  await page.getByLabel("输出价格单位").fill("USD / 1M tokens");
+  await expect(page.getByLabel("在价格录入中启用")).toBeChecked();
+  await page.getByLabel("在价格录入中启用").uncheck();
+  await page.getByRole("button", { name: "创建模型" }).click();
+
+  await expect(page.getByText("模型已创建。", { exact: true })).toBeVisible();
+  const createdCard = page.locator(".admin-list-card").filter({ hasText: modelName }).first();
+  await expect(createdCard).toBeVisible();
+  await expect(createdCard).toContainText(modelKey);
+  await expect(createdCard).toContainText("已停用");
+
+  await openAdmin(page, "/prices");
+  await expect(page.getByLabel("模型").locator("option").filter({ hasText: modelName })).toHaveCount(0);
+
+  await openAdmin(page, "/models");
+  await openModelForEditing(page, modelName);
+  await page.getByLabel("模型名称").fill(updatedModelName);
+  await page.getByLabel("模型分类").fill("community-series");
+  await page.getByLabel("在价格录入中启用").check();
+  await page.getByRole("button", { name: "保存修改" }).click();
+
+  await expect(page.getByText("模型已更新。", { exact: true })).toBeVisible();
+  const updatedCard = page.locator(".admin-list-card").filter({ hasText: updatedModelName }).first();
+  await expect(updatedCard).toBeVisible();
+  await expect(updatedCard).toContainText("community-series");
+  await expect(updatedCard).toContainText("启用中");
+
+  await page.reload();
+  await openModelForEditing(page, updatedModelName);
+  await expect(page.getByLabel("模型键值")).toHaveValue(modelKey);
+  await expect(page.getByLabel("模型名称")).toHaveValue(updatedModelName);
+  await expect(page.getByLabel("模型分类")).toHaveValue("community-series");
+  await expect(page.getByLabel("在价格录入中启用")).toBeChecked();
+
+  await openAdmin(page, "/prices");
+  await expect(page.getByLabel("模型").locator("option").filter({ hasText: updatedModelName })).toHaveCount(1);
 });
 
 test("admin can soft delete a relay without removing its row", async ({ page, request }) => {

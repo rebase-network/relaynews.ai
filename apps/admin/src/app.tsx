@@ -1,5 +1,8 @@
 import { clsx } from "clsx";
 import {
+  type AdminModel,
+  type AdminModelsResponse,
+  type AdminModelUpsert,
   type AdminProbeCredential,
   type AdminProbeCredentialCreate,
   type AdminProbeCredentialDetail,
@@ -27,13 +30,6 @@ const PUBLIC_SITE_URL =
 const ADMIN_AUTH_STORAGE_KEY = "relaynews.admin.basic-auth";
 const ADMIN_AUTH_REQUIRED_EVENT = "relaynews.admin.auth-required";
 
-type AdminModelOption = {
-  id: string;
-  key: string;
-  name: string;
-  vendor: string;
-};
-
 type MutationState = {
   pending: boolean;
   error: string | null;
@@ -60,6 +56,7 @@ type PriceFormState = {
   source: AdminPriceCreate["source"];
 };
 type PriceFormErrors = Partial<Record<"relayId" | "modelId" | "inputPricePer1M" | "outputPricePer1M" | "effectiveFrom", string>>;
+type ModelFormErrors = Partial<Record<"key" | "vendor" | "name" | "family", string>>;
 type ProbeCredentialFormState = {
   ownerType: ProbeCredentialOwnerType;
   ownerId: string;
@@ -382,6 +379,18 @@ function getRelayOptionLabel(relay: AdminRelaysResponse["rows"][number]) {
   return relay.catalogStatus === "archived" ? `${relay.name} · 已归档` : relay.name;
 }
 
+function getModelOptionLabel(model: AdminModel) {
+  return model.isActive ? model.name : `${model.name} · 已停用`;
+}
+
+function formatModelStatus(isActive: boolean) {
+  return isActive ? "启用中" : "已停用";
+}
+
+function buildPriceModelOptions(models: AdminModel[], selectedModelId: string) {
+  return models.filter((model) => model.isActive || model.id === selectedModelId);
+}
+
 function buildRelaySelectOptions(
   relays: AdminRelaysResponse["rows"],
   selectedRelayId?: string | null,
@@ -514,6 +523,34 @@ function validatePriceForm(form: PriceFormState) {
   return { errors, payload };
 }
 
+function validateModelForm(form: AdminModelUpsert) {
+  const payload: AdminModelUpsert = {
+    key: trimString(form.key),
+    vendor: trimString(form.vendor),
+    name: trimString(form.name),
+    family: trimString(form.family),
+    inputPriceUnit: emptyToNull(form.inputPriceUnit),
+    outputPriceUnit: emptyToNull(form.outputPriceUnit),
+    isActive: form.isActive,
+  };
+  const errors: ModelFormErrors = {};
+
+  if (!payload.key) {
+    errors.key = "请输入模型键值。";
+  }
+  if (!payload.vendor) {
+    errors.vendor = "请输入模型提供方。";
+  }
+  if (!payload.name) {
+    errors.name = "请输入模型名称。";
+  }
+  if (!payload.family) {
+    errors.family = "请输入模型分类。";
+  }
+
+  return { errors, payload };
+}
+
 function validateProbeCredentialForm(form: ProbeCredentialFormState) {
   const payload: AdminProbeCredentialCreate = {
     ownerType: form.ownerType,
@@ -559,6 +596,18 @@ function createDefaultPriceFormState(): PriceFormState {
     outputPricePer1M: "0.5",
     effectiveFrom: new Date().toISOString(),
     source: "manual",
+  };
+}
+
+function createDefaultModelFormState(): AdminModelUpsert {
+  return {
+    key: "",
+    vendor: "",
+    name: "",
+    family: "",
+    inputPriceUnit: "USD / 1M tokens",
+    outputPriceUnit: "USD / 1M tokens",
+    isActive: true,
   };
 }
 
@@ -617,6 +666,7 @@ function AdminShell({
     ["/intake", "审核队列"],
     ["/credentials", "密钥"],
     ["/sponsors", "赞助位"],
+    ["/models", "模型"],
     ["/prices", "价格"],
   ] as const;
 
@@ -636,9 +686,9 @@ function AdminShell({
                 relaynew.ai 管理台
               </div>
               <div>
-                <h1 className="text-3xl tracking-[-0.05em] md:text-4xl">统一管理中转站目录、赞助位与价格记录。</h1>
+                <h1 className="text-3xl tracking-[-0.05em] md:text-4xl">统一管理中转站目录、模型、赞助位与价格记录。</h1>
                 <p className="mt-2.5 max-w-2xl text-sm leading-6 text-white/60">
-                  在一个中文化控制台里处理提交审核、目录维护、赞助投放和价格更新。
+                  在一个中文化控制台里处理提交审核、目录维护、模型维护、赞助投放和价格更新。
                 </p>
               </div>
             </div>
@@ -804,7 +854,7 @@ function AdminLogin({ onAuthenticated }: { onAuthenticated: (authorization: stri
           <p className="eyebrow">管理员认证</p>
           <h1 className="text-3xl tracking-[-0.04em] md:text-[2rem]">登录后继续</h1>
           <p className="mt-3 text-sm leading-6 text-white/62">
-            管理后台需要先完成身份验证，才能访问审核队列、中转站、赞助位和价格管理。
+            管理后台需要先完成身份验证，才能访问审核队列、中转站、模型、赞助位和价格管理。
           </p>
           <form className="mt-5 grid gap-3" onSubmit={handleSubmit}>
             <label className="field-label">
@@ -898,7 +948,7 @@ function OverviewPage() {
               {
                 step: "3",
                 title: "后续运营维护",
-                text: "目录信息在中转站页面维护；密钥页只处理轮换、删除或修复等后续操作。",
+                text: "目录信息、模型与价格在对应页面维护；密钥页只处理轮换、删除或修复等后续操作。",
                 action: { href: "/relays", label: "打开中转站页面" },
               },
             ].map((item) => (
@@ -923,6 +973,10 @@ function OverviewPage() {
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/relays">
               <p className="text-sm uppercase tracking-[0.16em] text-white/42">目录管理</p>
               <p className="mt-1 text-lg tracking-[-0.03em]">查看 Relay 状态与元数据</p>
+            </Link>
+            <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/models">
+              <p className="text-sm uppercase tracking-[0.16em] text-white/42">模型目录</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">新增模型并维护启停状态</p>
             </Link>
             <Link className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:bg-white/8" to="/credentials">
               <p className="text-sm uppercase tracking-[0.16em] text-white/42">Relay 密钥</p>
@@ -2212,16 +2266,195 @@ function SponsorsPage() {
   );
 }
 
+function ModelsPage() {
+  const models = useLoadable<AdminModelsResponse>(() => fetchJson("/admin/models"), []);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<AdminModelUpsert>(createDefaultModelFormState);
+  const [fieldErrors, setFieldErrors] = useState<ModelFormErrors>({});
+  const [mutation, setMutation] = useMutationState();
+
+  function resetForm() {
+    setEditingId(null);
+    setForm(createDefaultModelFormState());
+    setFieldErrors({});
+    setMutation({ pending: false, error: null, success: null });
+  }
+
+  function beginEditingModel(model: AdminModel) {
+    setEditingId(model.id);
+    setForm({
+      key: model.key,
+      vendor: model.vendor,
+      name: model.name,
+      family: model.family,
+      inputPriceUnit: model.inputPriceUnit,
+      outputPriceUnit: model.outputPriceUnit,
+      isActive: model.isActive,
+    });
+    setFieldErrors({});
+    setMutation({ pending: false, error: null, success: null });
+  }
+
+  async function submitModel() {
+    const { errors, payload } = validateModelForm(form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setMutation({ pending: false, error: "请先修正高亮字段，再保存模型。", success: null });
+      return;
+    }
+
+    setMutation({ pending: true, error: null, success: null });
+    try {
+      await fetchJson(editingId ? `/admin/models/${editingId}` : "/admin/models", {
+        method: editingId ? "PATCH" : "POST",
+        body: JSON.stringify(payload),
+      });
+      setMutation({ pending: false, error: null, success: editingId ? "模型已更新。" : "模型已创建。" });
+      setEditingId(null);
+      setForm(createDefaultModelFormState());
+      setFieldErrors({});
+      await models.reload();
+    } catch (reason) {
+      setMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : editingId ? "无法更新模型。" : "无法创建模型。",
+        success: null,
+      });
+    }
+  }
+
+  if (models.loading) return <LoadingCard />;
+  if (models.error || !models.data) return <ErrorCard message={models.error ?? "无法加载模型列表。"} />;
+
+  const activeCount = models.data.rows.filter((model) => model.isActive).length;
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <Card title="模型列表" kicker="站点目录使用的模型">
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-6 text-white/62">
+          这里维护站点目录使用的模型清单。启用中的模型会出现在价格页的下拉框中；停用后会保留历史价格和探测数据，
+          但不再用于新的价格录入。
+        </div>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">模型目录</p>
+              <p className="mt-1 text-lg tracking-[-0.03em]">当前已录入的模型</p>
+            </div>
+            <p className="text-sm text-white/48">
+              启用 {activeCount} / 共 {models.data.rows.length}
+            </p>
+          </div>
+          {models.data.rows.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
+              当前还没有模型记录，请先补录模型目录。
+            </div>
+          ) : models.data.rows.map((model) => (
+            <div
+              key={model.id}
+              className={clsx(
+                "admin-list-card border p-3.5",
+                model.id === editingId ? "border-[#ffd06a]/70 bg-white/10" : "border-white/10 bg-white/5",
+              )}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xl tracking-[-0.03em]">{model.name}</p>
+                  <p className="mt-1 text-sm text-white/60">{model.vendor} · {model.family}</p>
+                </div>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/40">{formatModelStatus(model.isActive)}</p>
+              </div>
+              <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{model.key}</p>
+              <p className="mt-3 text-sm text-white/60">
+                输入单位：{model.inputPriceUnit ?? "未设置"} · 输出单位：{model.outputPriceUnit ?? "未设置"}
+              </p>
+              <p className="mt-2 text-sm text-white/55">
+                最近更新：{formatDateTime(model.updatedAt)}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className="pill pill-idle" onClick={() => beginEditingModel(model)} type="button">
+                  编辑模型
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card title={editingId ? "编辑模型" : "创建模型"} kicker={editingId ? "模型维护" : "目录补录"}>
+        {editingId ? (
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
+            你正在编辑已有模型。停用模型后，价格页不会再允许新建该模型的价格记录，但历史数据仍会保留。
+          </div>
+        ) : null}
+        <div className="grid gap-2.5">
+          {([
+            { label: "模型键值", key: "key", placeholder: "openai-gpt-4.1" },
+            { label: "模型名称", key: "name", placeholder: "GPT-4.1" },
+            { label: "模型提供方", key: "vendor", placeholder: "OpenAI" },
+            { label: "模型分类", key: "family", placeholder: "gpt-4.1" },
+            { label: "输入价格单位", key: "inputPriceUnit", placeholder: "USD / 1M tokens" },
+            { label: "输出价格单位", key: "outputPriceUnit", placeholder: "USD / 1M tokens" },
+          ] as const).map(({ label, key, placeholder }) => (
+            <label key={key} className="field-label">
+              {label}
+              <input
+                className="field-input"
+                placeholder={placeholder}
+                type="text"
+                value={form[key] ?? ""}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    [key]: nextValue || (key === "inputPriceUnit" || key === "outputPriceUnit" ? null : ""),
+                  }));
+                  if (key === "key" || key === "vendor" || key === "name" || key === "family") {
+                    setFieldErrors((current) => withoutFieldError(current, key));
+                  }
+                  setMutation((current) => ({ ...current, error: null }));
+                }}
+              />
+              <FieldError
+                message={
+                  key === "key" || key === "vendor" || key === "name" || key === "family"
+                    ? fieldErrors[key]
+                    : undefined
+                }
+              />
+            </label>
+          ))}
+          <label className="inline-flex items-center gap-3 text-sm text-white/70">
+            <input
+              checked={form.isActive}
+              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+              type="checkbox"
+            />
+            在价格录入中启用
+          </label>
+          <div className="flex flex-wrap gap-2.5">
+            <button className="pill pill-active" disabled={mutation.pending} onClick={submitModel} type="button">
+              {mutation.pending ? "保存中..." : editingId ? "保存修改" : "创建模型"}
+            </button>
+            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>取消编辑</button> : null}
+          </div>
+          <Notice state={mutation} />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function PricesPage() {
   const prices = useLoadable<AdminPricesResponse>(() => fetchJson("/admin/prices"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
-  const models = useLoadable<{ rows: AdminModelOption[] }>(() => fetchJson("/admin/models"), []);
+  const models = useLoadable<AdminModelsResponse>(() => fetchJson("/admin/models"), []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [priceDeleteTarget, setPriceDeleteTarget] = useState<AdminPricesResponse["rows"][number] | null>(null);
   const [form, setForm] = useState<PriceFormState>(createDefaultPriceFormState);
   const [fieldErrors, setFieldErrors] = useState<PriceFormErrors>({});
   const [mutation, setMutation] = useMutationState();
   const relayOptions = buildRelaySelectOptions(relays.data?.rows ?? [], form.relayId);
+  const selectableModels = buildPriceModelOptions(models.data?.rows ?? [], form.modelId);
 
   function resetForm() {
     setEditingId(null);
@@ -2343,7 +2576,7 @@ function PricesPage() {
         ) : null}
         <div className="grid gap-2.5">
           <label className="field-label">中转站<select className="field-input" value={form.relayId} onChange={(event) => { setForm((current) => ({ ...current, relayId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "relayId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">请选择中转站</option>{relayOptions.map((relay) => <option key={relay.id} value={relay.id}>{getRelayOptionLabel(relay)}</option>)}</select><FieldError message={fieldErrors.relayId} /></label>
-          <label className="field-label">模型<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">请选择模型</option>{models.data.rows.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
+          <label className="field-label">模型<select className="field-input" value={form.modelId} onChange={(event) => { setForm((current) => ({ ...current, modelId: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "modelId")); setMutation((current) => ({ ...current, error: null })); }}><option value="">请选择模型</option>{selectableModels.map((model) => <option key={model.id} value={model.id}>{getModelOptionLabel(model)}</option>)}</select><FieldError message={fieldErrors.modelId} /></label>
           <label className="field-label">货币<input className="field-input" value={form.currency} onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))} /></label>
           <label className="field-label">来源<select className="field-input" value={form.source} onChange={(event) => setForm((current) => ({ ...current, source: event.target.value as PriceFormState["source"] }))}><option value="manual">手动录入</option><option value="scraped">scraped</option><option value="detected">detected</option><option value="api">api</option></select></label>
           <label className="field-label">输入价<input className="field-input" type="number" min="0" step="0.01" value={form.inputPricePer1M} onChange={(event) => { setForm((current) => ({ ...current, inputPricePer1M: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "inputPricePer1M")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.inputPricePer1M} /></label>
@@ -2423,6 +2656,7 @@ function AdminRoutes() {
       <Route path="/submissions" element={<Navigate replace to="/intake" />} />
       <Route path="/credentials" element={<CredentialsPage />} />
       <Route path="/sponsors" element={<SponsorsPage />} />
+      <Route path="/models" element={<ModelsPage />} />
       <Route path="/prices" element={<PricesPage />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

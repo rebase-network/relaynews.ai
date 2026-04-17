@@ -1,4 +1,6 @@
 import {
+  adminModelsResponseSchema,
+  adminModelUpsertSchema,
   adminOverviewResponseSchema,
   adminProbeCredentialCreateSchema,
   adminProbeCredentialDetailSchema,
@@ -436,12 +438,68 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.get("/admin/models", async () => {
     const rows = await app.db
       .selectFrom("models")
-      .select(["id", "key", "name", "vendor"])
-      .where("is_active", "=", true)
+      .select([
+        "id",
+        "key",
+        "name",
+        "vendor",
+        "family",
+        "input_price_unit as inputPriceUnit",
+        "output_price_unit as outputPriceUnit",
+        "is_active as isActive",
+        "updated_at as updatedAt",
+      ])
       .orderBy("name", "asc")
       .execute();
 
-    return { rows };
+    return adminModelsResponseSchema.parse({ rows });
+  });
+
+  app.post("/admin/models", async (request, reply) => {
+    const body = adminModelUpsertSchema.parse(request.body ?? {});
+    const row = await app.db
+      .insertInto("models")
+      .values({
+        key: body.key,
+        vendor: body.vendor,
+        name: body.name,
+        family: body.family,
+        input_price_unit: body.inputPriceUnit ?? null,
+        output_price_unit: body.outputPriceUnit ?? null,
+        is_active: body.isActive,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await refreshPublicData(app.db);
+    reply.code(201);
+    return { ok: true, id: row.id };
+  });
+
+  app.patch("/admin/models/:id", async (request) => {
+    const params = request.params as { id: string };
+    const body = adminModelUpsertSchema.parse(request.body ?? {});
+    const updatedAt = new Date().toISOString();
+
+    await app.db
+      .updateTable("models")
+      .set({
+        key: body.key,
+        vendor: body.vendor,
+        name: body.name,
+        family: body.family,
+        input_price_unit: body.inputPriceUnit ?? null,
+        output_price_unit: body.outputPriceUnit ?? null,
+        is_active: body.isActive,
+        updated_at: updatedAt,
+      })
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    await refreshPublicData(app.db);
+    return { ok: true };
   });
 
   app.post("/admin/relays", async (request, reply) => {
