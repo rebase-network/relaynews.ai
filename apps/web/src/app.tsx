@@ -2389,7 +2389,7 @@ function LeaderboardPage() {
         <div className="surface-card p-4">
           <p className="kicker">赞助分离</p>
           <p className="mt-3 text-sm leading-6 text-black/72">
-            赞助展示只会出现在独立模块，不会混入自然排名表格，也不会影响这里的实测顺序。
+            赞助方展示只会出现在独立模块，不会混入排名，也不会影响这里的实测结果。
           </p>
           <Link className="mt-4 inline-flex text-sm underline underline-offset-4" to="/policy">
             查看评估政策
