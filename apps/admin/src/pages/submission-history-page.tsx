@@ -55,7 +55,6 @@ export function SubmissionHistoryPage() {
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">归档 {archivedCount}</span>
             <InfoTip content="列表只展示概要信息。需要查看提交资料、测试快照或审批备注时，在右侧抽屉中展开。" />
           </div>
-          <p className="text-sm text-white/48">列表收敛为概览，详细信息统一放到右侧抽屉。</p>
         </div>
 
         <div className="mt-3 space-y-2">

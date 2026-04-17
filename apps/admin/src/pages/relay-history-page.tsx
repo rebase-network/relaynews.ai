@@ -52,16 +52,12 @@ export function RelayHistoryPage() {
       <Card title="Relay 历史">
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-white/72">当前归档 Relay</p>
-            <InfoTip content="归档后的 Relay 不会参与自动测试，也不会出现在公开目录和榜单中" />
             <div className="flex flex-wrap gap-2 sm:ml-2">
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
                 共 {archivedRelays.length} 条
               </span>
             </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 历史</p>
+            <InfoTip content="归档后的 Relay 不会参与自动测试，也不会出现在公开目录和榜单中" />
           </div>
         </div>
 

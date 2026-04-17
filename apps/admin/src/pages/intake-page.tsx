@@ -53,7 +53,6 @@ export function IntakePage() {
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">需关注 {attentionCount}</span>
             <InfoTip content="这里只保留待处理提交。审批通过后会进入 Relay 列表；拒绝或归档后只保留在提交历史中。" />
           </div>
-          <p className="text-sm text-white/48">点击列表项即可在右侧抽屉中查看完整资料、测试快照和审核操作。</p>
         </div>
 
         <div className="mt-3 space-y-2">

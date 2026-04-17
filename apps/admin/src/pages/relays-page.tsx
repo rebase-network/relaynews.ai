@@ -200,9 +200,7 @@ export function RelaysPage() {
               </button>
             </div>
           </div>
-          <p className="text-sm text-white/48">
-            {statusFilter !== "all" ? `当前显示 ${filteredRelays.length} / ${currentRelays.length} 条` : "点击列表项即可展开右侧抽屉查看详情。"}
-          </p>
+          {statusFilter !== "all" ? <p className="text-sm text-white/48">当前显示 {filteredRelays.length} / {currentRelays.length} 条</p> : null}
         </div>
 
         <div className="mt-3 space-y-2">

@@ -104,7 +104,6 @@ export function SponsorsPage() {
             <p className="text-sm text-white/72">当前共 {sponsorRows.length} 条</p>
             <InfoTip content="赞助位收敛为简单列表：从 active Relay 中挑选要展示的站点即可，不再单独维护投放状态、时间窗口或批量操作。" />
           </div>
-          <p className="text-sm text-white/48">只保留当前展示所需的 Relay 选择与移除操作。</p>
         </div>
 
         <div className="mt-3 space-y-2">
