@@ -723,6 +723,7 @@ function RelaysPage() {
     notes: null,
   };
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [relayPendingSoftDeleteId, setRelayPendingSoftDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<AdminRelayUpsert>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<RelayFormErrors>({});
   const [mutation, setMutation] = useMutationState();
@@ -746,12 +747,14 @@ function RelaysPage() {
     });
     setFieldErrors({});
     setMutation({ pending: false, error: null, success: null });
+    setRelayPendingSoftDeleteId(null);
   }
 
   function resetForm() {
     setEditingId(null);
     setForm(emptyForm);
     setFieldErrors({});
+    setRelayPendingSoftDeleteId(null);
   }
 
   async function softDeleteRelay(relay: AdminRelaysResponse["rows"][number]) {
@@ -763,6 +766,7 @@ function RelaysPage() {
       if (editingId === relay.id) {
         resetForm();
       }
+      setRelayPendingSoftDeleteId(null);
       setMutation({
         pending: false,
         error: null,
@@ -770,6 +774,7 @@ function RelaysPage() {
       });
       await relays.reload();
     } catch (reason) {
+      setRelayPendingSoftDeleteId(null);
       setMutation({
         pending: false,
         error: reason instanceof Error ? reason.message : "Unable to archive relay.",
@@ -820,62 +825,73 @@ function RelaysPage() {
     return <ErrorCard message={relays.error ?? credentials.error ?? "Unable to load relays."} />;
   }
 
+  const activeRelays = relays.data.rows.filter((relay) => relay.catalogStatus !== "archived");
+  const archivedRelays = relays.data.rows.filter((relay) => relay.catalogStatus === "archived");
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <Card title="Relay catalog" kicker="Current rows">
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
           This is the fastest post-approval checkpoint. You can confirm catalog status, see whether
           a monitoring key is attached, jump straight into key rotation, or soft delete a relay
-          without removing its database row.
+          without removing its database row. Archived relays stay visible here for audit and
+          future restore work.
         </div>
-        <div className="space-y-2.5">
-          {relays.data.rows.map((relay) => (
-            <div
-              key={relay.id}
-              className="admin-list-card w-full border border-white/10 bg-white/5 p-3.5 text-left transition hover:bg-white/8"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">{relay.slug} · {relay.catalogStatus}</p>
-                </div>
-                <div className="text-right text-xs uppercase tracking-[0.14em] text-white/50">
-                  <p>{relay.isFeatured ? "featured" : "standard"}</p>
-                  <p>{relay.isSponsored ? "sponsor hint" : "organic"}</p>
-                </div>
+        <div className="space-y-5">
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Live catalog</p>
+                <p className="mt-1 text-lg tracking-[-0.03em]">Active and editable relays</p>
               </div>
-              {(() => {
-                const credential = relayCredentialLookup.get(relay.id);
+              <p className="text-sm text-white/48">{activeRelays.length} rows</p>
+            </div>
+            {activeRelays.map((relay) => (
+              <div
+                key={relay.id}
+                className="admin-list-card w-full border border-white/10 bg-white/5 p-3.5 text-left transition hover:bg-white/8"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">{relay.slug} · {relay.catalogStatus}</p>
+                  </div>
+                  <div className="text-right text-xs uppercase tracking-[0.14em] text-white/50">
+                    <p>{relay.isFeatured ? "featured" : "standard"}</p>
+                    <p>{relay.isSponsored ? "sponsor hint" : "organic"}</p>
+                  </div>
+                </div>
+                {(() => {
+                  const credential = relayCredentialLookup.get(relay.id);
 
-                return (
-                  <>
-                    <p className="mt-3 text-sm text-white/62">{relay.baseUrl}</p>
-                    <p className={clsx("mt-3 text-sm", credential ? "text-white/72" : "text-[#ffd06a]")}>
-                      {credential ? `Monitoring key · ${credential.status}` : "Monitoring key missing"}
-                    </p>
-                    <p className="mt-1 text-sm text-white/55">
-                      {credential
-                        ? `${credential.testModel} · ${credential.lastHealthStatus ?? "unknown"}${credential.lastHttpStatus ? ` · ${credential.lastHttpStatus}` : ""}`
-                        : "Attach a relay-owned key so scheduled probe runs can start."}
-                      {credential?.lastVerifiedAt
-                        ? ` · ${new Date(credential.lastVerifiedAt).toLocaleString()}`
-                        : ""}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button className="pill pill-active" onClick={() => beginEditingRelay(relay)} type="button">
-                        Edit relay
-                      </button>
-                      <Link
-                        className="pill pill-idle"
-                        to={buildCredentialRoute({
-                          credentialId: credential?.id ?? null,
-                          ownerType: "relay",
-                          ownerId: relay.id,
-                        })}
-                      >
-                        {credential ? "Manage key" : "Add key"}
-                      </Link>
-                      {relay.catalogStatus !== "archived" ? (
+                  return (
+                    <>
+                      <p className="mt-3 text-sm text-white/62">{relay.baseUrl}</p>
+                      <p className={clsx("mt-3 text-sm", credential ? "text-white/72" : "text-[#ffd06a]")}>
+                        {credential ? `Monitoring key · ${credential.status}` : "Monitoring key missing"}
+                      </p>
+                      <p className="mt-1 text-sm text-white/55">
+                        {credential
+                          ? `${credential.testModel} · ${credential.lastHealthStatus ?? "unknown"}${credential.lastHttpStatus ? ` · ${credential.lastHttpStatus}` : ""}`
+                          : "Attach a relay-owned key so scheduled probe runs can start."}
+                        {credential?.lastVerifiedAt
+                          ? ` · ${new Date(credential.lastVerifiedAt).toLocaleString()}`
+                          : ""}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button className="pill pill-active" onClick={() => beginEditingRelay(relay)} type="button">
+                          Edit relay
+                        </button>
+                        <Link
+                          className="pill pill-idle"
+                          to={buildCredentialRoute({
+                            credentialId: credential?.id ?? null,
+                            ownerType: "relay",
+                            ownerId: relay.id,
+                          })}
+                        >
+                          {credential ? "Manage key" : "Add key"}
+                        </Link>
                         <a
                           className="pill pill-ghost"
                           href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`}
@@ -884,25 +900,86 @@ function RelaysPage() {
                         >
                           Public page
                         </a>
-                      ) : null}
-                      {relay.catalogStatus !== "archived" ? (
-                        <button
-                          className="pill pill-ghost"
-                          disabled={mutation.pending}
-                          onClick={() => softDeleteRelay(relay)}
-                          type="button"
-                        >
-                          Soft delete
-                        </button>
-                      ) : (
-                        <span className="pill pill-ghost opacity-60">Archived</span>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
+                        {relayPendingSoftDeleteId === relay.id ? (
+                          <>
+                            <button
+                              className="pill pill-ghost"
+                              disabled={mutation.pending}
+                              onClick={() => softDeleteRelay(relay)}
+                              type="button"
+                            >
+                              Confirm delete
+                            </button>
+                            <button
+                              className="pill pill-idle"
+                              disabled={mutation.pending}
+                              onClick={() => setRelayPendingSoftDeleteId(null)}
+                              type="button"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="pill pill-ghost"
+                            disabled={mutation.pending}
+                            onClick={() => setRelayPendingSoftDeleteId(relay.id)}
+                            type="button"
+                          >
+                            Soft delete
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Archived relays</p>
+                <p className="mt-1 text-lg tracking-[-0.03em]">Soft-deleted rows kept in the system</p>
+              </div>
+              <p className="text-sm text-white/48">{archivedRelays.length} rows</p>
             </div>
-          ))}
+            {archivedRelays.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
+                No archived relays yet.
+              </div>
+            ) : archivedRelays.map((relay) => (
+              <div
+                key={relay.id}
+                className="admin-list-card w-full border border-white/10 bg-white/5 p-3.5 text-left opacity-85"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xl tracking-[-0.03em]">{relay.name}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">{relay.slug} · {relay.catalogStatus}</p>
+                  </div>
+                  <span className="pill pill-ghost opacity-60">Archived</span>
+                </div>
+                <p className="mt-3 text-sm text-white/62">{relay.baseUrl}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button className="pill pill-active" onClick={() => beginEditingRelay(relay)} type="button">
+                    Inspect row
+                  </button>
+                  <Link
+                    className="pill pill-idle"
+                    to={buildCredentialRoute({
+                      credentialId: relayCredentialLookup.get(relay.id)?.id ?? null,
+                      ownerType: "relay",
+                      ownerId: relay.id,
+                    })}
+                  >
+                    Manage key
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </Card>
       <Card title={editingId ? "Edit relay" : "Create relay"} kicker="Write path">

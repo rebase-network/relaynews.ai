@@ -183,13 +183,19 @@ test("admin can soft delete a relay without removing its row", async ({ page, re
   const relayCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
   await expect(relayCard).toBeVisible();
   await relayCard.getByRole("button", { name: "Soft delete" }).click();
+  await expect(relayCard.getByRole("button", { name: "Confirm delete" })).toBeVisible();
+  await expect(relayCard.getByRole("button", { name: "Cancel" })).toBeVisible();
+  await relayCard.getByRole("button", { name: "Confirm delete" }).click();
   await expect(page.getByText("Relay archived. The row stays in Postgres and drops out of public surfaces.")).toBeVisible();
-  await expect(relayCard).toContainText(/archived/i);
-  await expect(relayCard.getByRole("button", { name: "Soft delete" })).toHaveCount(0);
-  await expect(relayCard.getByText("Archived", { exact: true })).toBeVisible();
+  await expect(page.getByText("Archived relays", { exact: true })).toBeVisible();
 
   await page.reload();
-  const archivedCard = page.locator(".admin-list-card").filter({ hasText: relayName }).first();
+  const archivedCard = page
+    .locator(".admin-list-card")
+    .filter({ hasText: relayName })
+    .filter({ has: page.getByText("Archived", { exact: true }) })
+    .first();
+  await expect(page.getByText("Soft-deleted rows kept in the system")).toBeVisible();
   await expect(archivedCard).toContainText(/archived/i);
 
   const after = await readOverviewTotals(page);
