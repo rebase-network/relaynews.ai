@@ -2125,29 +2125,6 @@ function HomePage() {
         </div>
       </Panel>
 
-      <Panel title="最近事件" kicker="异常与退化" titleClassName="text-[2.2rem] md:text-[2.45rem]">
-        <div className="mb-4 flex flex-col gap-2.5 lg:flex-row lg:items-end lg:justify-between">
-          <p className="max-w-3xl text-sm leading-6 text-black/68">
-            这里仅展示最近观测到的异常、退化或暂停事件，帮助普通用户快速判断风险，
-            也帮助节点运营者确认哪些问题已经进入公开视野。
-          </p>
-          <p className="text-xs uppercase tracking-[0.16em] text-black/48">
-            与重点榜单、赞助位分别独立展示
-          </p>
-        </div>
-        {data.latestIncidents.length > 0 ? (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {data.latestIncidents.map((incident) => (
-              <HomeIncidentCard key={incident.id} incident={incident} />
-            ))}
-          </div>
-        ) : (
-          <div className="surface-card p-4 text-sm leading-6 text-black/68">
-            当前快照里还没有需要公开提示的最新异常事件。榜单和赞助位会继续保持独立展示。
-          </div>
-        )}
-      </Panel>
-
       <section className="home-bridge">
         <p className="home-bridge-copy">
           评测是基于多个维度对站点服务质量进行自动化测试，赞助并不影响评测，会有单独的赞助方展示，力求评测公开公正
