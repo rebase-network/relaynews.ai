@@ -16,6 +16,10 @@ import { registerAdminRoutes } from "./routes/admin";
 import { registerProbeRoutes } from "./routes/probe";
 import { registerPublicRoutes } from "./routes/public";
 
+const PUBLIC_API_CACHE_CONTROL = "public, max-age=15";
+const PUBLIC_API_CDN_CACHE_CONTROL =
+  "public, max-age=60, stale-while-revalidate=300, stale-if-error=600";
+
 declare module "fastify" {
   interface FastifyInstance {
     db: Kysely<Database>;
@@ -36,6 +40,29 @@ export async function buildApp() {
     allowedHeaders: ["Content-Type", "Authorization"],
   });
   await app.register(sensible);
+
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (request.method !== "GET") {
+      return payload;
+    }
+
+    const path = request.url.split("?")[0] ?? request.url;
+    const publicPrefix = config.API_BASE_PATH ? `${config.API_BASE_PATH}/public` : "/public";
+
+    if (path !== publicPrefix && !path.startsWith(`${publicPrefix}/`)) {
+      return payload;
+    }
+
+    if (!reply.hasHeader("Cache-Control")) {
+      reply.header("Cache-Control", PUBLIC_API_CACHE_CONTROL);
+    }
+
+    if (!reply.hasHeader("Cloudflare-CDN-Cache-Control")) {
+      reply.header("Cloudflare-CDN-Cache-Control", PUBLIC_API_CDN_CACHE_CONTROL);
+    }
+
+    return payload;
+  });
 
   app.addHook("onRequest", async (request, reply) => {
     if (request.method === "OPTIONS") {

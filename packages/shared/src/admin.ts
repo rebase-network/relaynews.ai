@@ -7,63 +7,22 @@ import {
   relaySummarySchema,
   supportStatusSchema,
 } from "./common";
-import {
-  probeCompatibilityModeSchema,
-  probeDetectionModeSchema,
-  probeResolvedCompatibilityModeSchema,
-} from "./probe";
+import { probeCompatibilityModeSchema, probeDetectionModeSchema } from "./probe";
+import { submissionProbeSummarySchema } from "./submissions";
 
 const internalIdSchema = z.string().min(1);
 const trimString = (value: unknown) => (typeof value === "string" ? value.trim() : value);
-const emptyStringToUndefined = (value: unknown) => {
-  const trimmed = trimString(value);
-  return trimmed === "" ? undefined : trimmed;
-};
 const emptyStringToNull = (value: unknown) => {
   const trimmed = trimString(value);
   return trimmed === "" ? null : trimmed;
 };
 const requiredUrlSchema = z.preprocess(trimString, z.url());
-const requiredHttpsUrlSchema = z.preprocess(trimString, z.url({ protocol: /^https$/ }));
-const optionalUrlSchema = z.preprocess(emptyStringToUndefined, z.url().optional());
 const nullableUrlSchema = z.preprocess(emptyStringToNull, z.url().nullable());
-const optionalNonEmptyStringSchema = z.preprocess(emptyStringToUndefined, z.string().min(1).optional());
-const optionalEmailSchema = z.preprocess(emptyStringToUndefined, z.email().optional());
 const nullableNonEmptyStringSchema = z.preprocess(emptyStringToNull, z.string().min(1).nullable());
 const requiredNonEmptyStringSchema = z.preprocess(trimString, z.string().min(1));
 
 export const probeCredentialStatusSchema = z.enum(["active", "rotated", "revoked"]);
 export const probeCredentialOwnerTypeSchema = z.enum(["submission", "relay"]);
-
-export const publicSubmissionRequestSchema = z.object({
-  relayName: requiredNonEmptyStringSchema,
-  baseUrl: requiredHttpsUrlSchema,
-  websiteUrl: optionalUrlSchema,
-  description: requiredNonEmptyStringSchema,
-  submitterName: optionalNonEmptyStringSchema,
-  submitterEmail: optionalEmailSchema,
-  notes: optionalNonEmptyStringSchema,
-  testApiKey: requiredNonEmptyStringSchema,
-  testModel: requiredNonEmptyStringSchema,
-  compatibilityMode: z.preprocess(trimString, probeCompatibilityModeSchema).default("auto"),
-});
-
-export const submissionProbeSummarySchema = z.object({
-  ok: z.boolean(),
-  healthStatus: healthStatusSchema,
-  httpStatus: z.number().int().min(100).max(599).nullable(),
-  message: z.string().nullable(),
-  verifiedAt: isoTimestampSchema,
-  compatibilityMode: probeResolvedCompatibilityModeSchema.nullable().optional(),
-  detectionMode: probeDetectionModeSchema.optional(),
-});
-
-export const publicSubmissionResponseSchema = z.object({
-  ok: z.literal(true),
-  id: internalIdSchema,
-  status: z.enum(["pending", "approved", "rejected", "archived"]),
-  probe: submissionProbeSummarySchema.nullable().optional(),
-});
 
 export const adminOverviewResponseSchema = z.object({
   totals: z.object({
@@ -257,9 +216,6 @@ export const adminRelayModelSchema = z.object({
   supportStatus: supportStatusSchema,
 });
 
-export type PublicSubmissionRequest = z.infer<typeof publicSubmissionRequestSchema>;
-export type PublicSubmissionResponse = z.infer<typeof publicSubmissionResponseSchema>;
-export type SubmissionProbeSummary = z.infer<typeof submissionProbeSummarySchema>;
 export type AdminOverviewResponse = z.infer<typeof adminOverviewResponseSchema>;
 export type AdminRelay = z.infer<typeof adminRelaySchema>;
 export type AdminRelaysResponse = z.infer<typeof adminRelaysResponseSchema>;

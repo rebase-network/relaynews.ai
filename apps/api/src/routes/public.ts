@@ -14,11 +14,18 @@ import {
   relayOverviewResponseSchema,
   relayPricingHistoryQuerySchema,
   relayPricingHistoryResponseSchema,
+  publicSubmissionRequestSchema,
+  publicSubmissionResponseSchema,
 } from "@relaynews/shared";
 import type { FastifyInstance } from "fastify";
 
 import { orderLeaderboardModels } from "../lib/leaderboard-order";
 import { getMethodologyPayload } from "../lib/methodology";
+import { runPublicProbe } from "../lib/probe";
+import {
+  toProbeCredentialVerification,
+  toSubmissionProbeSummary,
+} from "../lib/probe-credentials";
 
 function assertRelayFound(relay: { id: string; slug: string; name: string } | undefined) {
   if (!relay) {
@@ -438,5 +445,79 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     return methodologyResponseSchema.parse(
       getMethodologyPayload(row?.measuredAt ?? new Date().toISOString()),
     );
+  });
+
+  app.post("/public/submissions", async (request, reply) => {
+    const body = publicSubmissionRequestSchema.parse(request.body ?? {});
+    const createdAt = new Date().toISOString();
+    const row = await app.db.transaction().execute(async (trx) => {
+      const submission = await trx
+        .insertInto("submissions")
+        .values({
+          relay_name: body.relayName,
+          base_url: body.baseUrl,
+          website_url: body.websiteUrl ?? null,
+          description: body.description,
+          submitter_name: body.submitterName ?? null,
+          submitter_email: body.submitterEmail ?? null,
+          notes: body.notes ?? null,
+          status: "pending",
+          review_notes: null,
+          approved_relay_id: null,
+          created_at: createdAt,
+          updated_at: createdAt,
+        })
+        .returning(["id", "status"])
+        .executeTakeFirstOrThrow();
+
+      const credential = await trx
+        .insertInto("probe_credentials")
+        .values({
+          submission_id: submission.id,
+          relay_id: null,
+          api_key: body.testApiKey,
+          test_model: body.testModel,
+          compatibility_mode: body.compatibilityMode,
+          status: "active",
+          last_verified_at: null,
+          last_probe_ok: null,
+          last_health_status: null,
+          last_http_status: null,
+          last_message: null,
+          last_detection_mode: null,
+          last_used_url: null,
+          created_at: createdAt,
+          updated_at: createdAt,
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+
+      return {
+        id: submission.id,
+        status: submission.status,
+        credentialId: credential.id,
+      };
+    });
+
+    const probeResult = await runPublicProbe({
+      baseUrl: body.baseUrl,
+      apiKey: body.testApiKey,
+      model: body.testModel,
+      compatibilityMode: body.compatibilityMode,
+    });
+
+    await app.db
+      .updateTable("probe_credentials")
+      .set(toProbeCredentialVerification(probeResult))
+      .where("id", "=", row.credentialId)
+      .executeTakeFirst();
+
+    reply.code(201);
+    return publicSubmissionResponseSchema.parse({
+      ok: true,
+      id: row.id,
+      status: row.status,
+      probe: toSubmissionProbeSummary(probeResult),
+    });
   });
 }
