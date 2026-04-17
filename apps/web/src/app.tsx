@@ -86,7 +86,7 @@ const HEALTH_STATUS_COPY: Record<string, string> = {
   degraded: "该 relay 仍可访问，但延迟、错误率或协议行为已出现明显下滑。",
   down: "在当前模型族的测试路径上，该 relay 暂时无法提供可用服务。",
   paused: "该 relay 正处于人工复核或运营处理阶段，当前不参与公开排序。",
-  unknown: "最近证据仍不足，暂时无法给出明确的公开状态判断。",
+  unknown: "测试样本数据不足，暂时无法给出明确的评价判断",
 };
 
 const BADGE_COPY: Record<string, string> = {
