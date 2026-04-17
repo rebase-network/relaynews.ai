@@ -2111,7 +2111,7 @@ function HomePage() {
             展示按照主流模型分类的榜单，每个模型分类取评分前五的站点，每天会根据测试数据重新排行
           </p>
           <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
-            查看全部赛道
+            查看全部站点
           </Link>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
