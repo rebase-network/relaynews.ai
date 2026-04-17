@@ -849,8 +849,8 @@ function OverviewPage() {
               {
                 step: "3",
                 title: "后续运营维护",
-                text: "目录信息在 Relay 页面维护；密钥页只处理轮换、删除或修复等后续操作。",
-                action: { href: "/relays", label: "打开 Relay 页面" },
+                text: "目录信息在中转站页面维护；密钥页只处理轮换、删除或修复等后续操作。",
+                action: { href: "/relays", label: "打开中转站页面" },
               },
             ].map((item) => (
               <div key={item.step} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -1509,7 +1509,7 @@ function CredentialsPage() {
     const { errors, payload } = validateProbeCredentialForm(createForm);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setCreateMutation({ pending: false, error: "Please fix the highlighted key fields before saving.", success: null });
+      setCreateMutation({ pending: false, error: "请先修正高亮字段，再保存监测密钥。", success: null });
       return;
     }
 
