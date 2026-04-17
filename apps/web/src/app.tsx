@@ -2058,7 +2058,7 @@ function HomePage() {
         <div className="grid gap-5 xl:grid-cols-[0.98fr_1.02fr] xl:items-start">
           <div className="order-2 md:order-1">
             <h1 className="max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
-              快速发现优质 relay，检测自己的端点，并提交进入公开目录。
+              发现优质中转站点，快速测试API可用性，建立公开站点目录
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72 md:mt-4 md:text-base md:leading-7">
               你可以查看各模型赛道榜单、快速做一次 relay 自检，或在需要更深入诊断时进入完整探测工作台。
