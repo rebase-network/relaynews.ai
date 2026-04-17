@@ -1586,6 +1586,7 @@ function CredentialsPage() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<AdminProbeCredential["status"] | "all">("all");
+  const [selectedCredentialIds, setSelectedCredentialIds] = useState<string[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
   const [credentialDeleteTarget, setCredentialDeleteTarget] = useState<AdminProbeCredentialDetail | null>(null);
   const [credentialRevokeTarget, setCredentialRevokeTarget] = useState<AdminProbeCredentialDetail | null>(null);
@@ -1763,6 +1764,16 @@ function CredentialsPage() {
     }
   }
 
+  function toggleCredentialSelection(id: string, checked: boolean) {
+    setSelectedCredentialIds((current) => {
+      if (checked) {
+        return current.includes(id) ? current : [...current, id];
+      }
+
+      return current.filter((value) => value !== id);
+    });
+  }
+
   async function reprobeSelected() {
     if (!detail.data) {
       return;
@@ -1783,6 +1794,42 @@ function CredentialsPage() {
       await reloadCredentialViews(detail.data.id);
     } catch (reason) {
       setActionMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法重新执行 Probe。", success: null });
+    }
+  }
+
+  async function bulkReprobeCredentials() {
+    const selectedRows = relayCredentials.filter(
+      (row) => selectedCredentialIds.includes(row.id) && row.status === "active",
+    );
+
+    if (selectedRows.length === 0) {
+      setActionMutation({ pending: false, error: "所选密钥中没有可重新运行的生效记录。", success: null });
+      return;
+    }
+
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      for (const row of selectedRows) {
+        await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${row.id}/reprobe`, {
+          method: "POST",
+        });
+      }
+
+      setSelectedCredentialIds([]);
+      setActionMutation({
+        pending: false,
+        error: null,
+        success: `已批量重跑 ${selectedRows.length} 条监测密钥。`,
+      });
+      await reloadCredentialViews(selectedCredentialId && selectedRows.some((row) => row.id === selectedCredentialId)
+        ? selectedCredentialId
+        : undefined);
+    } catch (reason) {
+      setActionMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "无法批量重新执行 Probe。",
+        success: null,
+      });
     }
   }
 
@@ -1861,6 +1908,42 @@ function CredentialsPage() {
     }
   }
 
+  async function bulkRevokeCredentials() {
+    const selectedRows = relayCredentials.filter(
+      (row) => selectedCredentialIds.includes(row.id) && row.status === "active",
+    );
+
+    if (selectedRows.length === 0) {
+      setActionMutation({ pending: false, error: "所选密钥中没有可撤销的生效记录。", success: null });
+      return;
+    }
+
+    setActionMutation({ pending: true, error: null, success: null });
+    try {
+      for (const row of selectedRows) {
+        await fetchJson<AdminProbeCredentialMutationResponse>(`/admin/probe-credentials/${row.id}/revoke`, {
+          method: "POST",
+        });
+      }
+
+      setSelectedCredentialIds([]);
+      setActionMutation({
+        pending: false,
+        error: null,
+        success: `已批量撤销 ${selectedRows.length} 条监测密钥。`,
+      });
+      await reloadCredentialViews(selectedCredentialId && selectedRows.some((row) => row.id === selectedCredentialId)
+        ? selectedCredentialId
+        : undefined);
+    } catch (reason) {
+      setActionMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "无法批量撤销监测密钥。",
+        success: null,
+      });
+    }
+  }
+
   async function copySelectedKey() {
     if (!detail.data) {
       return;
@@ -1875,6 +1958,9 @@ function CredentialsPage() {
   if (credentials.error || relays.error || !credentials.data || !relays.data) {
     return <ErrorCard message={credentials.error ?? relays.error ?? "无法加载监测密钥。"} />;
   }
+
+  const allFilteredSelected = filteredRelayCredentials.length > 0
+    && filteredRelayCredentials.every((row) => selectedCredentialIds.includes(row.id));
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
@@ -1918,6 +2004,53 @@ function CredentialsPage() {
             </button>
           ) : null}
         </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">批量操作</p>
+            <p className="mt-1 text-sm text-white/62">
+              已选择 {selectedCredentialIds.length} 条
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex items-center gap-2 text-sm text-white/70">
+              <input
+                checked={allFilteredSelected}
+                onChange={(event) =>
+                  setSelectedCredentialIds((current) => {
+                    const filteredIds = filteredRelayCredentials.map((row) => row.id);
+                    if (event.target.checked) {
+                      return Array.from(new Set([...current, ...filteredIds]));
+                    }
+
+                    return current.filter((value) => !filteredIds.includes(value));
+                  })
+                }
+                type="checkbox"
+              />
+              全选当前结果
+            </label>
+            <button
+              className="pill pill-idle"
+              disabled={actionMutation.pending || selectedCredentialIds.length === 0}
+              onClick={() => {
+                void bulkReprobeCredentials();
+              }}
+              type="button"
+            >
+              批量重跑 Probe
+            </button>
+            <button
+              className="pill pill-idle"
+              disabled={actionMutation.pending || selectedCredentialIds.length === 0}
+              onClick={() => {
+                void bulkRevokeCredentials();
+              }}
+              type="button"
+            >
+              批量撤销
+            </button>
+          </div>
+        </div>
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -1937,33 +2070,46 @@ function CredentialsPage() {
               没有符合筛选条件的监测密钥。
             </div>
           ) : filteredRelayCredentials.map((row) => (
-              <button
+              <div
                 key={row.id}
                 className={clsx(
-                  "admin-list-card w-full border p-3.5 text-left transition",
+                  "admin-list-card flex items-start gap-3 border p-3.5 text-left transition",
                   row.id === selectedCredentialId
                     ? "border-[#ffd06a]/70 bg-white/10"
                     : "border-white/10 bg-white/5 hover:bg-white/8",
                 )}
-                onClick={() => setSelectedCredentialId(row.id)}
-                type="button"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg tracking-[-0.03em]">{row.ownerName}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
-                      {formatCredentialStatus(row.status)} · {row.apiKeyPreview}
-                    </p>
+                <label className="inline-flex items-center gap-2 pt-1 text-sm text-white/70">
+                  <input
+                    aria-label={`选择监测密钥 ${row.ownerName}`}
+                    checked={selectedCredentialIds.includes(row.id)}
+                    onChange={(event) => toggleCredentialSelection(row.id, event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="sr-only">{row.ownerName}</span>
+                </label>
+                <button
+                  className="flex-1 text-left"
+                  onClick={() => setSelectedCredentialId(row.id)}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg tracking-[-0.03em]">{row.ownerName}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
+                        {formatCredentialStatus(row.status)} · {row.apiKeyPreview}
+                      </p>
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-white/45">{formatCompatibilityMode(row.compatibilityMode)}</p>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-white/45">{formatCompatibilityMode(row.compatibilityMode)}</p>
-                </div>
-                <p className="mt-2 text-sm text-white/62">{row.ownerBaseUrl}</p>
-                <p className="mt-2 text-sm text-white/70">
-                  {row.testModel} · {formatHealthStatus(row.lastHealthStatus)}
-                  {row.lastHttpStatus ? ` · ${row.lastHttpStatus}` : ""}
-                </p>
-                {row.lastMessage ? <p className="mt-2 text-sm text-white/45">{row.lastMessage}</p> : null}
-              </button>
+                  <p className="mt-2 text-sm text-white/62">{row.ownerBaseUrl}</p>
+                  <p className="mt-2 text-sm text-white/70">
+                    {row.testModel} · {formatHealthStatus(row.lastHealthStatus)}
+                    {row.lastHttpStatus ? ` · ${row.lastHttpStatus}` : ""}
+                  </p>
+                  {row.lastMessage ? <p className="mt-2 text-sm text-white/45">{row.lastMessage}</p> : null}
+                </button>
+              </div>
             ))}
         </div>
       </Card>
@@ -2204,6 +2350,7 @@ function SponsorsPage() {
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedSponsorIds, setSelectedSponsorIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [sponsorDeleteTarget, setSponsorDeleteTarget] = useState<AdminSponsorsResponse["rows"][number] | null>(null);
   const [form, setForm] = useState<SponsorFormState>(createDefaultSponsorFormState);
   const [fieldErrors, setFieldErrors] = useState<SponsorFormErrors>({});
@@ -2212,6 +2359,7 @@ function SponsorsPage() {
 
   function resetForm() {
     setEditingId(null);
+    setBulkDeleteOpen(false);
     setSponsorDeleteTarget(null);
     setForm(createDefaultSponsorFormState());
     setFieldErrors({});
@@ -2341,6 +2489,46 @@ function SponsorsPage() {
     }
   }
 
+  async function bulkDeleteSponsors() {
+    const selectedRows = sponsors.data?.rows.filter((row) => selectedSponsorIds.includes(row.id)) ?? [];
+
+    if (selectedRows.length === 0) {
+      return;
+    }
+
+    setMutation({ pending: true, error: null, success: null });
+    try {
+      for (const row of selectedRows) {
+        await fetchJson<{ ok: true }>(`/admin/sponsors/${row.id}`, {
+          method: "DELETE",
+        });
+      }
+
+      if (editingId && selectedSponsorIds.includes(editingId)) {
+        setEditingId(null);
+        setForm(createDefaultSponsorFormState());
+        setFieldErrors({});
+      }
+
+      setBulkDeleteOpen(false);
+      setSelectedSponsorIds([]);
+      setSponsorDeleteTarget(null);
+      setMutation({
+        pending: false,
+        error: null,
+        success: `已批量删除 ${selectedRows.length} 条赞助位。`,
+      });
+      await sponsors.reload();
+    } catch (reason) {
+      setBulkDeleteOpen(false);
+      setMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : "无法批量删除赞助位。",
+        success: null,
+      });
+    }
+  }
+
   if (sponsors.loading || relays.loading) return <LoadingCard />;
   if (sponsors.error || !sponsors.data || relays.error || !relays.data) return <ErrorCard message={sponsors.error ?? relays.error ?? "无法加载赞助位。"} />;
 
@@ -2401,6 +2589,14 @@ function SponsorsPage() {
                 type="button"
               >
                 批量结束
+              </button>
+              <button
+                className="pill pill-ghost"
+                disabled={mutation.pending || selectedSponsorIds.length === 0}
+                onClick={() => setBulkDeleteOpen(true)}
+                type="button"
+              >
+                批量删除
               </button>
             </div>
           </div>
@@ -2478,6 +2674,22 @@ function SponsorsPage() {
         open={Boolean(sponsorDeleteTarget)}
         pending={mutation.pending}
         title={sponsorDeleteTarget ? `确认删除 ${sponsorDeleteTarget.name}？` : ""}
+      />
+      <ConfirmDialog
+        confirmLabel="批量删除"
+        confirmPendingLabel="删除中..."
+        message={
+          selectedSponsorIds.length > 0
+            ? `将删除当前勾选的 ${selectedSponsorIds.length} 条赞助位记录。只有在确认是误建、重复或应彻底移除时才建议使用批量删除。`
+            : ""
+        }
+        onCancel={() => setBulkDeleteOpen(false)}
+        onConfirm={() => {
+          void bulkDeleteSponsors();
+        }}
+        open={bulkDeleteOpen}
+        pending={mutation.pending}
+        title="确认批量删除选中的赞助位？"
       />
     </div>
   );

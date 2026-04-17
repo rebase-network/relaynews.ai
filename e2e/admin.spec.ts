@@ -381,6 +381,16 @@ test("admin can bulk update sponsor statuses", async ({ page, request }) => {
   await page.reload();
   await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameA }).first()).toContainText("已暂停");
   await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameB }).first()).toContainText("已暂停");
+
+  await page.getByLabel(`选择赞助位 ${sponsorNameA}`).check();
+  await page.getByLabel(`选择赞助位 ${sponsorNameB}`).check();
+  await page.getByRole("button", { name: "批量删除" }).click();
+  const bulkDeleteDialog = page.getByRole("dialog");
+  await expect(bulkDeleteDialog).toBeVisible();
+  await bulkDeleteDialog.getByRole("button", { name: "批量删除" }).click();
+  await expect(page.getByText("已批量删除 2 条赞助位。", { exact: true })).toBeVisible();
+  await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameA })).toHaveCount(0);
+  await expect(page.locator(".admin-list-card").filter({ hasText: sponsorNameB })).toHaveCount(0);
 });
 
 test("admin can edit and delete price records after reload", async ({ page, request }) => {
@@ -694,6 +704,69 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   await expect(deleteKeyDialog).toBeVisible();
   await deleteKeyDialog.getByRole("button", { name: "删除密钥" }).click();
   await expect(page.getByText("监测密钥已删除。", { exact: true })).toBeVisible();
+});
+
+test("admin can batch reprobe and revoke credentials", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Bulk credential operations are skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const relayNames = [`Bulk Credential A ${runId}`, `Bulk Credential B ${runId}`];
+
+  for (const [index, relayName] of relayNames.entries()) {
+    const relaySlug = `bulk-credential-${runId}-${index}`;
+    const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+      headers: getAdminApiHeaders(),
+      data: {
+        slug: relaySlug,
+        name: relayName,
+        baseUrl: `https://example.com/relay/${relaySlug}`,
+        providerName: "Bulk Credential Ops",
+        websiteUrl: "https://example.com",
+        catalogStatus: "active",
+        isFeatured: false,
+        isSponsored: false,
+        description: "Created for bulk credential coverage.",
+        docsUrl: `https://example.com/docs/${relaySlug}`,
+        notes: "Playwright bulk credential verification",
+      },
+    });
+    expect(relayResponse.ok()).toBeTruthy();
+    const relayPayload = (await relayResponse.json()) as { id: string };
+
+    const credentialResponse = await request.post(`${apiBaseUrl}/admin/probe-credentials`, {
+      headers: getAdminApiHeaders(),
+      data: {
+        ownerType: "relay",
+        ownerId: relayPayload.id,
+        apiKey: `sk-bulk-credential-${index}`,
+        testModel: "gpt-5.4",
+        compatibilityMode: "auto",
+      },
+    });
+    expect(credentialResponse.ok()).toBeTruthy();
+  }
+
+  await openAdmin(page, "/credentials");
+  await page.getByLabel(`选择监测密钥 ${relayNames[0]}`).check();
+  await page.getByLabel(`选择监测密钥 ${relayNames[1]}`).check();
+  await page.getByRole("button", { name: "批量重跑 Probe" }).click();
+  await expect(page.getByText("已批量重跑 2 条监测密钥。", { exact: true })).toBeVisible();
+
+  await page.getByLabel(`选择监测密钥 ${relayNames[0]}`).check();
+  await page.getByLabel(`选择监测密钥 ${relayNames[1]}`).check();
+  await page.getByRole("button", { name: "批量撤销" }).click();
+  await expect(page.getByText("已批量撤销 2 条监测密钥。", { exact: true })).toBeVisible();
+
+  for (const relayName of relayNames) {
+    await expect(page.locator(".admin-list-card").filter({ hasText: relayName }).first()).toContainText("已撤销");
+  }
+
+  await page.reload();
+  for (const relayName of relayNames) {
+    await expect(page.locator(".admin-list-card").filter({ hasText: relayName }).first()).toContainText("已撤销");
+  }
 });
 
 test("admin can review submissions, create sponsors, and add prices", async ({ page, request }) => {
