@@ -2165,7 +2165,7 @@ function HomePage() {
       {data.highlights.length > 0 ? (
         <section className="panel">
           <div className="mb-4">
-            <p className="kicker">赞助展示</p>
+            <p className="kicker">赞助商</p>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
             {data.highlights.map((relay) => (
