@@ -193,3 +193,119 @@
 - `public / admin` 路由组织比当前更清晰
 - Playwright 中文验收基线建立完成
 - 相关文档已同步更新，可支持继续迭代
+
+## 执行进展（截至 2026-04-17）
+
+### 第 1 轮状态：已完成
+
+已完成内容：
+
+- 已完成首轮审阅文档与 5 轮实施方案文档落库：
+  - `33ebe41` `docs(review): record audit findings and five-pass plan`
+
+验证记录：
+
+- 已人工核对 `DESIGN.md`、架构 / 路由 / API / 测试 / 安全文档与当前实现之间的差异。
+
+遗留问题：
+
+- 无。该轮主要用于建立后续自动迭代基线。
+
+### 第 2 轮状态：已完成
+
+已完成内容：
+
+- 后台中文化主改造：
+  - `da94c1e` `feat(admin): localize admin console to zh-CN`
+  - `bc78824` `fix(admin): polish zh-cn operator copy`
+- 前台中文化主改造：
+  - `d4bd72b` `feat(web): localize public experience to zh-cn`
+- 中文时间展示进一步固定中国时区：
+  - `8005548` `fix(web): harden relay detail states and cache behavior`
+
+验证记录：
+
+- 核心导航、表单、按钮、状态文案已切换为中文。
+- 管理后台日期时间已固定 `Asia/Shanghai`，便于中国运营团队统一判断。
+- 中文化后的后台 E2E 已收敛：
+  - `6220ca6` `test(e2e): update admin checks for zh-CN console`
+
+遗留问题：
+
+- 仍需继续补充运营操作手册与更细的中文文案规范，但核心路径已可用。
+
+### 第 3 轮状态：已完成
+
+已完成内容：
+
+- 公共页信息完整度补齐：
+  - `8fbc02d` `feat(web): enrich public ranking and relay detail modules`
+- 首页已补齐最近事件模块与风险提示入口。
+- 榜单页已补齐自然排名 / 方法论入口 / 赞助分离说明。
+- Relay 详情页已补齐价格历史与事故时间线模块。
+- Relay 详情加载失败时的趋势 / 状态 / 价格 / 事故模块错误态已补齐：
+  - `8005548` `fix(web): harden relay detail states and cache behavior`
+
+验证记录：
+
+- `e2e/public.spec.ts` 已切换为中文产品路径断言，并覆盖首页、榜单、Relay 详情、提交、Probe 与移动端可用性。
+- 本地执行通过：
+  - `PLAYWRIGHT_VIDEO=off corepack pnpm exec playwright test e2e/public.spec.ts`
+
+遗留问题：
+
+- SEO metadata 仍未随该轮一并落地，后续需要单独收口。
+
+### 第 4 轮状态：已完成
+
+已完成内容：
+
+- `public / admin` 代码边界与公共缓存策略已经落地：
+  - `c73b2d3` `refactor(api): split public submission contracts and cache public reads`
+  - `5949192` `docs(api): record public cache and route boundaries`
+- `/public/submissions` 已移入 public 边界，shared contract 也已拆分。
+- 公共 `GET /public/*` 已统一注入缓存头。
+- 错误响应不再附带公共缓存头：
+  - `8005548` `fix(web): harden relay detail states and cache behavior`
+
+验证记录：
+
+- 新增 API E2E：
+  - `df3bb00` `test(e2e): stabilize zh-cn acceptance coverage`
+- 已验证：
+  - public 成功 `GET` 返回缓存头
+  - public `404` 不返回缓存头
+  - public 写接口不返回缓存头
+
+遗留问题：
+
+- internal 层仍以文档约束为主，尚未拆成更明确的实现模块。
+
+### 第 5 轮状态：部分完成
+
+已完成内容：
+
+- 第 5 轮的“复审 -> 修复 -> 测试升级”部分已完成：
+  - `8005548` `fix(web): harden relay detail states and cache behavior`
+  - `df3bb00` `test(e2e): stabilize zh-cn acceptance coverage`
+- 已完成内容包括：
+  - public / admin E2E 中文断言对齐
+  - API 缓存头 E2E 覆盖
+  - 本地 macOS Chrome 回退，规避 Playwright 浏览器下载阻塞
+  - 默认关闭视频录制，避免 ffmpeg 缺失导致测试无法启动
+  - Postgres 迁移 / seed 重试，减少数据库刚启动时的 flake
+
+验证记录：
+
+- `corepack pnpm test`
+- `PLAYWRIGHT_VIDEO=off corepack pnpm test:e2e`
+- 当前结果：
+  - 单元 / 类型检查通过
+  - Playwright 全量通过 `18 passed`
+  - `1 skipped` 为依赖本地 `LLM_API_TYPE` 手动兼容模式配置的 Probe 场景，不属于失败
+
+遗留问题：
+
+- 原计划中第 5 轮包含的 route-level SEO metadata / canonical / description 仍未实现。
+- Probe 更强的安全硬化（限流、Turnstile、上线前边界）仍需继续推进。
+- 若后续准备面向搜索流量或公开更大规模使用，应优先继续处理 SEO 与 Probe 安全项。
