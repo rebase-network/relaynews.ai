@@ -2065,7 +2065,7 @@ function HomePage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
               <Link className="button-dark" to="/leaderboard">查看榜单</Link>
-              <Link className="button-cream" to="/probe">开始探测</Link>
+              <Link className="button-cream" to="/probe">开始测试</Link>
               <Link className="button-cream" to="/submit">提交 Relay</Link>
             </div>
           </div>
