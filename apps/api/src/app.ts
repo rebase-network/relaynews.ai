@@ -53,6 +53,10 @@ export async function buildApp() {
       return payload;
     }
 
+    if (reply.statusCode >= 400) {
+      return payload;
+    }
+
     if (!reply.hasHeader("Cache-Control")) {
       reply.header("Cache-Control", PUBLIC_API_CACHE_CONTROL);
     }

@@ -270,15 +270,18 @@ const zhDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
   dateStyle: "medium",
   timeStyle: "short",
   hour12: false,
+  timeZone: "Asia/Shanghai",
 });
 
 const zhDateFormatter = new Intl.DateTimeFormat("zh-CN", {
   dateStyle: "medium",
+  timeZone: "Asia/Shanghai",
 });
 
 const zhTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
   timeStyle: "short",
   hour12: false,
+  timeZone: "Asia/Shanghai",
 });
 
 function formatDateTime(value: string) {

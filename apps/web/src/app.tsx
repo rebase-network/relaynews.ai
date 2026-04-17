@@ -543,7 +543,7 @@ function prefetchPublicRoute(target: string) {
         [`/public/relay/${slug}/history?window=7d`, () => fetchJson(`/public/relay/${slug}/history?window=7d`)],
         [`/public/relay/${slug}/models`, () => fetchJson(`/public/relay/${slug}/models`)],
         [`/public/relay/${slug}/pricing-history`, () => fetchJson(`/public/relay/${slug}/pricing-history`)],
-        [`/public/relay/${slug}/incidents`, () => fetchJson(`/public/relay/${slug}/incidents`)],
+        [`/public/relay/${slug}/incidents?window=30d`, () => fetchJson(`/public/relay/${slug}/incidents?window=30d`)],
       );
     }
   } else if (pathname === "/methodology") {
@@ -3042,7 +3042,9 @@ function RelayPage() {
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {history.loading || !history.data ? <p className="text-sm text-black/60">正在加载趋势...</p> : (
+          {history.error ? (
+            <p className="text-sm text-[#b42318]">{history.error}</p>
+          ) : history.loading || !history.data ? <p className="text-sm text-black/60">正在加载趋势...</p> : (
             <div className="space-y-3">
               <RelayLatencyChart slots={historySlots} />
               <RelayLatencyLegend />
@@ -3072,7 +3074,9 @@ function RelayPage() {
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {history.loading || !history.data ? (
+          {history.error ? (
+            <p className="text-sm text-[#b42318]">{history.error}</p>
+          ) : history.loading || !history.data ? (
             <p className="text-sm text-black/60">正在加载状态...</p>
           ) : (
             <StatusHistoryPanel slots={historySlots} />
@@ -3135,7 +3139,9 @@ function RelayPage() {
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {pricing.loading || !pricing.data ? (
+          {pricing.error ? (
+            <p className="text-sm text-[#b42318]">{pricing.error}</p>
+          ) : pricing.loading || !pricing.data ? (
             <p className="text-sm text-black/60">正在加载价格历史...</p>
           ) : (
             <RelayPricingHistoryPanel modelNames={modelNames} rows={pricing.data.rows} />
@@ -3147,7 +3153,9 @@ function RelayPage() {
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {incidents.loading || !incidents.data ? (
+          {incidents.error ? (
+            <p className="text-sm text-[#b42318]">{incidents.error}</p>
+          ) : incidents.loading || !incidents.data ? (
             <p className="text-sm text-black/60">正在加载事故时间线...</p>
           ) : (
             <RelayIncidentTimeline rows={incidents.data.rows} />
