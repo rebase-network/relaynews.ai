@@ -2150,7 +2150,7 @@ function HomePage() {
 
       <section className="home-bridge">
         <p className="home-bridge-copy">
-          方法论会说明 relay 的测量与评分方式，政策页则解释收录规则、赞助分离与复核机制。
+          评测是基于多个维度对站点服务质量进行自动化测试，赞助并不影响评测，会有单独的赞助方展示，力求评测公开公正
         </p>
         <div className="home-bridge-actions">
           <Link className="home-bridge-link" to="/methodology">
