@@ -154,7 +154,7 @@ export function RelayInspectorDrawer({
   }
 
   return (
-    <AdminDrawer open={open} title={relay.name} onClose={onClose}>
+    <AdminDrawer kicker="Relay 抽屉" open={open} title={relay.name} onClose={onClose}>
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
           <div className="min-w-0">

@@ -65,7 +65,6 @@ export function RelaysPage() {
       }),
     [currentRelays, searchQuery, statusFilter],
   );
-  const hasFilters = searchQuery.trim().length > 0 || statusFilter !== "all";
 
   useEffect(() => {
     if (!selectedRelayId || relays.loading) {
@@ -156,7 +155,7 @@ export function RelaysPage() {
       setHighlightedRelayId(response.id);
       await relays.reload();
       closeCreateDrawer();
-      setActionMutation({ pending: false, error: null, success: "Relay 已创建并加入当前列表，已在下方高亮显示。" });
+      setActionMutation({ pending: false, error: null, success: "Relay 已创建并加入当前列表。" });
     } catch (reason) {
       setCreateMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法创建 Relay。", success: null });
     }
@@ -182,7 +181,7 @@ export function RelaysPage() {
           status === "archived"
             ? `${relay.name} 已归档到 Relay 历史。`
             : status === "paused"
-              ? `${relay.name} 已暂停，后续不会参与自动测试和公开展示。`
+              ? `${relay.name} 已暂停。`
               : `${relay.name} 已重新激活。`,
       });
     } catch (reason) {
@@ -205,36 +204,13 @@ export function RelaysPage() {
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm text-white/72">当前 active / paused Relay</p>
-              <InfoTip content="列表只保留概要信息；选择某个 Relay 后，详细信息与编辑操作会在右侧抽屉中完成。" />
-              <div className="flex flex-wrap gap-2 sm:ml-2">
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
-                  共 {currentRelays.length} 条
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
-                  active {activeCount}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/66">
-                  paused {pausedCount}
-                </span>
-              </div>
+              <p className="text-sm text-white/72">共 {currentRelays.length} 条</p>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">active {activeCount}</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">paused {pausedCount}</span>
+              <InfoTip content="列表只保留概要信息；点击某条 Relay 后，会在右侧抽屉中查看详情或继续编辑。" />
             </div>
-            <button className="pill pill-active" type="button" onClick={openCreateDrawer}>
-              手动添加 Relay
-            </button>
-          </div>
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-            <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-2">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">当前 Relay</p>
-                <InfoTip content="支持按名称、Base URL、联系方式、模型搜索，也可以按 active / paused 过滤。" />
-              </div>
-              <p className="text-sm text-white/52">
-                {hasFilters ? `筛选后显示 ${filteredRelays.length} / ${currentRelays.length} 条` : `共 ${currentRelays.length} 条`}
-              </p>
-            </div>
-            <div className="grid gap-2.5 md:grid-cols-[minmax(0,18rem)_10rem_auto]">
-              <label className="field-label">
+            <div className="flex flex-wrap items-end gap-2.5">
+              <label className="field-label w-[15rem]">
                 搜索 Relay
                 <input
                   className="field-input"
@@ -244,33 +220,25 @@ export function RelaysPage() {
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
               </label>
-              <label className="field-label">
-                状态筛选
+              <label className="field-label w-[8.5rem]">
+                状态
                 <select className="field-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "paused")}>
                   <option value="all">全部</option>
                   <option value="active">active</option>
                   <option value="paused">paused</option>
                 </select>
               </label>
-              {hasFilters ? (
-                <div className="flex items-end">
-                  <button
-                    className="pill pill-idle"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("all");
-                    }}
-                    type="button"
-                  >
-                    清空筛选
-                  </button>
-                </div>
-              ) : null}
+              <button className="pill pill-active" type="button" onClick={openCreateDrawer}>
+                手动添加 Relay
+              </button>
             </div>
           </div>
+          <p className="text-sm text-white/48">
+            {searchQuery.trim() || statusFilter !== "all" ? `筛选后显示 ${filteredRelays.length} / ${currentRelays.length} 条` : "点击列表项即可展开右侧抽屉查看详情。"}
+          </p>
         </div>
 
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-3 space-y-2">
           {currentRelays.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
               当前还没有 Relay。你可以先手动添加 Relay，或去提交记录中批准一个待审核站点。
@@ -283,14 +251,23 @@ export function RelaysPage() {
             <div
               key={relay.id}
               className={clsx(
-                "admin-list-card border bg-white/5 p-3.5",
+                "admin-list-card cursor-pointer border bg-white/5 p-3",
                 relay.id === highlightedRelayId
                   ? "border-[#ffd06a]/45 bg-white/[0.07] shadow-[rgba(255,208,106,0.16)_0_0_0_1px]"
                   : "border-white/10",
               )}
+              onClick={() => openRelayDrawer(relay.id, "detail")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openRelayDrawer(relay.id, "detail");
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
-              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)_auto] xl:items-center">
-                <button className="min-w-0 text-left" type="button" onClick={() => openRelayDrawer(relay.id, "detail")}>
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.88fr)_auto] xl:items-center">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-lg tracking-[-0.03em]">{relay.name}</p>
                     <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
@@ -299,17 +276,13 @@ export function RelaysPage() {
                     {relay.id === highlightedRelayId ? <span className="pill pill-ghost !bg-[#ffd06a]/14 !text-[#ffe6a7]">刚创建</span> : null}
                   </div>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>
-                  <p className="mt-2 truncate text-sm text-white/64">{relay.baseUrl}</p>
+                  <p className="mt-1.5 truncate text-sm text-white/62">{relay.baseUrl}</p>
                   <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/58">
                     <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">模型 {relay.modelPrices.length}</span>
-                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">
-                      {relay.contactInfo ? "已填联系方式" : "未填联系方式"}
-                    </span>
-                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">
-                      {relay.websiteUrl ? "已填网站" : "未填网站"}
-                    </span>
+                    {relay.contactInfo ? <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">{relay.contactInfo}</span> : null}
+                    {relay.websiteUrl ? <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">已填写网站</span> : null}
                   </div>
-                </button>
+                </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2.5">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">测试状态</p>
@@ -318,8 +291,8 @@ export function RelaysPage() {
                       <p className="mt-1.5 text-sm text-white/72">
                         {formatCredentialStatus(relay.probeCredential.status)} · {formatHealthStatus(relay.probeCredential.lastHealthStatus)}
                       </p>
-                      <p className="mt-1 truncate text-sm text-white/58">{relay.probeCredential.testModel}</p>
-                      <p className="mt-1 text-xs text-white/46">
+                      <p className="mt-1 truncate text-xs text-white/54">{relay.probeCredential.testModel}</p>
+                      <p className="mt-1 text-xs text-white/42">
                         {relay.probeCredential.lastVerifiedAt ? formatDateTime(relay.probeCredential.lastVerifiedAt) : "尚未完成验证"}
                       </p>
                     </>
@@ -329,22 +302,50 @@ export function RelaysPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 xl:flex-col xl:items-end">
-                  <button className="pill pill-idle" type="button" onClick={() => openRelayDrawer(relay.id, "detail")}>
-                    查看
-                  </button>
-                  <button className="pill pill-active" type="button" onClick={() => openRelayDrawer(relay.id, "edit")}>
+                  <button
+                    className="pill pill-active"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openRelayDrawer(relay.id, "edit");
+                    }}
+                    type="button"
+                  >
                     编辑
                   </button>
                   {relay.catalogStatus === "active" ? (
-                    <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "paused")} type="button">
+                    <button
+                      className="pill pill-idle"
+                      disabled={actionMutation.pending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void updateRelayStatus(relay, "paused");
+                      }}
+                      type="button"
+                    >
                       暂停
                     </button>
                   ) : (
-                    <button className="pill pill-idle" disabled={actionMutation.pending} onClick={() => void updateRelayStatus(relay, "active")} type="button">
+                    <button
+                      className="pill pill-idle"
+                      disabled={actionMutation.pending}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void updateRelayStatus(relay, "active");
+                      }}
+                      type="button"
+                    >
                       重新激活
                     </button>
                   )}
-                  <button className="pill pill-ghost" disabled={actionMutation.pending} onClick={() => setArchiveTarget(relay)} type="button">
+                  <button
+                    className="pill pill-ghost"
+                    disabled={actionMutation.pending}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setArchiveTarget(relay);
+                    }}
+                    type="button"
+                  >
                     归档
                   </button>
                 </div>
@@ -353,7 +354,7 @@ export function RelaysPage() {
           ))}
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <Shared.Notice state={actionMutation} />
         </div>
       </Card>

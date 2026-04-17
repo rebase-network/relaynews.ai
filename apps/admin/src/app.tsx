@@ -15,7 +15,6 @@ import {
 import { CredentialsPage } from "./pages/credentials-page";
 import { IntakePage } from "./pages/intake-page";
 import { ModelsPage } from "./pages/models-page";
-import { OverviewPage } from "./pages/overview-page";
 import { PricesPage } from "./pages/prices-page";
 import { RelayHistoryPage } from "./pages/relay-history-page";
 import { RelaysPage } from "./pages/relays-page";
@@ -53,7 +52,7 @@ function AdminBootstrapCard({
 function AdminRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<OverviewPage />} />
+      <Route path="/" element={<Navigate replace to="/relays" />} />
       <Route path="/relays" element={<RelaysPage />} />
       <Route path="/relays/:relayId" element={<Navigate replace to="/relays" />} />
       <Route path="/relays/history" element={<RelayHistoryPage />} />
@@ -64,7 +63,7 @@ function AdminRoutes() {
       <Route path="/sponsors" element={<SponsorsPage />} />
       <Route path="/models" element={<ModelsPage />} />
       <Route path="/prices" element={<PricesPage />} />
-      <Route path="*" element={<Navigate replace to="/" />} />
+      <Route path="*" element={<Navigate replace to="/relays" />} />
     </Routes>
   );
 }

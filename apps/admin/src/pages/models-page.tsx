@@ -1,64 +1,38 @@
 import * as Shared from "../shared";
+import { InfoTip } from "../components/info-tip";
 
 const {
   clsx,
-  Link,
-  useEffect,
-  useMemo,
-  useSearchParams,
-  useState,
   Card,
   ConfirmDialog,
   ErrorCard,
   FieldError,
   LoadingCard,
   Notice,
-  PROBE_COMPATIBILITY_OPTIONS,
-  PUBLIC_SITE_URL,
-  buildCredentialRoute,
-  buildPriceModelOptions,
-  buildRelayFormState,
-  buildRelaySelectOptions,
-  createDefaultModelFormState,
-  createDefaultPriceFormState,
-  createDefaultSponsorFormState,
-  createRelayPriceRowFormState,
   fetchJson,
-  formatCatalogStatus,
-  formatCompatibilityMode,
-  formatCredentialStatus,
-  formatDate,
   formatDateTime,
-  formatHealthStatus,
   formatModelStatus,
-  formatOverviewMetricLabel,
-  formatSubmissionStatus,
-  formatSponsorStatus,
-  formatTime,
-  getModelOptionLabel,
-  getRelayOptionLabel,
-  matchesSearchQuery,
-  pickPreferredCredential,
-  trimString,
+  inferModelFamily,
+  inferModelVendor,
   useLoadable,
   useMutationState,
+  useState,
   validateModelForm,
-  validatePriceForm,
-  validateProbeCredentialForm,
-  validateRelayForm,
-  validateSponsorForm,
+  createDefaultModelFormState,
   withoutFieldError,
 } = Shared;
 
 export function ModelsPage() {
   const models = useLoadable<Shared.AdminModelsResponse>(() => fetchJson("/admin/models"), []);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Shared.AdminModel | null>(null);
   const [form, setForm] = useState<Shared.AdminModelUpsert>(createDefaultModelFormState);
   const [fieldErrors, setFieldErrors] = useState<Shared.ModelFormErrors>({});
   const [mutation, setMutation] = useMutationState();
 
   function resetForm() {
     setEditingId(null);
+    setDeleteTarget(null);
     setForm(createDefaultModelFormState());
     setFieldErrors({});
     setMutation({ pending: false, error: null, success: null });
@@ -94,9 +68,7 @@ export function ModelsPage() {
         body: JSON.stringify(payload),
       });
       setMutation({ pending: false, error: null, success: editingId ? "模型已更新。" : "模型已创建。" });
-      setEditingId(null);
-      setForm(createDefaultModelFormState());
-      setFieldErrors({});
+      resetForm();
       await models.reload();
     } catch (reason) {
       setMutation({
@@ -107,124 +79,173 @@ export function ModelsPage() {
     }
   }
 
-  if (models.loading) return <LoadingCard />;
-  if (models.error || !models.data) return <ErrorCard message={models.error ?? "无法加载模型列表。"} />;
+  async function deleteModel(model: Shared.AdminModel) {
+    setMutation({ pending: true, error: null, success: null });
+    try {
+      await fetchJson<{ ok: true }>(`/admin/models/${model.id}`, {
+        method: "DELETE",
+      });
+      if (editingId === model.id) {
+        resetForm();
+      }
+      setDeleteTarget(null);
+      setMutation({ pending: false, error: null, success: "模型已删除。" });
+      await models.reload();
+    } catch (reason) {
+      setDeleteTarget(null);
+      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法删除模型。", success: null });
+    }
+  }
+
+  if (models.loading) {
+    return <LoadingCard />;
+  }
+
+  if (models.error || !models.data) {
+    return <ErrorCard message={models.error ?? "无法加载模型列表。"} />;
+  }
 
   const activeCount = models.data.rows.filter((model) => model.isActive).length;
+  const inferredVendor = inferModelVendor(form.key);
+  const inferredFamily = inferModelFamily(form.key);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-      <Card title="模型列表" kicker="站点目录使用的模型">
-        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-6 text-white/62">
-          这里维护站点目录使用的模型清单。启用中的模型会出现在价格页的下拉框中；停用后会保留历史价格和探测数据，
-          但不再用于新的价格录入。
-        </div>
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">模型目录</p>
-              <p className="mt-1 text-lg tracking-[-0.03em]">当前已录入的模型</p>
+    <>
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card title="模型列表" kicker="模型目录">
+          <div className="space-y-3 border-b border-white/10 pb-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-white/72">共 {models.data.rows.length} 条</p>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">启用 {activeCount}</span>
+              <InfoTip content="列表只保留模型键值、推导出的提供方和价格单位等关键信息；模型名称与分类不再重复展示。" />
             </div>
-            <p className="text-sm text-white/48">
-              启用 {activeCount} / 共 {models.data.rows.length}
-            </p>
+            <p className="text-sm text-white/48">模型键值是主信息，名称与分类由键值自动推导，不再单独维护。</p>
           </div>
-          {models.data.rows.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-              当前还没有模型记录，请先补录模型目录。
-            </div>
-          ) : models.data.rows.map((model) => (
-            <div
-              key={model.id}
-              className={clsx(
-                "admin-list-card border p-3.5",
-                model.id === editingId ? "border-[#ffd06a]/70 bg-white/10" : "border-white/10 bg-white/5",
-              )}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xl tracking-[-0.03em]">{model.name}</p>
-                  <p className="mt-1 text-sm text-white/60">{model.vendor} · {model.family}</p>
+
+          <div className="mt-3 space-y-2">
+            {models.data.rows.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
+                当前还没有模型记录。
+              </div>
+            ) : models.data.rows.map((model) => (
+              <div
+                key={model.id}
+                className={clsx(
+                  "admin-list-card border bg-white/5 p-3",
+                  model.id === editingId ? "border-[#ffd06a]/45 bg-white/[0.07]" : "border-white/10",
+                )}
+              >
+                <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-lg tracking-[-0.03em]">{model.key}</p>
+                      <span className={model.isActive ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                        {formatModelStatus(model.isActive)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/58">
+                      <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">{model.vendor}</span>
+                      <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">输入 {model.inputPriceUnit ?? "未设置"}</span>
+                      <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">输出 {model.outputPriceUnit ?? "未设置"}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-white/42">最近更新 {formatDateTime(model.updatedAt)}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 xl:flex-col xl:items-end">
+                    <button className="pill pill-active" onClick={() => beginEditingModel(model)} type="button">
+                      编辑
+                    </button>
+                    <button className="pill pill-ghost" disabled={mutation.pending} onClick={() => setDeleteTarget(model)} type="button">
+                      删除
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/40">{formatModelStatus(model.isActive)}</p>
               </div>
-              <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{model.key}</p>
-              <p className="mt-3 text-sm text-white/60">
-                输入单位：{model.inputPriceUnit ?? "未设置"} · 输出单位：{model.outputPriceUnit ?? "未设置"}
-              </p>
-              <p className="mt-2 text-sm text-white/55">
-                最近更新：{formatDateTime(model.updatedAt)}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button className="pill pill-idle" onClick={() => beginEditingModel(model)} type="button">
-                  编辑模型
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-      <Card title={editingId ? "编辑模型" : "创建模型"} kicker={editingId ? "模型维护" : "目录补录"}>
-        {editingId ? (
-          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
-            你正在编辑已有模型。停用模型后，价格页不会再允许新建该模型的价格记录，但历史数据仍会保留。
+            ))}
           </div>
-        ) : null}
-        <div className="grid gap-2.5">
-          {([
-            { label: "模型键值", key: "key", placeholder: "openai-gpt-4.1" },
-            { label: "模型名称", key: "name", placeholder: "GPT-4.1" },
-            { label: "模型提供方", key: "vendor", placeholder: "OpenAI" },
-            { label: "模型分类", key: "family", placeholder: "gpt-4.1" },
-            { label: "输入价格单位", key: "inputPriceUnit", placeholder: "USD / 1M tokens" },
-            { label: "输出价格单位", key: "outputPriceUnit", placeholder: "USD / 1M tokens" },
-          ] as const).map(({ label, key, placeholder }) => (
-            <label key={key} className="field-label">
-              {label}
+        </Card>
+
+        <Card title={editingId ? "编辑模型" : "添加模型"} kicker={editingId ? "目录维护" : "快速补录"}>
+          <div className="grid gap-3">
+            <label className="field-label">
+              模型键值
               <input
                 className="field-input"
-                placeholder={placeholder}
+                placeholder="openai-gpt-5.4"
                 type="text"
-                value={form[key] ?? ""}
+                value={form.key}
                 onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setForm((current) => ({
-                    ...current,
-                    [key]: nextValue || (key === "inputPriceUnit" || key === "outputPriceUnit" ? null : ""),
-                  }));
-                  if (key === "key" || key === "vendor" || key === "name" || key === "family") {
-                    setFieldErrors((current) => withoutFieldError(current, key));
-                  }
+                  setForm((current) => ({ ...current, key: event.target.value }));
+                  setFieldErrors((current) => withoutFieldError(current, "key"));
                   setMutation((current) => ({ ...current, error: null }));
                 }}
               />
-              <FieldError
-                message={
-                  key === "key" || key === "vendor" || key === "name" || key === "family"
-                    ? fieldErrors[key]
-                    : undefined
-                }
+              <FieldError message={fieldErrors.key} />
+            </label>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3 text-sm leading-6 text-white/62">
+              <p>提供方将自动推导为：{inferredVendor || "-"}</p>
+              <p>模型分类将自动推导为：{inferredFamily || "-"}</p>
+            </div>
+            <label className="field-label">
+              输入价格单位
+              <input
+                className="field-input"
+                placeholder="USD / 1M tokens"
+                type="text"
+                value={form.inputPriceUnit ?? ""}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setForm((current) => ({ ...current, inputPriceUnit: nextValue || null }));
+                  setMutation((current) => ({ ...current, error: null }));
+                }}
               />
             </label>
-          ))}
-          <label className="inline-flex items-center gap-3 text-sm text-white/70">
-            <input
-              checked={form.isActive}
-              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-              type="checkbox"
-            />
-            在价格录入中启用
-          </label>
-          <div className="flex flex-wrap gap-2.5">
-            <button className="pill pill-active" disabled={mutation.pending} onClick={submitModel} type="button">
-              {mutation.pending ? "保存中..." : editingId ? "保存修改" : "创建模型"}
-            </button>
-            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>取消编辑</button> : null}
+            <label className="field-label">
+              输出价格单位
+              <input
+                className="field-input"
+                placeholder="USD / 1M tokens"
+                type="text"
+                value={form.outputPriceUnit ?? ""}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setForm((current) => ({ ...current, outputPriceUnit: nextValue || null }));
+                  setMutation((current) => ({ ...current, error: null }));
+                }}
+              />
+            </label>
+            <label className="inline-flex items-center gap-3 text-sm text-white/70">
+              <input
+                checked={form.isActive}
+                onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+                type="checkbox"
+              />
+              在价格录入与站点资料中启用
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              <button className="pill pill-active" disabled={mutation.pending} onClick={() => void submitModel()} type="button">
+                {mutation.pending ? "保存中..." : editingId ? "保存修改" : "创建模型"}
+              </button>
+              {editingId ? <button className="pill pill-idle" onClick={resetForm} type="button">取消编辑</button> : null}
+            </div>
+            <Notice state={mutation} />
           </div>
-          <Notice state={mutation} />
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
+
+      <ConfirmDialog
+        confirmLabel="删除模型"
+        confirmPendingLabel="删除中..."
+        message={deleteTarget ? `${deleteTarget.key} 及其关联价格/历史记录会一起移除。` : ""}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            void deleteModel(deleteTarget);
+          }
+        }}
+        open={Boolean(deleteTarget)}
+        pending={mutation.pending}
+        title={deleteTarget ? `确认删除 ${deleteTarget.key}？` : ""}
+      />
+    </>
   );
 }
-

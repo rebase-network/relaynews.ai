@@ -83,19 +83,19 @@ button {
 }
 
 .admin-header {
-  padding-top: 0.4rem;
+  padding-top: 0.32rem;
 }
 
 .admin-header-bar {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background:
     linear-gradient(135deg, rgba(49, 37, 18, 0.94), rgba(27, 24, 21, 0.98));
   box-shadow:
     rgba(0, 0, 0, 0.34) 0 30px 80px,
     rgba(255, 161, 16, 0.14) 0 1px 0 inset;
-  padding: 0.78rem 0.95rem;
+  padding: 0.72rem 0.88rem;
 }
 
 .admin-brand {
@@ -128,7 +128,7 @@ button {
 }
 
 .admin-main {
-  padding-top: 0.75rem;
+  padding-top: 0.58rem;
   padding-bottom: 4rem;
 }
 
@@ -139,7 +139,7 @@ button {
   background:
     linear-gradient(180deg, rgba(49, 37, 18, 0.92), rgba(26, 24, 22, 0.96));
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 0.92rem;
 }
 
 .card::before {
@@ -167,7 +167,7 @@ button {
 }
 
 .eyebrow {
-  margin-bottom: 0.68rem;
+  margin-bottom: 0.52rem;
   font-family: var(--font-mono);
   font-size: 0.64rem;
   letter-spacing: 0.22em;
@@ -295,7 +295,7 @@ button {
   .admin-header-bar,
   .card,
   .confirm-dialog {
-    padding: 0.88rem;
+    padding: 0.82rem;
   }
 
   .admin-brand {
@@ -321,12 +321,12 @@ button {
 
 @media (min-width: 1024px) {
   .admin-header {
-    padding-top: 0.75rem;
+    padding-top: 0.58rem;
   }
 
   .admin-header-bar,
   .card,
   .confirm-dialog {
-    padding: 1rem;
+    padding: 0.94rem;
   }
 }

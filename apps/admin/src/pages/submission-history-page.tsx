@@ -1,119 +1,117 @@
 import * as Shared from "../shared";
-import { WorkflowDetailGrid, WorkflowPriceTable, WorkflowSection } from "../components/relay-workflow";
+import { InfoTip } from "../components/info-tip";
+import { SubmissionInspectorDrawer } from "../components/submission-inspector-drawer";
 
 const {
+  clsx,
   Card,
   ErrorCard,
   LoadingCard,
-  Link,
-  PUBLIC_SITE_URL,
-  fetchJson,
   formatDateTime,
-  formatHealthStatus,
   formatSubmissionStatus,
+  useEffect,
   useLoadable,
+  useState,
 } = Shared;
 
 export function SubmissionHistoryPage() {
-  const submissions = useLoadable<Shared.AdminSubmissionsResponse>(() => fetchJson("/admin/submissions"), []);
+  const submissions = useLoadable<Shared.AdminSubmissionsResponse>(() => Shared.fetchJson("/admin/submissions"), []);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
 
-  if (submissions.loading) return <LoadingCard />;
+  const historyRows = (submissions.data?.rows ?? []).filter((row) => row.status !== "pending");
+  const approvedCount = historyRows.filter((row) => row.status === "approved").length;
+  const rejectedCount = historyRows.filter((row) => row.status === "rejected").length;
+  const archivedCount = historyRows.filter((row) => row.status === "archived").length;
+  const selectedSubmission = historyRows.find((row) => row.id === selectedSubmissionId) ?? null;
+
+  useEffect(() => {
+    if (!selectedSubmissionId || submissions.loading) {
+      return;
+    }
+
+    if (!selectedSubmission) {
+      setSelectedSubmissionId(null);
+    }
+  }, [selectedSubmission, selectedSubmissionId, submissions.loading]);
+
+  if (submissions.loading) {
+    return <LoadingCard />;
+  }
+
   if (submissions.error || !submissions.data) {
     return <ErrorCard message={submissions.error ?? "无法加载提交历史。"} />;
   }
 
-  const historyRows = submissions.data.rows.filter((row) => row.status !== "pending");
-
   return (
-    <Card title="提交记录历史" kicker="已处理记录">
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-6 text-white/62">
-        这里保留所有已经处理完成的提交，包括 approved、rejected 和 archived，便于运营追溯历史决策和测试快照。
-      </div>
-
-      <div className="mt-4 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">提交历史</p>
-            <p className="mt-1 text-lg tracking-[-0.03em]">已处理完成</p>
+    <>
+      <Card title="提交历史" kicker="已处理记录">
+        <div className="space-y-3 border-b border-white/10 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-white/72">共 {historyRows.length} 条</p>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">通过 {approvedCount}</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">拒绝 {rejectedCount}</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">归档 {archivedCount}</span>
+            <InfoTip content="列表只展示概要信息。需要查看提交资料、测试快照或审批备注时，在右侧抽屉中展开。" />
           </div>
-          <p className="text-sm text-white/48">共 {historyRows.length} 条</p>
+          <p className="text-sm text-white/48">列表收敛为概览，详细信息统一放到右侧抽屉。</p>
         </div>
 
-        {historyRows.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
-            当前还没有历史提交记录。
-          </div>
-        ) : historyRows.map((row) => (
-          <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
+        <div className="mt-3 space-y-2">
+          {historyRows.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-sm text-white/58">
+              当前还没有历史提交记录。
+            </div>
+          ) : historyRows.map((row) => (
+            <div
+              key={row.id}
+              className={clsx(
+                "admin-list-card cursor-pointer border bg-white/5 p-3",
+                row.id === selectedSubmissionId ? "border-[#ffd06a]/45 bg-white/[0.07]" : "border-white/10",
+              )}
+              onClick={() => setSelectedSubmissionId(row.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedSubmissionId(row.id);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,0.9fr)] xl:items-center">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xl tracking-[-0.03em]">{row.relayName}</p>
+                    <p className="text-lg tracking-[-0.03em]">{row.relayName}</p>
                     <span className={row.status === "approved" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
                       {formatSubmissionStatus(row.status)}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm break-all text-white/62">{row.baseUrl}</p>
-                </div>
-                <p className="text-sm text-white/44">提交于 {formatDateTime(row.createdAt)}</p>
-              </div>
-
-              <div className="grid gap-3 xl:grid-cols-[minmax(0,1.04fr)_minmax(18rem,0.96fr)]">
-                <div className="space-y-3">
-                  <WorkflowSection title="提交资料" description="保留原始提交内容，便于回看当时填写的信息。">
-                    {row.description ? <p className="text-sm leading-6 text-white/72">{row.description}</p> : <p className="text-sm text-white/48">提交者未填写站点简介。</p>}
-                    <div className="mt-3">
-                      <WorkflowDetailGrid
-                        items={[
-                          { label: "联系方式", value: row.contactInfo ?? "未填写" },
-                          {
-                            label: "关联 Relay",
-                            value: row.approvedRelay ? row.approvedRelay.name : row.status === "approved" ? "创建中或已解绑" : "未创建",
-                          },
-                        ]}
-                      />
-                    </div>
-                  </WorkflowSection>
-
-                  <WorkflowSection title="支持模型及价格表" description="保留提交时的原始价格信息，方便与当前 Relay 配置比对。">
-                    <WorkflowPriceTable rows={row.modelPrices} />
-                  </WorkflowSection>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">提交于 {formatDateTime(row.createdAt)}</p>
+                  <p className="mt-1.5 truncate text-sm text-white/62">{row.baseUrl}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/58">
+                    <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">模型 {row.modelPrices.length}</span>
+                    {row.approvedRelay ? <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">已关联 Relay</span> : null}
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <WorkflowSection title="审核结果" description="这里汇总审批结论、备注和测试快照。">
-                    <WorkflowDetailGrid
-                      columns={1}
-                      items={[
-                        { label: "处理状态", value: formatSubmissionStatus(row.status) },
-                        { label: "审核备注", value: row.reviewNotes ?? "未填写" },
-                        {
-                          label: "测试快照",
-                          value: row.probeCredential
-                            ? `${row.probeCredential.testModel} · ${formatHealthStatus(row.probeCredential.lastHealthStatus)}${row.probeCredential.lastVerifiedAt ? ` · ${formatDateTime(row.probeCredential.lastVerifiedAt)}` : ""}`
-                            : "没有测试快照",
-                        },
-                      ]}
-                    />
-                  </WorkflowSection>
-
-                  <WorkflowSection title="快捷入口" description="在需要时可以跳转到 Relay 列表或前台详情页继续检查。">
-                    <div className="flex flex-wrap gap-2">
-                      {row.status === "approved" ? <Link className="pill pill-idle" to="/relays">打开 Relay 列表</Link> : null}
-                      {row.approvedRelay ? (
-                        <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${row.approvedRelay.slug}`} rel="noreferrer" target="_blank">
-                          打开前台页面
-                        </a>
-                      ) : null}
-                    </div>
-                  </WorkflowSection>
+                <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-white/38">处理概览</p>
+                  <p className="mt-1.5 text-sm text-white/72">{formatSubmissionStatus(row.status)}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-white/54">{row.reviewNotes ?? "未填写审批备注"}</p>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </Card>
+          ))}
+        </div>
+      </Card>
+
+      <SubmissionInspectorDrawer
+        mode="history"
+        open={Boolean(selectedSubmission)}
+        submission={selectedSubmission}
+        onClose={() => setSelectedSubmissionId(null)}
+        onReload={submissions.reload}
+      />
+    </>
   );
 }

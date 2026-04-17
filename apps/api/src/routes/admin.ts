@@ -634,6 +634,18 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.delete("/admin/models/:id", async (request) => {
+    const params = request.params as { id: string };
+
+    await app.db
+      .deleteFrom("models")
+      .where("id", "=", params.id)
+      .executeTakeFirst();
+
+    await refreshPublicData(app.db);
+    return { ok: true };
+  });
+
   app.post("/admin/relays", async (request, reply) => {
     const body = adminRelayUpsertSchema.parse(request.body ?? {});
     const testModel = body.modelPrices[0]?.modelKey?.trim();

@@ -653,12 +653,43 @@ export function validatePriceForm(form: PriceFormState) {
   return { errors, payload };
 }
 
+function slugifyModelKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+export function inferModelVendor(modelKey: string) {
+  const normalized = slugifyModelKey(modelKey);
+  const [vendor] = normalized.split("-");
+  return vendor || "relay";
+}
+
+export function inferModelFamily(modelKey: string) {
+  const normalized = slugifyModelKey(modelKey);
+  const parts = normalized.split("-");
+
+  if (parts.length <= 1) {
+    return normalized || "custom";
+  }
+
+  return parts.slice(1).join("-") || normalized;
+}
+
+export function inferModelDisplayName(modelKey: string) {
+  return modelKey.trim() || "";
+}
+
 export function validateModelForm(form: AdminModelUpsert) {
+  const key = trimString(form.key);
   const payload: AdminModelUpsert = {
-    key: trimString(form.key),
-    vendor: trimString(form.vendor),
-    name: trimString(form.name),
-    family: trimString(form.family),
+    key,
+    vendor: inferModelVendor(key),
+    name: inferModelDisplayName(key),
+    family: inferModelFamily(key),
     inputPriceUnit: emptyToNull(form.inputPriceUnit),
     outputPriceUnit: emptyToNull(form.outputPriceUnit),
     isActive: form.isActive,
@@ -667,15 +698,6 @@ export function validateModelForm(form: AdminModelUpsert) {
 
   if (!payload.key) {
     errors.key = "请输入模型键值。";
-  }
-  if (!payload.vendor) {
-    errors.vendor = "请输入模型提供方。";
-  }
-  if (!payload.name) {
-    errors.name = "请输入模型名称。";
-  }
-  if (!payload.family) {
-    errors.family = "请输入模型分类。";
   }
 
   return { errors, payload };
@@ -792,7 +814,6 @@ export function AdminShell({
 }) {
   const location = useLocation();
   const items = [
-    ["/", "概览"],
     ["/relays", "Relay"],
     ["/relays/history", "Relay历史"],
     ["/intake", "提交记录"],
@@ -802,10 +823,6 @@ export function AdminShell({
   ] as const;
 
   function isItemActive(path: string) {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-
     return location.pathname === path;
   }
 
@@ -829,7 +846,7 @@ export function AdminShell({
                 <InfoTip content="审批通过后的记录直接进入 Relay 列表；只有 active Relay 会参与自动测试、目录展示和榜单排行。" />
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="admin-nav">
                 {items.map(([to, label]) => (
                   <NavLink
@@ -842,7 +859,7 @@ export function AdminShell({
                   </NavLink>
                 ))}
               </div>
-              <div className="flex flex-wrap items-center justify-end gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <a className="pill pill-ghost" href={PUBLIC_SITE_URL} target="_blank" rel="noreferrer">
                   前台站点
                 </a>
