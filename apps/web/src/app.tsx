@@ -15,6 +15,7 @@ import {
   type RelayPricingHistoryResponse,
   type PublicSubmissionResponse,
 } from "@relaynews/shared";
+import { createPortal } from "react-dom";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -2592,6 +2593,8 @@ function RelayStatusLegend() {
 
 function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["scoreSummary"] }) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<{ left: number; top: number; width: number } | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const entries = (["availability", "latency", "consistency", "value", "stability"] as const).map((label) => [
     label,
@@ -2603,8 +2606,29 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
       return;
     }
 
+    function updatePosition() {
+      if (!toggleRef.current) {
+        return;
+      }
+
+      const rect = toggleRef.current.getBoundingClientRect();
+      const viewportPadding = 12;
+      const width = Math.min(248, Math.max(212, window.innerWidth - viewportPadding * 2));
+      const left = Math.min(
+        Math.max(rect.right - width, viewportPadding),
+        window.innerWidth - width - viewportPadding,
+      );
+      const top = Math.min(rect.bottom + 8, window.innerHeight - viewportPadding);
+
+      setPosition({ left, top, width });
+    }
+
+    updatePosition();
+
     function handlePointerDown(event: PointerEvent) {
-      if (!popoverRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (!popoverRef.current?.contains(target) && !toggleRef.current?.contains(target)) {
         setOpen(false);
       }
     }
@@ -2617,20 +2641,25 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [open]);
 
   return (
-    <div ref={popoverRef} className="relative">
+    <>
       <button
         aria-label="Inspect score breakdown"
         aria-expanded={open}
         className="surface-link w-full cursor-pointer p-3.5 text-left"
         data-testid="score-popover-toggle"
+        ref={toggleRef}
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
@@ -2638,17 +2667,19 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
         <p className="mt-2 text-[2.2rem] leading-none tracking-[-0.05em]">{scoreSummary.total.toFixed(1)}</p>
         <p className="mt-2 text-xs text-black/58">View breakdown</p>
       </button>
-      {open ? (
+      {open && position ? createPortal(
         <div
           aria-label="Score breakdown"
-          className="mt-2 w-full min-w-0"
+          className="fixed z-[140]"
           data-testid="score-popover"
+          ref={popoverRef}
           role="dialog"
+          style={{ left: `${position.left}px`, top: `${position.top}px`, width: `${position.width}px` }}
         >
           <div className="surface-card border border-black/8 p-3 shadow-[rgba(127,99,21,0.18)_0_18px_40px]">
             <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2.5">
-              <p className="kicker">Score breakdown</p>
-              <p className="text-sm tracking-[-0.03em] text-black/66">Total {scoreSummary.total.toFixed(1)}</p>
+              <p className="kicker">Breakdown</p>
+              <p className="text-sm tracking-[-0.03em] text-black/66">{scoreSummary.total.toFixed(1)}</p>
             </div>
             <div className="mt-2.5 space-y-1.5">
               {entries.map(([label, value]) => (
@@ -2659,9 +2690,10 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -2804,7 +2836,7 @@ function RelayPage() {
 
   return (
     <div className="space-y-4">
-      <section className="panel overflow-visible bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
+      <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay detail</p>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
           <div className="space-y-4">
@@ -2837,7 +2869,7 @@ function RelayPage() {
           </div>
           <ScorePopover scoreSummary={overview.data.scoreSummary} />
         </div>
-        <div className="relative z-10 mt-4">
+        <div className="mt-4">
           <MetricGrid
             columnsClassName="grid-cols-2 lg:grid-cols-4"
             items={snapshotMetrics.map((item) => ({
