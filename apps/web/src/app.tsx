@@ -3313,20 +3313,6 @@ function MethodologyPage() {
               ))}
             </div>
           </Panel>
-          <Panel title="阅读提示" kicker="如何理解榜单">
-            <div className="space-y-3 text-sm leading-6 text-black/72">
-              {data.notes.map((note) => (
-                <div key={note} className="surface-card p-3.5">
-                  {note}
-                </div>
-              ))}
-              <div className="surface-card p-3.5">
-                如需了解收录规则、赞助分离与争议处理，请继续阅读公开政策页。
-                {" "}
-                <Link className="underline" to="/policy">查看政策</Link>
-              </div>
-            </div>
-          </Panel>
         </div>
       </section>
     </div>
