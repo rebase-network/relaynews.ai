@@ -3634,7 +3634,7 @@ function ProbePage() {
         <section className="panel">
           <p className="kicker">自助探测</p>
           <h1 className="text-[2.45rem] leading-[0.92] tracking-[-0.06em] md:text-5xl">
-            运行探测
+            运行测试
           </h1>
           <p className="form-note mt-4 text-sm leading-6">
             请使用你线上应用实际发送的基础 URL、密钥与模型。除非你已经明确知道所需协议族，否则建议从自动模式开始。
