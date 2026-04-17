@@ -1,5 +1,6 @@
 import * as Shared from "../shared";
 import { InfoTip } from "../components/info-tip";
+import { StatusBadge } from "../components/status-badge";
 import { SubmissionInspectorDrawer } from "../components/submission-inspector-drawer";
 
 const {
@@ -9,6 +10,7 @@ const {
   LoadingCard,
   formatDateTime,
   formatSubmissionStatus,
+  statusToneForSubmissionStatus,
   useEffect,
   useLoadable,
   useState,
@@ -44,7 +46,7 @@ export function SubmissionHistoryPage() {
 
   return (
     <>
-      <Card title="提交历史" kicker="已处理记录">
+      <Card title="提交历史">
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-white/72">共 {historyRows.length} 条</p>
@@ -82,9 +84,9 @@ export function SubmissionHistoryPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-lg tracking-[-0.03em]">{row.relayName}</p>
-                    <span className={row.status === "approved" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                    <StatusBadge tone={statusToneForSubmissionStatus(row.status)}>
                       {formatSubmissionStatus(row.status)}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">提交于 {formatDateTime(row.createdAt)}</p>
                   <p className="mt-1.5 truncate text-sm text-white/62">{row.baseUrl}</p>

@@ -1,5 +1,6 @@
 import * as Shared from "../shared";
 import { InfoTip } from "../components/info-tip";
+import { StatusBadge } from "../components/status-badge";
 
 const {
   clsx,
@@ -14,6 +15,7 @@ const {
   formatModelStatus,
   inferModelFamily,
   inferModelVendor,
+  statusToneForModelStatus,
   useLoadable,
   useMutationState,
   useState,
@@ -112,7 +114,7 @@ export function ModelsPage() {
   return (
     <>
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card title="模型列表" kicker="模型目录">
+        <Card title="模型列表">
           <div className="space-y-3 border-b border-white/10 pb-3">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-white/72">共 {models.data.rows.length} 条</p>
@@ -139,9 +141,9 @@ export function ModelsPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-lg tracking-[-0.03em]">{model.key}</p>
-                      <span className={model.isActive ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                      <StatusBadge tone={statusToneForModelStatus(model.isActive)}>
                         {formatModelStatus(model.isActive)}
-                      </span>
+                      </StatusBadge>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/58">
                       <span className="rounded-full border border-white/10 bg-black/10 px-2.5 py-1">{model.vendor}</span>
@@ -164,7 +166,7 @@ export function ModelsPage() {
           </div>
         </Card>
 
-        <Card title={editingId ? "编辑模型" : "添加模型"} kicker={editingId ? "目录维护" : "快速补录"}>
+        <Card title={editingId ? "编辑模型" : "添加模型"}>
           <div className="grid gap-3">
             <label className="field-label">
               模型键值

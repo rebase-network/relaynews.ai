@@ -3,6 +3,7 @@ import { AdminDrawer } from "../components/admin-drawer";
 import { InfoTip } from "../components/info-tip";
 import { RelayEditorForm } from "../components/relay-editor-form";
 import { RelayInspectorDrawer } from "../components/relay-inspector-drawer";
+import { StatusBadge } from "../components/status-badge";
 
 const {
   clsx,
@@ -18,6 +19,7 @@ const {
   formatDateTime,
   formatHealthStatus,
   matchesSearchQuery,
+  statusToneForCatalogStatus,
   useEffect,
   useLoadable,
   useMemo,
@@ -200,13 +202,13 @@ export function RelaysPage() {
 
   return (
     <>
-      <Card title="Relay 列表" kicker="当前运营中的站点">
+      <Card title="Relay 列表">
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-white/72">共 {currentRelays.length} 条</p>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">active {activeCount}</span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">paused {pausedCount}</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">启用中 {activeCount}</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/62">已暂停 {pausedCount}</span>
               <InfoTip content="列表只保留概要信息；点击某条 Relay 后，会在右侧抽屉中查看详情或继续编辑。" />
             </div>
             <div className="flex flex-wrap items-end gap-2.5">
@@ -224,8 +226,8 @@ export function RelaysPage() {
                 状态
                 <select className="field-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "paused")}>
                   <option value="all">全部</option>
-                  <option value="active">active</option>
-                  <option value="paused">paused</option>
+                  <option value="active">启用中</option>
+                  <option value="paused">已暂停</option>
                 </select>
               </label>
               <button className="pill pill-active" type="button" onClick={openCreateDrawer}>
@@ -270,9 +272,9 @@ export function RelaysPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-lg tracking-[-0.03em]">{relay.name}</p>
-                    <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
+                    <StatusBadge tone={statusToneForCatalogStatus(relay.catalogStatus)}>
                       {formatCatalogStatus(relay.catalogStatus)}
-                    </span>
+                    </StatusBadge>
                     {relay.id === highlightedRelayId ? <span className="pill pill-ghost !bg-[#ffd06a]/14 !text-[#ffe6a7]">刚创建</span> : null}
                   </div>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>

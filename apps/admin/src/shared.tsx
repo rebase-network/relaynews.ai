@@ -65,6 +65,8 @@ export type MutationState = {
   success: string | null;
 };
 
+export type StatusTone = "neutral" | "accent" | "success" | "warning" | "danger";
+
 export type RelayFormErrors = Partial<Record<"name" | "baseUrl" | "websiteUrl" | "contactInfo" | "description" | "testApiKey" | "modelPrices", string>>;
 export type RelayPriceRowFormState = {
   id: string;
@@ -366,6 +368,26 @@ export function formatCatalogStatus(status: string) {
   return labels[status] ?? status;
 }
 
+export function statusToneForCatalogStatus(status: string): StatusTone {
+  if (status === "active") {
+    return "success";
+  }
+
+  if (status === "paused") {
+    return "warning";
+  }
+
+  if (status === "pending") {
+    return "accent";
+  }
+
+  if (status === "archived" || status === "retired") {
+    return "neutral";
+  }
+
+  return "neutral";
+}
+
 export function formatSubmissionStatus(status: string) {
   const labels: Record<string, string> = {
     pending: "待审核",
@@ -375,6 +397,22 @@ export function formatSubmissionStatus(status: string) {
   };
 
   return labels[status] ?? status;
+}
+
+export function statusToneForSubmissionStatus(status: string): StatusTone {
+  if (status === "approved") {
+    return "success";
+  }
+
+  if (status === "pending") {
+    return "accent";
+  }
+
+  if (status === "rejected") {
+    return "danger";
+  }
+
+  return "neutral";
 }
 
 export function formatCredentialStatus(status: string) {
@@ -445,6 +483,10 @@ export function getModelOptionLabel(model: AdminModel) {
 
 export function formatModelStatus(isActive: boolean) {
   return isActive ? "启用中" : "已停用";
+}
+
+export function statusToneForModelStatus(isActive: boolean): StatusTone {
+  return isActive ? "success" : "neutral";
 }
 
 export function buildPriceModelOptions(models: AdminModel[], selectedModelId: string) {
@@ -878,10 +920,9 @@ export function AdminShell({
   );
 }
 
-export function Card({ title, kicker, children }: { title: string; kicker?: string; children: ReactNode }) {
+export function Card({ title, children }: { title: string; kicker?: string; children: ReactNode }) {
   return (
     <section className="card">
-      {kicker ? <p className="eyebrow">{kicker}</p> : null}
       <h2 className="text-[1.85rem] tracking-[-0.04em] md:text-[1.9rem]">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>

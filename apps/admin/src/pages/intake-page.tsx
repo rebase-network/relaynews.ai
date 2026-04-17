@@ -1,5 +1,6 @@
 import * as Shared from "../shared";
 import { InfoTip } from "../components/info-tip";
+import { StatusBadge } from "../components/status-badge";
 import { SubmissionInspectorDrawer } from "../components/submission-inspector-drawer";
 
 const {
@@ -9,6 +10,7 @@ const {
   LoadingCard,
   formatDateTime,
   formatHealthStatus,
+  statusToneForSubmissionStatus,
   useEffect,
   useLoadable,
   useState,
@@ -43,7 +45,7 @@ export function IntakePage() {
 
   return (
     <>
-      <Card title="提交记录" kicker="当前待审核">
+      <Card title="提交记录">
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-white/72">共 {pendingRows.length} 条待处理</p>
@@ -80,7 +82,7 @@ export function IntakePage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-lg tracking-[-0.03em]">{row.relayName}</p>
-                    <span className="pill pill-idle !cursor-default">待审核</span>
+                    <StatusBadge tone={statusToneForSubmissionStatus("pending")}>待审核</StatusBadge>
                   </div>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">提交于 {formatDateTime(row.createdAt)}</p>
                   <p className="mt-1.5 truncate text-sm text-white/62">{row.baseUrl}</p>

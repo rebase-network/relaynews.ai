@@ -1,5 +1,6 @@
 import * as Shared from "../shared";
 import { InfoTip } from "../components/info-tip";
+import { StatusBadge } from "../components/status-badge";
 
 const {
   Card,
@@ -97,7 +98,7 @@ export function SponsorsPage() {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-      <Card title="赞助商" kicker="前台展示">
+      <Card title="赞助商">
         <div className="space-y-3 border-b border-white/10 pb-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-white/72">当前共 {sponsorRows.length} 条</p>
@@ -122,7 +123,7 @@ export function SponsorsPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-lg tracking-[-0.03em]">{displayName}</p>
-                      <span className="pill pill-active !cursor-default">赞助展示</span>
+                      <StatusBadge tone="accent">赞助展示</StatusBadge>
                     </div>
                     <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{relay?.slug ?? row.relay?.slug ?? "未绑定 Relay"}</p>
                     {displayUrl ? <p className="mt-1.5 truncate text-sm text-white/62">{displayUrl}</p> : null}
@@ -144,7 +145,7 @@ export function SponsorsPage() {
         </div>
       </Card>
 
-      <Card title="添加赞助商" kicker="从 Relay 选择">
+      <Card title="添加赞助商">
         <div className="space-y-3">
           <label className="field-label">
             选择 Relay
@@ -156,7 +157,7 @@ export function SponsorsPage() {
                 setMutation((current) => ({ ...current, error: null }));
               }}
             >
-              <option value="">请选择 active Relay</option>
+              <option value="">请选择启用中的 Relay</option>
               {availableRelays.map((relay) => (
                 <option key={relay.id} value={relay.id}>{relay.name}</option>
               ))}

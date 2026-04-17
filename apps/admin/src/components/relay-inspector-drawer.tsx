@@ -2,6 +2,7 @@ import * as Shared from "../shared";
 import { AdminDrawer } from "./admin-drawer";
 import { InfoTip } from "./info-tip";
 import { RelayEditorForm } from "./relay-editor-form";
+import { StatusBadge } from "./status-badge";
 import { WorkflowDetailGrid, WorkflowPriceTable, WorkflowSection } from "./relay-workflow";
 
 const {
@@ -13,6 +14,7 @@ const {
   formatCredentialStatus,
   formatDateTime,
   formatHealthStatus,
+  statusToneForCatalogStatus,
   useEffect,
   useMutationState,
   useState,
@@ -33,10 +35,31 @@ export function RelayInspectorDrawer({
   onClose: () => void;
   onReload: () => Promise<unknown>;
 }) {
+  const [presentedRelay, setPresentedRelay] = useState<Shared.AdminRelaysResponse["rows"][number] | null>(relay);
   const [mode, setMode] = useState<"detail" | "edit">(initialMode);
   const [form, setForm] = useState<Shared.RelayFormState>(() => buildRelayFormState());
   const [fieldErrors, setFieldErrors] = useState<Shared.RelayFormErrors>({});
   const [mutation, setMutation] = useMutationState();
+
+  useEffect(() => {
+    if (relay) {
+      setPresentedRelay(relay);
+    }
+  }, [relay]);
+
+  useEffect(() => {
+    if (open || !presentedRelay) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setPresentedRelay(null);
+    }, 240);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [open, presentedRelay]);
 
   useEffect(() => {
     if (!open || !relay) {
@@ -94,7 +117,7 @@ export function RelayInspectorDrawer({
   }
 
   async function submitRelay() {
-    if (!relay) {
+    if (!presentedRelay) {
       return;
     }
 
@@ -107,7 +130,7 @@ export function RelayInspectorDrawer({
 
     setMutation({ pending: true, error: null, success: null });
     try {
-      await fetchJson(`/admin/relays/${relay.id}`, {
+      await fetchJson(`/admin/relays/${presentedRelay.id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
@@ -119,17 +142,17 @@ export function RelayInspectorDrawer({
   }
 
   async function updateRelayStatus(status: Shared.RelayFormState["catalogStatus"]) {
-    if (!relay) {
+    if (!presentedRelay) {
       return;
     }
 
-    const nextForm = buildRelayFormState(relay);
+    const nextForm = buildRelayFormState(presentedRelay);
     nextForm.catalogStatus = status;
     const { payload } = validateRelayForm(nextForm, { editing: true });
 
     setMutation({ pending: true, error: null, success: null });
     try {
-      await fetchJson(`/admin/relays/${relay.id}`, {
+      await fetchJson(`/admin/relays/${presentedRelay.id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
@@ -139,34 +162,33 @@ export function RelayInspectorDrawer({
         error: null,
         success:
           status === "archived"
-            ? `${relay.name} 已归档。`
+            ? `${presentedRelay.name} 已归档。`
             : status === "paused"
-              ? `${relay.name} 已暂停。`
-              : `${relay.name} 已重新激活。`,
+              ? `${presentedRelay.name} 已暂停。`
+              : `${presentedRelay.name} 已重新激活。`,
       });
     } catch (reason) {
       setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法更新 Relay 状态。", success: null });
     }
   }
 
-  if (!relay) {
+  if (!presentedRelay) {
     return null;
   }
 
   return (
-    <AdminDrawer kicker="Relay 抽屉" open={open} title={relay.name} onClose={onClose}>
+    <AdminDrawer open={open} title={presentedRelay.name} onClose={onClose}>
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/40">Relay 抽屉</p>
+              <StatusBadge tone={statusToneForCatalogStatus(presentedRelay.catalogStatus)}>
+                {formatCatalogStatus(presentedRelay.catalogStatus)}
+              </StatusBadge>
               <InfoTip content="右侧抽屉用于集中查看详情和编辑，不再跳转到独立页面。" />
-              <span className={relay.catalogStatus === "active" ? "pill pill-active !cursor-default" : "pill pill-idle !cursor-default"}>
-                {formatCatalogStatus(relay.catalogStatus)}
-              </span>
             </div>
-            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{relay.slug}</p>
-            <p className="mt-1 truncate text-sm text-white/56">{relay.baseUrl}</p>
+            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/40">{presentedRelay.slug}</p>
+            <p className="mt-1 truncate text-sm text-white/56">{presentedRelay.baseUrl}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button className={mode === "detail" ? "pill pill-active" : "pill pill-idle"} onClick={() => setMode("detail")} type="button">
@@ -175,7 +197,7 @@ export function RelayInspectorDrawer({
             <button className={mode === "edit" ? "pill pill-active" : "pill pill-idle"} onClick={() => setMode("edit")} type="button">
               编辑
             </button>
-            <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${relay.slug}`} rel="noreferrer" target="_blank">
+            <a className="pill pill-ghost" href={`${PUBLIC_SITE_URL}/relay/${presentedRelay.slug}`} rel="noreferrer" target="_blank">
               前台详情页
             </a>
           </div>
@@ -186,40 +208,40 @@ export function RelayInspectorDrawer({
             <WorkflowSection title="概要信息" tip="这里保留站点最关键的运营信息，便于先判断是否需要继续编辑。">
               <WorkflowDetailGrid
                 items={[
-                  { label: "Base URL", value: relay.baseUrl },
+                  { label: "Base URL", value: presentedRelay.baseUrl },
                   {
                     label: "站点网站",
-                    value: relay.websiteUrl ? (
-                      <a className="underline underline-offset-4 text-white/82" href={relay.websiteUrl} rel="noreferrer" target="_blank">
-                        {relay.websiteUrl}
+                    value: presentedRelay.websiteUrl ? (
+                      <a className="underline underline-offset-4 text-white/82" href={presentedRelay.websiteUrl} rel="noreferrer" target="_blank">
+                        {presentedRelay.websiteUrl}
                       </a>
                     ) : "未填写",
                   },
-                  { label: "联系方式", value: relay.contactInfo ?? "未填写" },
-                  { label: "模型数量", value: `${relay.modelPrices.length} 个` },
+                  { label: "联系方式", value: presentedRelay.contactInfo ?? "未填写" },
+                  { label: "模型数量", value: `${presentedRelay.modelPrices.length} 个` },
                 ]}
               />
               <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm leading-6 text-white/72">
-                {relay.description ?? "暂未填写站点简介。"}
+                {presentedRelay.description ?? "暂未填写站点简介。"}
               </div>
             </WorkflowSection>
 
             <WorkflowSection title="测试状态" tip="只有 active 且存在可用测试 Key 的 Relay 才会继续自动测试。">
-              {relay.probeCredential ? (
+              {presentedRelay.probeCredential ? (
                 <WorkflowDetailGrid
                   columns={1}
                   items={[
                     {
                       label: "测试凭据",
-                      value: `${relay.probeCredential.apiKeyPreview} · ${formatCredentialStatus(relay.probeCredential.status)}`,
+                      value: `${presentedRelay.probeCredential.apiKeyPreview} · ${formatCredentialStatus(presentedRelay.probeCredential.status)}`,
                     },
                     {
                       label: "测试模型",
-                      value: `${relay.probeCredential.testModel} · ${formatHealthStatus(relay.probeCredential.lastHealthStatus)}${relay.probeCredential.lastHttpStatus ? ` · ${relay.probeCredential.lastHttpStatus}` : ""}`,
+                      value: `${presentedRelay.probeCredential.testModel} · ${formatHealthStatus(presentedRelay.probeCredential.lastHealthStatus)}${presentedRelay.probeCredential.lastHttpStatus ? ` · ${presentedRelay.probeCredential.lastHttpStatus}` : ""}`,
                     },
                     {
                       label: "最近验证",
-                      value: relay.probeCredential.lastVerifiedAt ? formatDateTime(relay.probeCredential.lastVerifiedAt) : "尚未完成验证",
+                      value: presentedRelay.probeCredential.lastVerifiedAt ? formatDateTime(presentedRelay.probeCredential.lastVerifiedAt) : "尚未完成验证",
                     },
                   ]}
                 />
@@ -231,7 +253,7 @@ export function RelayInspectorDrawer({
             </WorkflowSection>
 
             <WorkflowSection title="支持模型及价格表" tip="这里只展示当前价格信息；需要调整时切到“编辑”即可。">
-              <WorkflowPriceTable rows={relay.modelPrices} />
+              <WorkflowPriceTable rows={presentedRelay.modelPrices} />
             </WorkflowSection>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5">
@@ -239,7 +261,7 @@ export function RelayInspectorDrawer({
                 <button className="pill pill-active" onClick={() => setMode("edit")} type="button">
                   编辑 Relay
                 </button>
-                {relay.catalogStatus === "active" ? (
+                {presentedRelay.catalogStatus === "active" ? (
                   <button className="pill pill-idle" disabled={mutation.pending} onClick={() => void updateRelayStatus("paused")} type="button">
                     暂停
                   </button>
