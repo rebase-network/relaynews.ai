@@ -2396,7 +2396,7 @@ function LeaderboardPage() {
           </Link>
         </div>
       </section>
-      <Panel title="Relay 排名" kicker="自然排序">
+      <Panel title="Relay 排名">
         <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <p className="max-w-3xl text-sm leading-6 text-black/68">
             本页只呈现当前模型赛道的自然排序结果。赞助展示不会插入表格，理解分数口径请配合方法论一起阅读。
