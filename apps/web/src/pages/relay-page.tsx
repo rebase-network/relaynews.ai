@@ -141,11 +141,11 @@ export function RelayPage() {
 
   return (
     <div className="space-y-4">
-      <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
+      <section className="panel relay-hero-panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay 详情</p>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.16em]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_11rem] lg:items-start">
+          <div className="space-y-3.5">
+            <div className="relay-hero-meta">
               <span className="inline-flex items-center gap-2">
                 <StatusDot status={overview.data.healthStatus} />
                 {formatHealthStatusLabel(overview.data.healthStatus)}
@@ -153,14 +153,16 @@ export function RelayPage() {
               <span className="text-black/46">北京时间 {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
             </div>
             <div>
-              <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-[4.2rem]">{overview.data.relay.name}</h1>
-              <p className="mt-2 break-all font-mono text-[0.8rem] text-black/62">{overview.data.relay.baseUrl}</p>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72">
+              <h1 className="text-[2.85rem] leading-[0.94] tracking-[-0.05em] md:text-[3.7rem]">{overview.data.relay.name}</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-black/70">
                 {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "这个站点的近期证据仍在持续积累中。"}
               </p>
             </div>
-            {overview.data.relay.websiteUrl ? (
-              <div className="flex flex-wrap gap-2">
+            <div className="relay-hero-links">
+              <span className="relay-base-url-chip" title={overview.data.relay.baseUrl}>
+                {overview.data.relay.baseUrl}
+              </span>
+              {overview.data.relay.websiteUrl ? (
                 <a
                   className="signal-chip"
                   href={overview.data.relay.websiteUrl}
@@ -169,8 +171,8 @@ export function RelayPage() {
                 >
                   访问官网
                 </a>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
           <ScorePopover scoreSummary={overview.data.scoreSummary} />
         </div>
@@ -179,9 +181,9 @@ export function RelayPage() {
             columnsClassName="grid-cols-2 lg:grid-cols-4"
             items={snapshotMetrics.map((item) => ({
               ...item,
-              cardClassName: "probe-metric-card",
-              valueClassName: "text-[1.32rem] leading-[1.05]",
-              valueSpacingClassName: "mt-2.5",
+              cardClassName: "relay-overview-metric-card",
+              valueClassName: "text-[1.2rem] leading-[1.05]",
+              valueSpacingClassName: "mt-2",
             }))}
           />
         </div>
@@ -193,7 +195,7 @@ export function RelayPage() {
           title="延迟"
           kicker="近 30 天走势"
           headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+          titleClassName="text-[1.9rem] md:text-[2.1rem]"
         >
           {history.error ? (
             <p className="text-sm text-[#b42318]">{history.error}</p>
@@ -225,7 +227,7 @@ export function RelayPage() {
           title="状态"
           kicker="近 30 天可用性"
           headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+          titleClassName="text-[1.9rem] md:text-[2.1rem]"
         >
           {history.error ? (
             <p className="text-sm text-[#b42318]">{history.error}</p>
@@ -242,7 +244,7 @@ export function RelayPage() {
           title="模型支持"
           kicker="当前价格"
           headerClassName="mb-3"
-          titleClassName="text-[2.2rem] md:text-[2.45rem]"
+          titleClassName="text-[1.9rem] md:text-[2.1rem]"
         >
           {models.loading || !models.data ? <p className="text-sm text-black/60">正在加载模型...</p> : (
             modelPricingRows.length === 0 ? <p className="text-sm text-black/60">这个站点还没有公开模型信息。</p> : (

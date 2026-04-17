@@ -97,46 +97,51 @@ export function ProbePage() {
   });
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr] xl:items-start">
-        <section className="panel">
+    <div className="space-y-5">
+      <section className="grid gap-4 xl:grid-cols-[29rem_minmax(0,1fr)] xl:items-start">
+        <section className="panel probe-form-panel">
           <p className="kicker">自助测试</p>
-          <h1 className="text-[2.45rem] leading-[0.92] tracking-[-0.06em] md:text-5xl">
+          <h1 className="text-[2.35rem] leading-[0.94] tracking-[-0.05em] md:text-[3.15rem]">
             运行测试
           </h1>
           <p className="form-note mt-4 text-sm leading-6">
-            请填写Base URL、API Key 和 模型。除非你已经明确知道所需协议族，否则建议从自动模式开始。自助测试的API Key等信息不会留存，如果担心泄漏可以使用单独的Key进行测试
+            请填写Base URL、API Key 和 模型。除非你已经明确知道所需协议族，否则建议从自动模式开始。
+          </p>
+          <p className="probe-privacy-note">
+            自助测试的API Key等信息不会留存，如果担心泄漏可以使用单独的Key进行测试。
           </p>
           <form className="form-shell mt-4" onSubmit={handleSubmit}>
-            <ProbeFormFields setState={setState} state={state} />
-            <details className="surface-card p-4">
+            <ProbeFormFields setState={setState} showHelpers={false} state={state} />
+            <details className="surface-card probe-advanced-card p-4">
               <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">高级选项 / 接口类型</summary>
-              <label className="form-field mt-4">
-                兼容模式
-                <select
-                  className="input-shell mt-2"
-                  value={state.compatibilityMode}
-                  onChange={(event) =>
-                    setState((current) => ({
-                      ...current,
-                      compatibilityMode: event.target.value as Shared.ProbeCompatibilityMode,
-                    }))
-                  }
-                >
-                  {PROBE_COMPATIBILITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-              <p className="mt-3 text-sm leading-6 text-black/60">
-                自动模式会根据模型推断适配顺序；手动模式则会把测试锁定在单一兼容协议形态上。
-              </p>
+              <div className="probe-advanced-grid">
+                <label className="form-field">
+                  兼容模式
+                  <select
+                    className="input-shell mt-2"
+                    value={state.compatibilityMode}
+                    onChange={(event) =>
+                      setState((current) => ({
+                        ...current,
+                        compatibilityMode: event.target.value as Shared.ProbeCompatibilityMode,
+                      }))
+                    }
+                  >
+                    {PROBE_COMPATIBILITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <p className="probe-advanced-copy">
+                  自动模式会根据模型推断适配顺序；手动模式则会把测试锁定在单一兼容协议形态上。
+                </p>
+              </div>
             </details>
             <button className="button-dark" disabled={submitting} type="submit">{submitting ? "测试中..." : "开始测试"}</button>
           </form>
         </section>
 
-        <Panel title="测试结果" kicker={result ? "诊断输出" : error ? "请求失败" : "等待输入"} className={!result && !error ? "panel-soft" : ""}>
+        <Panel title="测试结果" kicker={result ? "诊断输出" : error ? "请求失败" : "等待输入"} className={result || error ? "probe-result-panel" : "panel-soft probe-result-panel"}>
           {result ? (
             <>
               <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
@@ -310,15 +315,11 @@ export function ProbePage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3 text-sm leading-6 text-black/70">
-              <p className="text-sm leading-6 text-black/70">
+            <div className="probe-empty-state">
+              <p className="probe-empty-title">填写左侧信息后开始测试。</p>
+              <p className="probe-empty-copy">
                 结果面板会展示连通性、协议状态、兼容模式识别结果、最终解析端点，以及到达上游路由时使用的请求轨迹。
               </p>
-              <ul className="m-0 list-disc space-y-2 pl-5 text-black/66">
-                <li>连通性会展示目标站点主机是否可达，以及对应延迟。</li>
-                <li>协议检查会确认所选 API 协议族是否返回有效结构和健康状态。</li>
-                <li>轨迹详情会展示测试实际使用的端点路径与请求尝试记录。</li>
-              </ul>
             </div>
           )}
         </Panel>
@@ -326,4 +327,3 @@ export function ProbePage() {
     </div>
   );
 }
-

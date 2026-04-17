@@ -2414,14 +2414,14 @@ export function StatusHistoryPanel({
 
 export function RelayModelsTable({ rows }: { rows: Array<RelayModelPricingRow | null> }) {
   return (
-    <div className="data-table relay-models-table px-1.5" data-testid="relay-models-table">
+    <div className="data-table relay-models-table relay-models-table-compact px-1.5" data-testid="relay-models-table">
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-black/10">
-            <th className="pb-2.5 pl-2">模型</th>
-            <th className="w-[5.5rem] whitespace-nowrap pb-2.5">状态</th>
-            <th className="w-[5.5rem] whitespace-nowrap pb-2.5 text-right">输入</th>
-            <th className="w-[5.7rem] whitespace-nowrap pb-2.5 pr-2 text-right">输出</th>
+            <th className="pb-2 pl-2">模型</th>
+            <th className="w-[4.6rem] whitespace-nowrap pb-2">状态</th>
+            <th className="w-[5.2rem] whitespace-nowrap pb-2 text-right">输入</th>
+            <th className="w-[5.2rem] whitespace-nowrap pb-2 pr-2 text-right">输出</th>
           </tr>
         </thead>
         <tbody>
@@ -2429,29 +2429,29 @@ export function RelayModelsTable({ rows }: { rows: Array<RelayModelPricingRow | 
             <tr key={row?.modelKey ?? `placeholder-${index}`} className="align-top">
               {row ? (
                 <>
-                  <td className="border-b border-black/8 py-3 pl-2 pr-3 last:border-b-0">
-                    <p className="break-words text-[0.96rem] leading-5 tracking-[-0.03em] [overflow-wrap:anywhere]">{row.modelName}</p>
-                    <p className="mt-1 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
+                  <td className="border-b border-black/8 py-2.5 pl-2 pr-3 last:border-b-0">
+                    <p className="break-words text-[0.93rem] leading-5 tracking-[-0.03em] [overflow-wrap:anywhere]">{row.modelName}</p>
+                    <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-black/40">{row.vendor}</p>
                   </td>
-                  <td className="border-b border-black/8 py-3 pr-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/52 whitespace-nowrap last:border-b-0">
+                  <td className="border-b border-black/8 py-2.5 pr-3 text-[0.6rem] uppercase tracking-[0.14em] text-black/44 whitespace-nowrap last:border-b-0">
                     {formatSupportStatusLabel(row.supportStatus)}
                   </td>
-                  <td className="border-b border-black/8 py-3 pr-3 text-right text-sm tabular-nums whitespace-nowrap last:border-b-0">
+                  <td className="border-b border-black/8 py-2.5 pr-3 text-right text-[0.92rem] font-medium tabular-nums whitespace-nowrap last:border-b-0">
                     {formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
                   </td>
-                  <td className="border-b border-black/8 py-3 pr-2 text-right text-sm tabular-nums whitespace-nowrap last:border-b-0">
+                  <td className="border-b border-black/8 py-2.5 pr-2 text-right text-[0.92rem] font-medium tabular-nums whitespace-nowrap last:border-b-0">
                     {formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
                   </td>
                 </>
               ) : (
                 <>
-                  <td className="border-b border-transparent py-3 pl-2 pr-3" aria-hidden="true">
+                  <td className="border-b border-transparent py-2.5 pl-2 pr-3" aria-hidden="true">
                     <span className="block h-5" />
                     <span className="mt-1 block h-3" />
                   </td>
-                  <td className="border-b border-transparent py-3 pr-3" aria-hidden="true" />
-                  <td className="border-b border-transparent py-3 pr-3" aria-hidden="true" />
-                  <td className="border-b border-transparent py-3 pr-2" aria-hidden="true" />
+                  <td className="border-b border-transparent py-2.5 pr-3" aria-hidden="true" />
+                  <td className="border-b border-transparent py-2.5 pr-3" aria-hidden="true" />
+                  <td className="border-b border-transparent py-2.5 pr-2" aria-hidden="true" />
                 </>
               )}
             </tr>
