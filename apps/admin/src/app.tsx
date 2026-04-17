@@ -539,6 +539,17 @@ function validateProbeCredentialForm(form: ProbeCredentialFormState) {
   return { errors, payload };
 }
 
+function createDefaultSponsorFormState(): SponsorFormState {
+  return {
+    relayId: "",
+    name: "",
+    placement: "homepage-spotlight",
+    status: "active",
+    startAt: new Date().toISOString(),
+    endAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+  };
+}
+
 function useLoadable<T>(loader: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1982,19 +1993,34 @@ function CredentialsPage() {
 function SponsorsPage() {
   const sponsors = useLoadable<AdminSponsorsResponse>(() => fetchJson("/admin/sponsors"), []);
   const relays = useLoadable<AdminRelaysResponse>(() => fetchJson("/admin/relays"), []);
-  const [form, setForm] = useState<SponsorFormState>({
-    relayId: "",
-    name: "",
-    placement: "homepage-spotlight",
-    status: "active",
-    startAt: new Date().toISOString(),
-    endAt: new Date(Date.now() + 30 * 86400000).toISOString(),
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<SponsorFormState>(createDefaultSponsorFormState);
   const [fieldErrors, setFieldErrors] = useState<SponsorFormErrors>({});
   const [mutation, setMutation] = useMutationState();
   const relayOptions = buildRelaySelectOptions(relays.data?.rows ?? [], form.relayId);
 
-  async function createSponsor() {
+  function resetForm() {
+    setEditingId(null);
+    setForm(createDefaultSponsorFormState());
+    setFieldErrors({});
+    setMutation({ pending: false, error: null, success: null });
+  }
+
+  function beginEditingSponsor(row: AdminSponsorsResponse["rows"][number]) {
+    setEditingId(row.id);
+    setForm({
+      relayId: row.relayId ?? "",
+      name: row.name,
+      placement: row.placement,
+      status: row.status,
+      startAt: row.startAt,
+      endAt: row.endAt,
+    });
+    setFieldErrors({});
+    setMutation({ pending: false, error: null, success: null });
+  }
+
+  async function submitSponsor() {
     const { errors, payload } = validateSponsorForm(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -2004,12 +2030,21 @@ function SponsorsPage() {
 
     setMutation({ pending: true, error: null, success: null });
     try {
-      await fetchJson("/admin/sponsors", { method: "POST", body: JSON.stringify(payload) });
-      setMutation({ pending: false, error: null, success: "赞助位已创建。" });
+      await fetchJson(editingId ? `/admin/sponsors/${editingId}` : "/admin/sponsors", {
+        method: editingId ? "PATCH" : "POST",
+        body: JSON.stringify(payload),
+      });
+      setMutation({ pending: false, error: null, success: editingId ? "赞助位已更新。" : "赞助位已创建。" });
+      setEditingId(null);
+      setForm(createDefaultSponsorFormState());
       setFieldErrors({});
       await sponsors.reload();
     } catch (reason) {
-      setMutation({ pending: false, error: reason instanceof Error ? reason.message : "无法创建赞助位。", success: null });
+      setMutation({
+        pending: false,
+        error: reason instanceof Error ? reason.message : editingId ? "无法更新赞助位。" : "无法创建赞助位。",
+        success: null,
+      });
     }
   }
 
@@ -2021,7 +2056,13 @@ function SponsorsPage() {
       <Card title="赞助位列表" kicker="投放时间窗口">
         <div className="space-y-2.5">
           {sponsors.data.rows.map((row) => (
-            <div key={row.id} className="admin-list-card border border-white/10 bg-white/5 p-3.5">
+            <div
+              key={row.id}
+              className={clsx(
+                "admin-list-card border p-3.5",
+                row.id === editingId ? "border-[#ffd06a]/70 bg-white/10" : "border-white/10 bg-white/5",
+              )}
+            >
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.name}</p>
@@ -2030,11 +2071,21 @@ function SponsorsPage() {
                 <p className="text-xs uppercase tracking-[0.16em] text-white/40">{formatSponsorStatus(row.status)}</p>
               </div>
               <p className="mt-2 text-sm text-white/60">{row.relay ? `${row.relay.name} · ` : "未绑定中转站 · "}{formatDate(row.startAt)} 至 {formatDate(row.endAt)}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className="pill pill-idle" onClick={() => beginEditingSponsor(row)} type="button">
+                  编辑赞助位
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </Card>
-      <Card title="创建赞助位" kicker="商务操作">
+      <Card title={editingId ? "编辑赞助位" : "创建赞助位"} kicker={editingId ? "商务调整" : "商务操作"}>
+        {editingId ? (
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/62">
+            你正在编辑已有赞助位。保存后会刷新公开快照；如果只是想放弃本次修改，点击“取消编辑”即可恢复创建模式。
+          </div>
+        ) : null}
         <div className="grid gap-2.5">
           <label className="field-label">名称<input className="field-input" placeholder="首页焦点位" value={form.name} onChange={(event) => { setForm((current) => ({ ...current, name: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "name")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.name} /></label>
           <label className="field-label">投放位标识<input className="field-input" placeholder="homepage-spotlight" value={form.placement} onChange={(event) => { setForm((current) => ({ ...current, placement: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "placement")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.placement} /></label>
@@ -2042,7 +2093,10 @@ function SponsorsPage() {
           <label className="field-label">状态<select className="field-input" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as SponsorFormState["status"] }))}><option value="active">投放中</option><option value="draft">草稿</option><option value="paused">已暂停</option><option value="ended">已结束</option></select></label>
           <label className="field-label">开始时间<input className="field-input" placeholder="2026-04-16T00:00:00.000Z" value={form.startAt} onChange={(event) => { setForm((current) => ({ ...current, startAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "startAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.startAt} /></label>
           <label className="field-label">结束时间<input className="field-input" placeholder="2026-05-16T00:00:00.000Z" value={form.endAt} onChange={(event) => { setForm((current) => ({ ...current, endAt: event.target.value })); setFieldErrors((current) => withoutFieldError(current, "endAt")); setMutation((current) => ({ ...current, error: null })); }} /><FieldError message={fieldErrors.endAt} /></label>
-          <button className="pill pill-active" disabled={mutation.pending} onClick={createSponsor} type="button">{mutation.pending ? "保存中..." : "创建赞助位"}</button>
+          <div className="flex flex-wrap gap-2.5">
+            <button className="pill pill-active" disabled={mutation.pending} onClick={submitSponsor} type="button">{mutation.pending ? "保存中..." : editingId ? "保存修改" : "创建赞助位"}</button>
+            {editingId ? <button className="pill pill-idle" type="button" onClick={resetForm}>取消编辑</button> : null}
+          </div>
           <Notice state={mutation} />
         </div>
       </Card>

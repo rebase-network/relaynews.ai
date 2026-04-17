@@ -94,6 +94,13 @@ async function openRelayForEditing(page: Page, relayName: string) {
   return relayCard;
 }
 
+async function openSponsorForEditing(page: Page, sponsorName: string) {
+  const sponsorCard = page.locator(".admin-list-card").filter({ hasText: sponsorName }).first();
+  await expect(sponsorCard).toBeVisible();
+  await sponsorCard.getByRole("button", { name: "编辑赞助位" }).click();
+  return sponsorCard;
+}
+
 test("admin overview shows operating totals", async ({ page }) => {
   await openAdmin(page, "/");
   await expect(page.getByText("统一管理中转站目录、赞助位与价格记录。", { exact: true })).toBeVisible();
@@ -205,6 +212,87 @@ test("admin can edit relay description, docs URL, and notes and keep them after 
   await expect(page.getByLabel(/(中转站介绍|站点介绍|description)/i)).toHaveValue(description);
   await expect(page.getByLabel(/(文档地址|文档 URL|docsUrl)/i)).toHaveValue(docsUrl);
   await expect(page.getByLabel(/(内部备注|备注|notes)/i)).toHaveValue(notes);
+});
+
+test("admin can edit sponsors and unbind relay after reload", async ({ page, request }) => {
+  test.skip(
+    isDeployedRun && !allowDeployedWrites,
+    "Sponsor editing is skipped on deployed runs unless E2E_ALLOW_DEPLOYED_WRITES=1.",
+  );
+  const runId = Date.now();
+  const relaySlug = `sponsor-relay-${runId}`;
+  const relayName = `Sponsor Relay ${runId}`;
+  const sponsorName = `Sponsor Edit ${runId}`;
+  const updatedSponsorName = `Sponsor Edited ${runId}`;
+  const relayBaseUrl = `https://example.com/relay/${relaySlug}`;
+  const initialStartAt = "2026-04-01T00:00:00.000Z";
+  const initialEndAt = "2026-05-01T00:00:00.000Z";
+  const updatedStartAt = "2026-06-01T00:00:00.000Z";
+  const updatedEndAt = "2026-07-01T00:00:00.000Z";
+
+  const relayResponse = await request.post(`${apiBaseUrl}/admin/relays`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      slug: relaySlug,
+      name: relayName,
+      baseUrl: relayBaseUrl,
+      providerName: "Sponsor Ops",
+      websiteUrl: "https://example.com",
+      catalogStatus: "active",
+      isFeatured: false,
+      isSponsored: false,
+      description: "Created for sponsor edit coverage.",
+      docsUrl: `https://example.com/docs/${relaySlug}`,
+      notes: "Playwright sponsor editing verification",
+    },
+  });
+  expect(relayResponse.ok()).toBeTruthy();
+  const relayPayload = (await relayResponse.json()) as { id: string };
+
+  const sponsorResponse = await request.post(`${apiBaseUrl}/admin/sponsors`, {
+    headers: getAdminApiHeaders(),
+    data: {
+      relayId: relayPayload.id,
+      name: sponsorName,
+      placement: "homepage-spotlight",
+      status: "active",
+      startAt: initialStartAt,
+      endAt: initialEndAt,
+    },
+  });
+  expect(sponsorResponse.ok()).toBeTruthy();
+
+  await openAdmin(page, "/sponsors");
+  await openSponsorForEditing(page, sponsorName);
+
+  await expect(page.getByLabel("名称")).toHaveValue(sponsorName);
+  await expect(page.getByLabel("投放位标识")).toHaveValue("homepage-spotlight");
+  await expect(page.getByLabel("关联中转站")).not.toHaveValue("");
+
+  await page.getByLabel("名称").fill(updatedSponsorName);
+  await page.getByLabel("投放位标识").fill("leaderboard-spotlight");
+  await page.getByLabel("关联中转站").selectOption("");
+  await page.getByLabel("状态").selectOption("paused");
+  await page.getByLabel("开始时间").fill(updatedStartAt);
+  await page.getByLabel("结束时间").fill(updatedEndAt);
+  await page.getByRole("button", { name: "保存修改" }).click();
+
+  await expect(page.getByText("赞助位已更新。", { exact: true })).toBeVisible();
+  const updatedCard = page.locator(".admin-list-card").filter({ hasText: updatedSponsorName }).first();
+  await expect(updatedCard).toBeVisible();
+  await expect(updatedCard).toContainText("leaderboard-spotlight");
+  await expect(updatedCard).toContainText("已暂停");
+  await expect(updatedCard).toContainText("未绑定中转站");
+
+  await page.reload();
+  await openSponsorForEditing(page, updatedSponsorName);
+
+  await expect(page.getByLabel("名称")).toHaveValue(updatedSponsorName);
+  await expect(page.getByLabel("投放位标识")).toHaveValue("leaderboard-spotlight");
+  await expect(page.getByLabel("关联中转站")).toHaveValue("");
+  await expect(page.getByLabel("状态")).toHaveValue("paused");
+  await expect(page.getByLabel("开始时间")).toHaveValue(updatedStartAt);
+  await expect(page.getByLabel("结束时间")).toHaveValue(updatedEndAt);
 });
 
 test("admin can soft delete a relay without removing its row", async ({ page, request }) => {

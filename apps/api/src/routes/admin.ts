@@ -941,6 +941,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .leftJoin("relays as r", "r.id", "s.relay_id")
       .select([
         "s.id",
+        "s.relay_id as relayId",
         "s.name",
         "s.placement",
         "s.status",
@@ -955,6 +956,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return adminSponsorsResponseSchema.parse({
       rows: rows.map((row) => ({
         id: row.id,
+        relayId: row.relayId,
         name: row.name,
         placement: row.placement,
         status: row.status,

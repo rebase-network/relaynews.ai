@@ -163,6 +163,7 @@ export const adminProbeCredentialMutationResponseSchema = z.object({
 
 export const adminSponsorSchema = z.object({
   id: internalIdSchema,
+  relayId: internalIdSchema.nullable(),
   name: z.string().min(1),
   placement: z.string().min(1),
   status: z.enum(["draft", "active", "paused", "ended"]),
