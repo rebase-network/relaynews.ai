@@ -256,7 +256,9 @@ test("admin can create and manage probe credentials", async ({ page, request }) 
   const createCard = page.locator("section.card").filter({
     has: page.getByRole("heading", { name: "绑定监测密钥", exact: true }),
   }).first();
-  await expect(createCard.getByLabel("Owner type")).toHaveCount(0);
+  await expect(createCard.getByLabel("中转站")).toBeVisible();
+  await expect(createCard.getByLabel("API Key")).toBeVisible();
+  await expect(createCard.getByLabel("测试模型")).toBeVisible();
   await createCard.getByLabel("中转站").selectOption({ label: relayName });
   await createCard.getByLabel("API Key").fill("sk-credential-initial");
   await createCard.getByLabel("测试模型").fill("gpt-5.4");
@@ -354,9 +356,13 @@ test("admin can review submissions, create sponsors, and add prices", async ({ p
   await expect(submissionCard).toContainText("gpt-5.4");
   await expect(submissionCard).toContainText(submissionDescription);
   await submissionCard.getByRole("button", { name: "批准并启用" }).click();
-  await expect(page.getByText("提交已通过，Relay 已启用，密钥已迁移，并已启动监测。", { exact: true })).toBeVisible();
-  await expect(submissionCard).toContainText("已通过");
-  await expect(submissionCard).toContainText("已关联中转站");
+  await expect(page.getByText(/提交已通过，Relay 已启用，密钥已迁移，并已启动监测。/)).toBeVisible();
+  const approvedCard = page.locator(".admin-list-card").filter({
+    has: page.getByText(relayName, { exact: true }),
+    hasNot: page.getByRole("button", { name: "批准并启用" }),
+  }).first();
+  await expect(approvedCard).toContainText("已通过");
+  await expect(approvedCard).toContainText("已关联中转站");
 
   await page.goto(`${webBaseUrl}/leaderboard/openai-gpt-5.4`);
   await expect(page.getByRole("link", { name: relayName })).toBeVisible();

@@ -1,9 +1,17 @@
 import "dotenv/config";
+import { existsSync } from "node:fs";
 
 import { defineConfig, devices } from "@playwright/test";
 
 const isDeployedRun = process.env.E2E_DEPLOYED === "1";
 const webBaseUrl = process.env.WEB_BASE_URL ?? "http://127.0.0.1:4173";
+const videoMode: "off" | "retain-on-failure" =
+  process.env.PLAYWRIGHT_VIDEO === "retain-on-failure" ? "retain-on-failure" : "off";
+const localChromeExecutablePath =
+  process.platform === "darwin"
+  && existsSync("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+    ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    : null;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -17,7 +25,7 @@ export default defineConfig({
     baseURL: webBaseUrl,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: videoMode,
   },
   webServer: isDeployedRun
     ? undefined
@@ -44,7 +52,17 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(localChromeExecutablePath
+          ? {
+              channel: undefined,
+              launchOptions: {
+                executablePath: localChromeExecutablePath,
+              },
+            }
+          : {}),
+      },
     },
   ],
 });
