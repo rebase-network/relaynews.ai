@@ -17,12 +17,14 @@ The following decisions are already in place and should be treated as the starti
 
 - keep the MVP simple and explicit
 - use TypeScript across frontend and backend
+- default the public site and admin tooling to Simplified Chinese for user-facing copy
 - public pages should read snapshots or aggregate tables, not raw probe rows
 - sponsor placement must remain separate from natural ranking
 - public probe work must follow `docs/PROBE_SECURITY.md`
 - testing should follow `docs/TESTING_STRATEGY.md`
 - default to Playwright-first acceptance coverage and keep non-E2E tests narrow
 - prefer shipping thin vertical slices over building all infrastructure up front
+- treat Chinese UX polish, public cache behavior, and launch hardening as explicit release work
 
 ## Phase 1: Repository And Workspace Foundation
 
@@ -128,6 +130,7 @@ Work items:
   - homepage using `/public/home-summary`
   - leaderboard using `/public/leaderboard/:modelKey`
   - relay overview shell using `/public/relay/:slug/overview`
+- default public route copy and empty states to Simplified Chinese
 - add Playwright smoke coverage for homepage, leaderboard, and relay overview
 
 Exit criteria:
@@ -233,6 +236,7 @@ Work items:
   - submission review
   - sponsor placement management
   - price record management
+- localize admin, submit, and probe experiences for Chinese operators and users
 - allow operators to inspect and, when necessary, override a relay's stored
   compatibility mode without changing natural ranking logic
 - implement submit flow for relay intake
@@ -257,6 +261,7 @@ Work items:
 - configure Cloudflare cache rules, WAF, and access control
 - finalize environment variable management
 - add deployment and operational runbooks
+- verify public cache headers, Chinese UX consistency, and page-level SEO metadata
 - run staging Playwright smoke coverage before launch
 
 Exit criteria:

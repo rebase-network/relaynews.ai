@@ -36,7 +36,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8787";
 
 const PROBE_COMPATIBILITY_OPTIONS: Array<{ value: ProbeCompatibilityMode; label: string }> = [
-  { value: "auto", label: "Auto detect (Recommended)" },
+  { value: "auto", label: "自动识别（推荐）" },
   { value: "openai-responses", label: "OpenAI Responses" },
   { value: "openai-chat-completions", label: "OpenAI Chat Completions" },
   { value: "anthropic-messages", label: "Anthropic Messages" },
@@ -44,26 +44,26 @@ const PROBE_COMPATIBILITY_OPTIONS: Array<{ value: ProbeCompatibilityMode; label:
 
 const PROBE_FIELD_META = {
   baseUrl: {
-    placeholder: "https://relay.example.ai or https://relay.example.ai/openai",
+    placeholder: "https://relay.example.ai 或 https://relay.example.ai/openai",
     helper:
-      "Paste the relay root or provider prefix. The probe can add `/v1` and protocol-specific route suffixes automatically.",
-    helperCompact: "Paste the relay root or provider prefix; the probe can add `/v1` and route suffixes.",
+      "请输入 relay 根地址或服务商前缀。探测会自动补全 `/v1` 以及协议对应的路由后缀。",
+    helperCompact: "请输入 relay 根地址或服务商前缀；探测会自动补全 `/v1` 和路由后缀。",
     autoComplete: "url",
     inputMode: "url" as const,
   },
   apiKey: {
-    placeholder: "Paste a relay API key",
+    placeholder: "请输入 relay API Key",
     helper:
-      "Used only for this bounded server-side request path. The result UI never prints the key back out.",
-    helperCompact: "Used only for this request. The result UI never prints the key back out.",
+      "仅用于本次受限的服务端探测请求。结果页不会回显你的密钥。",
+    helperCompact: "仅用于本次请求，结果页不会回显密钥。",
     autoComplete: "off",
     inputMode: "text" as const,
   },
   model: {
     placeholder: "gpt-5.3-codex",
     helper:
-      "Use the exact model identifier you call in production. Automatic mode infers the adapter order from it.",
-    helperCompact: "Use the same model ID you call in production.",
+      "请填写你在线上实际调用的模型标识。自动模式会据此推断适配顺序。",
+    helperCompact: "请填写你在线上实际调用的模型 ID。",
     autoComplete: "off",
     inputMode: "text" as const,
   },
@@ -79,52 +79,52 @@ const GITHUB_REPOSITORY_URL = "https://github.com/rebase.network";
 const REBASE_NETWORK_URL = "https://rebase.network";
 
 const HEALTH_STATUS_COPY: Record<string, string> = {
-  healthy: "Consistent responses and stable measurements across the recent observation window.",
-  degraded: "The relay is reachable, but latency, errors, or protocol behavior show material weakness.",
-  down: "The relay is not serving the tested route in a usable way for the selected model family.",
-  paused: "The relay is intentionally not ranked while the operator or catalog team reviews its state.",
-  unknown: "There is not enough recent evidence to make a strong public status claim yet.",
+  healthy: "最近观测窗口内响应稳定、可用性可靠，整体表现持续正常。",
+  degraded: "该 relay 仍可访问，但延迟、错误率或协议行为已出现明显下滑。",
+  down: "在当前模型族的测试路径上，该 relay 暂时无法提供可用服务。",
+  paused: "该 relay 正处于人工复核或运营处理阶段，当前不参与公开排序。",
+  unknown: "最近证据仍不足，暂时无法给出明确的公开状态判断。",
 };
 
 const BADGE_COPY: Record<string, string> = {
-  "low-latency": "Repeated low-latency performance for the measured model lane.",
-  "high-stability": "Low variance and strong continuity over the observation window.",
-  "high-value": "Competitive price-to-quality balance relative to peers in the same lane.",
-  "sample-size-low": "The relay is still building evidence, so confidence should be interpreted carefully.",
-  "under-observation": "The relay is visible, but current evidence is still being accumulated or reviewed.",
+  "low-latency": "在当前模型赛道中多次测得低延迟表现。",
+  "high-stability": "观测窗口内波动较小，连续性表现较强。",
+  "high-value": "相较同赛道其他中转站，价格与质量的平衡更有竞争力。",
+  "sample-size-low": "当前样本量仍偏少，解读结论时需要保留谨慎。",
+  "under-observation": "该 relay 已公开展示，但证据仍在继续积累或复核中。",
 };
 
 const POLICY_PILLARS = [
   {
-    title: "Neutral inclusion",
-    body: "Relays enter the catalog through operator submission and review. Listing does not guarantee a strong ranking position.",
+    title: "中立收录",
+    body: "Relay 通过运营者提交与审核进入目录。被收录并不代表会自动获得靠前排名。",
   },
   {
-    title: "Observable evidence",
-    body: "Natural ranking is driven by measured availability, latency, stability, and value signals for each model lane.",
+    title: "可观测证据",
+    body: "自然排名由各模型赛道的实测可用性、延迟、稳定性与性价比信号共同决定。",
   },
   {
-    title: "Sponsor separation",
-    body: "Sponsored promotion stays visually distinct and never rewrites the measured order of the natural leaderboard.",
+    title: "赞助分离",
+    body: "赞助展示会保持清晰可辨，绝不会改写自然榜单中的实测排序。",
   },
   {
-    title: "Operator recourse",
-    body: "If a relay is misclassified, the operator can submit corrections, updated endpoints, or dispute evidence for review.",
+    title: "可申诉纠偏",
+    body: "如果 relay 被错误归类，运营者可以提交修正、最新地址或申诉证据供平台复核。",
   },
 ] as const;
 
 const PROBE_OUTPUT_CARDS = [
   {
-    title: "Connectivity",
-    body: "Basic reachability plus a bounded latency measurement to the tested relay host.",
+    title: "连通性",
+    body: "展示基础可达性结果，以及对目标 relay 主机的受限延迟测量。",
   },
   {
-    title: "Protocol health",
-    body: "The selected API family is checked for a valid response shape, status code, and health state.",
+    title: "协议健康度",
+    body: "检查所选 API 协议族是否返回有效结构、状态码与健康状态。",
   },
   {
-    title: "Trace detail",
-    body: "You can inspect the exact endpoint path and request attempts the public probe used.",
+    title: "执行轨迹",
+    body: "你可以查看公开探测实际使用的端点路径与请求尝试记录。",
   },
 ] as const;
 
@@ -141,7 +141,7 @@ const LEADERBOARD_VENDOR_LABELS: Record<string, string> = {
 };
 
 function formatProbeCompatibilityMode(mode: ProbeResolvedCompatibilityMode | null | undefined) {
-  return mode ? PROBE_COMPATIBILITY_LABELS[mode] : "Not detected";
+  return mode ? PROBE_COMPATIBILITY_LABELS[mode] : "未识别";
 }
 
 function GitHubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -154,10 +154,76 @@ function GitHubIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function formatProbeDetectionMode(mode: ProbeDetectionMode | undefined) {
   if (mode === "manual") {
-    return "Manual override";
+    return "手动指定";
   }
 
-  return "Automatic";
+  return "自动识别";
+}
+
+function formatDateTime(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value : "";
+  }
+
+  return date.toLocaleString("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  });
+}
+
+function formatDate(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value : "";
+  }
+
+  return date.toLocaleDateString("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    timeZone: "Asia/Shanghai",
+  });
+}
+
+function formatHealthStatusLabel(status: string) {
+  return (
+    {
+      healthy: "健康",
+      degraded: "降级",
+      down: "不可用",
+      paused: "已暂停",
+      unknown: "未知",
+    }[status] ?? status
+  );
+}
+
+function formatSupportStatusLabel(status: string) {
+  return (
+    {
+      active: "可用",
+      pending: "待确认",
+      paused: "已暂停",
+      retired: "已退役",
+      archived: "已归档",
+      unknown: "未知",
+    }[status] ?? status
+  );
+}
+
+function formatBadgeLabel(badge: string) {
+  return (
+    {
+      "low-latency": "低延迟",
+      "high-stability": "高稳定",
+      "high-value": "高性价比",
+      "sample-size-low": "样本偏少",
+      "under-observation": "观察中",
+    }[badge] ?? badge
+  );
 }
 
 function formatProbeMeasuredAt(value: string) {
@@ -167,14 +233,11 @@ function formatProbeMeasuredAt(value: string) {
     return value;
   }
 
-  return date.toLocaleString([], {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTime(date);
 }
 
 function formatProbeHttpStatus(value: number | null | undefined) {
-  return value ? String(value) : "n/a";
+  return value ? String(value) : "无";
 }
 
 function formatAvailability(value: number) {
@@ -182,7 +245,7 @@ function formatAvailability(value: number) {
 }
 
 function formatLatency(value: number | null) {
-  return value === null ? "n/a" : `${value} ms`;
+  return value === null ? "无数据" : `${value} ms`;
 }
 
 function formatPricePerMillion(value: number | null, currency = "USD") {
@@ -222,7 +285,16 @@ function getAvailabilityTrendStatus(availability: number): HealthStatus {
 }
 
 function formatScoreMetricLabel(label: keyof RelayOverviewResponse["scoreSummary"]) {
-  return label === "total" ? "Total" : `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+  return (
+    {
+      total: "总分",
+      availability: "可用性",
+      latency: "延迟",
+      consistency: "一致性",
+      value: "性价比",
+      stability: "稳定性",
+    }[label] ?? label
+  );
 }
 
 type DailyHistorySlot = {
@@ -372,7 +444,7 @@ function primeLoadableCache<T>(key: string, loader: () => Promise<T>) {
       return value;
     })
     .catch((reason: unknown) => {
-      const error = reason instanceof Error ? reason.message : "Unknown error";
+      const error = reason instanceof Error ? reason.message : "未知错误";
 
       loadableCache.set(key, {
         error,
@@ -532,31 +604,31 @@ function NavLink(props: RouterNavLinkProps) {
 function getProbeResultTone(result: PublicProbeResponse) {
   if (!result.connectivity.ok) {
     return {
-      label: "Connectivity failed",
-      description: "The relay did not complete the basic network check. Review the upstream URL, auth, and network path.",
+      label: "连通性失败",
+      description: "该 relay 未通过基础网络检查。请重新核对上游地址、认证信息和网络路径。",
       className: "border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]",
     };
   }
 
   if (!result.protocol.ok || result.protocol.healthStatus === "down") {
     return {
-      label: "Protocol failed",
-      description: "The endpoint answered, but the compatibility probe did not see a valid healthy protocol response.",
+      label: "协议检查失败",
+      description: "端点有响应，但兼容性探测没有拿到有效且健康的协议返回。",
       className: "border-[#b42318]/20 bg-[#fff2ef] text-[#8d2d17]",
     };
   }
 
   if (result.protocol.healthStatus === "degraded" || !result.ok) {
     return {
-      label: "Protocol degraded",
-      description: "The relay is reachable, but the probe detected a degraded upstream state for this compatibility shape.",
+      label: "协议状态降级",
+      description: "该 relay 可以访问，但探测发现当前兼容协议形态对应的上游状态已降级。",
       className: "border-[#b54708]/20 bg-[#fff7e8] text-[#8a450c]",
     };
   }
 
   return {
-    label: "Probe healthy",
-    description: "Connectivity, protocol validation, and compatibility resolution all completed successfully for the selected model.",
+    label: "探测通过",
+    description: "连通性、协议校验与兼容模式识别都已针对所选模型成功完成。",
     className: "border-[#027a48]/20 bg-[#edfdf3] text-[#066649]",
   };
 }
@@ -602,76 +674,76 @@ function getProbeFailureGuidance(result: PublicProbeResponse) {
 
   if (!result.connectivity.ok || status === null) {
     return {
-      source: "Network or target reachability",
-      meaning: "The public probe could not complete a valid upstream HTTP exchange.",
-      nextStep: "Check DNS, HTTPS availability, host allowlisting, and whether the base URL is reachable from the public internet.",
+      source: "网络或目标可达性",
+      meaning: "公开探测未能完成有效的上游 HTTP 交互。",
+      nextStep: "请检查 DNS、HTTPS 是否可用、主机是否被允许访问，以及 base URL 是否能从公网正常连通。",
     };
   }
 
   if (status === 400) {
     return {
-      source: "Upstream API returned HTTP 400",
-      meaning: "The relay is reachable, but it rejected the request shape for this adapter or model.",
+      source: "上游 API 返回 HTTP 400",
+      meaning: "该 relay 可访问，但它拒绝了当前适配器或模型对应的请求结构。",
       nextStep: result.detectionMode === "auto"
-        ? "Try a manual compatibility override. If the relay is OpenAI-compatible but not Responses-compatible, switch to Chat Completions."
-        : "Recheck the selected compatibility mode, model availability, and whether the base URL already includes an `/openai` or `/v1` prefix.",
+        ? "建议尝试手动指定兼容模式。如果 relay 兼容 OpenAI，但不支持 Responses，可切换到 Chat Completions。"
+        : "请重新核对所选兼容模式、模型可用性，以及 base URL 是否已经包含 `/openai` 或 `/v1` 前缀。",
     };
   }
 
   if (status === 401 || status === 403) {
     return {
-      source: "Upstream API authentication",
-      meaning: "The endpoint answered, but the supplied key was rejected or lacks permission for this route/model.",
-      nextStep: "Verify the key, account permissions, and whether the provider expects a different auth header for this compatibility mode.",
+      source: "上游 API 鉴权失败",
+      meaning: "端点有响应，但提交的密钥被拒绝，或没有当前路由 / 模型所需权限。",
+      nextStep: "请检查密钥本身、账号权限，以及该兼容模式是否要求使用不同的认证头。",
     };
   }
 
   if (status === 404) {
     return {
-      source: "Upstream route mismatch",
-      meaning: "The relay answered, but the tested compatibility path was not found.",
+      source: "上游路由不匹配",
+      meaning: "该 relay 有响应，但当前测试的兼容路径不存在。",
       nextStep: result.detectionMode === "auto"
-        ? "Try a manual compatibility override or adjust the base URL so the probe builds the correct `/v1` path."
-        : "Check whether the base URL already includes `/v1`, `/openai`, or another provider-specific prefix.",
+        ? "建议尝试手动指定兼容模式，或调整 base URL，让探测能拼出正确的 `/v1` 路径。"
+        : "请检查 base URL 是否已经包含 `/v1`、`/openai` 或其他服务商专用前缀。",
     };
   }
 
   if (status === 405) {
     return {
-      source: "Upstream method mismatch",
-      meaning: "The route exists, but it does not accept the probe request method for this adapter.",
-      nextStep: "Double-check that the chosen compatibility mode matches the provider and endpoint family.",
+      source: "上游请求方法不匹配",
+      meaning: "目标路由存在，但不接受当前适配器使用的请求方法。",
+      nextStep: "请再次确认所选兼容模式是否与该服务商及端点族匹配。",
     };
   }
 
   if (status === 415) {
     return {
-      source: "Upstream content negotiation",
-      meaning: "The endpoint rejected the request content-type or streaming shape for this adapter.",
-      nextStep: "Try a different compatibility mode or verify whether the provider expects a non-streaming variant for this endpoint.",
+      source: "上游内容协商失败",
+      meaning: "该端点拒绝了当前适配器使用的 content-type 或流式请求格式。",
+      nextStep: "请尝试其他兼容模式，或确认该服务是否要求非流式请求变体。",
     };
   }
 
   if (status === 429) {
     return {
-      source: "Upstream rate limit",
-      meaning: "The relay is reachable, but the provider is currently throttling the probe request.",
-      nextStep: "Retry after the provider cooldown or test with a key and model that still have quota.",
+      source: "上游触发限流",
+      meaning: "该 relay 可以访问，但服务商当前正在对探测请求进行限流。",
+      nextStep: "请在冷却时间后重试，或改用仍有配额的密钥与模型。",
     };
   }
 
   if (status >= 500) {
     return {
-      source: "Upstream server error",
-      meaning: "The relay accepted the request but failed internally while serving it.",
-      nextStep: "Retry later or contact the relay operator with the measured status and endpoint path.",
+      source: "上游服务错误",
+      meaning: "该 relay 已接收请求，但在处理时发生了内部错误。",
+      nextStep: "建议稍后重试，或将测得状态与端点路径反馈给 relay 运营者。",
     };
   }
 
   return {
-    source: `Upstream API returned HTTP ${status}`,
-    meaning: "The request reached the relay, but the upstream response did not match the selected compatibility shape.",
-    nextStep: "Verify the base URL, compatibility mode, and model support, then retry with the most likely adapter.",
+    source: `上游 API 返回 HTTP ${status}`,
+    meaning: "请求已到达 relay，但上游响应与所选兼容协议形态不匹配。",
+    nextStep: "请核对 base URL、兼容模式和模型支持情况，再用最可能正确的适配器重试。",
   };
 }
 
@@ -703,11 +775,11 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 
     if (contentType.includes("application/json")) {
       const payload = (await response.json()) as ApiErrorPayload;
-      throw new Error(formatApiErrorPayload(payload) ?? `Request failed with ${response.status}`);
+      throw new Error(formatApiErrorPayload(payload) ?? `请求失败，状态码 ${response.status}`);
     }
 
     const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
+    throw new Error(text || `请求失败，状态码 ${response.status}`);
   }
 
   return (await response.json()) as T;
@@ -750,33 +822,33 @@ function validateSubmitForm(state: SubmitFormState) {
   const testModel = state.testModel.trim();
 
   if (!relayName) {
-    errors.relayName = "Relay name is required.";
+    errors.relayName = "请填写 relay 名称。";
   }
 
   if (!baseUrl) {
-    errors.baseUrl = "Base URL is required.";
+    errors.baseUrl = "请填写基础 URL。";
   } else if (!isValidHttpUrl(baseUrl) || !baseUrl.startsWith("https://")) {
-    errors.baseUrl = "Enter a full HTTPS base URL such as https://relay.example.ai/v1.";
+    errors.baseUrl = "请输入完整的 HTTPS 基础 URL，例如 https://relay.example.ai/v1。";
   }
 
   if (websiteUrl && !isValidHttpUrl(websiteUrl)) {
-    errors.websiteUrl = "Enter a valid website URL such as https://relay.example.ai.";
+    errors.websiteUrl = "请输入有效的网站地址，例如 https://relay.example.ai。";
   }
 
   if (!description) {
-    errors.description = "Add a short relay description so the review queue understands this endpoint.";
+    errors.description = "请补充简要说明，帮助审核队列快速理解这个 relay。";
   }
 
   if (submitterEmail && !isValidEmail(submitterEmail)) {
-    errors.submitterEmail = "Enter a valid contact email address.";
+    errors.submitterEmail = "请输入有效的联系邮箱。";
   }
 
   if (!testApiKey) {
-    errors.testApiKey = "A test key is required for the initial relay probe.";
+    errors.testApiKey = "初始 relay 探测需要测试密钥。";
   }
 
   if (!testModel) {
-    errors.testModel = "A test model is required.";
+    errors.testModel = "请填写测试模型。";
   }
 
   return {
@@ -845,7 +917,7 @@ function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_STATE) 
       });
       setResult(response);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Probe failed.");
+      setError(reason instanceof Error ? reason.message : "探测失败。");
     } finally {
       setSubmitting(false);
     }
@@ -916,9 +988,9 @@ function ProbeFormFields({
   showHelpers?: boolean;
 }) {
   const fields = [
-    ["Base URL", "baseUrl"],
-    ["API key", "apiKey"],
-    ["Model", "model"],
+    ["基础 URL", "baseUrl"],
+    ["API 密钥", "apiKey"],
+    ["目标模型", "model"],
   ] as const;
 
   return (
@@ -973,7 +1045,7 @@ function InlineProbeSummary({
   if (error) {
     return (
       <p className="quick-probe-inline-summary quick-probe-inline-summary-error" role="alert">
-        Probe failed. {error}
+        探测失败：{error}
       </p>
     );
   }
@@ -981,12 +1053,12 @@ function InlineProbeSummary({
   if (!result || !resultTone) {
     return (
       <p className="quick-probe-inline-summary">
-        Status, latency, HTTP, and API type appear here after a probe.
+        探测完成后，这里会显示状态、延迟、HTTP 状态码与接口兼容类型。
       </p>
     );
   }
 
-  const latencyText = result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "latency n/a";
+  const latencyText = result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "延迟无数据";
   const httpText = `HTTP ${formatProbeHttpStatus(result.protocol.httpStatus)}`;
   const compatibilityText = formatProbeCompatibilityMode(result.compatibilityMode);
 
@@ -1049,7 +1121,7 @@ function useLoadable<T>(cacheKey: string | null, loader: () => Promise<T>, deps:
       })
       .catch((reason: unknown) => {
         if (active) {
-          setError(reason instanceof Error ? reason.message : "Unknown error");
+          setError(reason instanceof Error ? reason.message : "未知错误");
         }
       })
       .finally(() => {
@@ -1071,11 +1143,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const currentYear = new Date().getFullYear();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navItems = [
-    ["/", "Home"],
-    ["/leaderboard", "Leaderboard"],
-    ["/methodology", "Methodology"],
-    ["/submit", "Submit"],
-    ["/probe", "Probe"],
+    ["/", "首页"],
+    ["/leaderboard", "榜单"],
+    ["/methodology", "方法论"],
+    ["/submit", "提交 Relay"],
+    ["/probe", "Relay 探测"],
   ] as const;
 
   useEffect(() => {
@@ -1097,7 +1169,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               <div>
                 <span className="block">relaynew.ai</span>
                 <span className="hidden text-[0.6rem] tracking-[0.2em] text-black/44 md:block">
-                  relay health, latency, pricing, and trust signals
+                  relay 健康度、延迟、价格与可信信号
                 </span>
               </div>
             </Link>
@@ -1108,7 +1180,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileNavOpen((current) => !current)}
               type="button"
             >
-              {mobileNavOpen ? "Close" : "Menu"}
+              {mobileNavOpen ? "关闭菜单" : "打开菜单"}
             </button>
             <nav className="site-nav hidden md:flex md:flex-wrap md:items-center">
               {navItems.map(([to, label]) => (
@@ -1214,7 +1286,7 @@ function Panel({
 }
 
 function LoadingPanel() {
-  return <div className="panel text-sm uppercase tracking-[0.15em] text-black/60">Loading...</div>;
+  return <div className="panel text-sm uppercase tracking-[0.15em] text-black/60">加载中...</div>;
 }
 
 function ErrorPanel({ message }: { message: string }) {
@@ -1253,7 +1325,7 @@ function HomePageSkeleton() {
               <SkeletonBlock className="skeleton-pill w-[7.2rem]" />
             </div>
             <div className="space-y-3">
-              {["Base URL", "API key", "Model"].map((label) => (
+              {["基础 URL", "API 密钥", "目标模型"].map((label) => (
                 <div key={label} className="form-field-inline quick-probe-field">
                   <SkeletonBlock className="skeleton-kicker h-4 w-[4.8rem]" />
                   <SkeletonBlock className="skeleton-input" />
@@ -1745,7 +1817,7 @@ function LeaderboardPreviewCard({
           <h2 className="leaderboard-preview-title">{board.modelName}</h2>
         </div>
         <Link className="leaderboard-preview-link" to={getLeaderboardPath(board.modelKey)}>
-          Open full board
+          查看完整榜单
         </Link>
       </div>
       <div className="leaderboard-preview-stack">
@@ -1760,11 +1832,11 @@ function LeaderboardPreviewCard({
                 <p className="text-[0.65rem] uppercase tracking-[0.18em] text-black/50">#{row.rank}</p>
                 <p className="leaderboard-preview-name">{row.relay.name}</p>
               </div>
-              <CompactBadgeList badges={row.badges} className="leaderboard-preview-badges" limit={1} />
+              <CompactBadgeList badges={row.badges.map(formatBadgeLabel)} className="leaderboard-preview-badges" limit={1} />
             </div>
             <div className="leaderboard-preview-score">
               <div className="leaderboard-preview-scoreline">
-                <StatusDot status={row.healthStatus} /> {row.healthStatus} · {row.score.toFixed(1)}
+                <StatusDot status={row.healthStatus} /> {formatHealthStatusLabel(row.healthStatus)} · {row.score.toFixed(1)}
               </div>
               <p className="leaderboard-preview-metrics">
                 {formatAvailability(row.availability24h)} · {formatLatency(row.latencyP50Ms)}
@@ -1774,7 +1846,7 @@ function LeaderboardPreviewCard({
         ))}
       </div>
       <p className="leaderboard-preview-snapshot">
-        Snapshot {new Date(board.measuredAt).toLocaleString()}
+        快照时间：{formatDateTime(board.measuredAt)}
       </p>
     </section>
   );
@@ -1789,31 +1861,31 @@ function LeaderboardRowCard({ row }: { row: LeaderboardResponse["rows"][number] 
           <Link to={`/relay/${row.relay.slug}`} className="mt-1 block text-[1.5rem] leading-[0.96] tracking-[-0.04em] hover:underline">
             {row.relay.name}
           </Link>
-          <CompactBadgeList badges={row.badges} className="mt-3" />
+          <CompactBadgeList badges={row.badges.map(formatBadgeLabel)} className="mt-3" />
         </div>
         <div className="shrink-0 text-right">
           <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-black/62">
-            <StatusDot status={row.healthStatus} /> {row.healthStatus}
+            <StatusDot status={row.healthStatus} /> {formatHealthStatusLabel(row.healthStatus)}
           </div>
           <p className="mt-3 text-[2rem] leading-[0.94] tracking-[-0.05em]">{row.score.toFixed(1)}</p>
-          <p className="text-[0.68rem] uppercase tracking-[0.18em] text-black/46">score</p>
+          <p className="text-[0.68rem] uppercase tracking-[0.18em] text-black/46">评分</p>
         </div>
       </div>
       <div className="mt-3.5 grid grid-cols-2 gap-2">
         <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Avail 24h</p>
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">24h 可用性</p>
           <p className="mt-2 text-sm leading-5 text-black/78">{formatAvailability(row.availability24h)}</p>
         </div>
         <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Latency p50</p>
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">P50 延迟</p>
           <p className="mt-2 text-sm leading-5 text-black/78">{formatLatency(row.latencyP50Ms)}</p>
         </div>
         <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Input / 1M</p>
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">输入 / 1M</p>
           <p className="mt-2 text-sm leading-5 text-black/78">{row.inputPricePer1M ?? "-"}</p>
         </div>
         <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Output / 1M</p>
+          <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/46">输出 / 1M</p>
           <p className="mt-2 text-sm leading-5 text-black/78">{row.outputPricePer1M ?? "-"}</p>
         </div>
       </div>
@@ -1830,39 +1902,39 @@ function HomePage() {
   const quickProbe = useProbeController(DEFAULT_PROBE_STATE);
 
   if (loading) return <HomePageSkeleton />;
-  if (error || !data) return <ErrorPanel message={error ?? "Unable to load homepage."} />;
+  if (error || !data) return <ErrorPanel message={error ?? "首页加载失败。"} />;
 
   return (
     <div className="space-y-5">
       <section className="panel hero-panel min-h-0">
         <div className="grid gap-5 xl:grid-cols-[0.98fr_1.02fr] xl:items-start">
           <div className="order-2 md:order-1">
-            <p className="kicker text-black/70">Relay intelligence</p>
+            <p className="kicker text-black/70">Relay 情报台</p>
             <h1 className="max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
-              Find strong relays fast, test your own endpoint, and submit for inclusion.
+              快速发现优质 relay，检测自己的端点，并提交进入公开目录。
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72 md:mt-4 md:text-base md:leading-7">
-              Browse ranked model lanes, run a quick relay check, and open the full probe workspace when you need deeper diagnostics.
+              你可以查看各模型赛道榜单、快速做一次 relay 自检，或在需要更深入诊断时进入完整探测工作台。
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link className="button-dark" to="/leaderboard">Browse leaderboards</Link>
-              <Link className="button-cream" to="/probe">Run probe</Link>
-              <Link className="button-cream" to="/submit">Submit relay</Link>
+              <Link className="button-dark" to="/leaderboard">查看榜单</Link>
+              <Link className="button-cream" to="/probe">开始探测</Link>
+              <Link className="button-cream" to="/submit">提交 Relay</Link>
             </div>
           </div>
           <div className="order-1 space-y-3 md:order-2">
             <form className="quick-probe-card quick-probe-form" onSubmit={quickProbe.handleSubmit}>
               <div className="quick-probe-header">
                 <div>
-                  <p className="quick-probe-heading">Quick probe</p>
+                  <p className="quick-probe-heading">快速探测</p>
                 </div>
                 <Link
-                  aria-label="Open the pro probe page"
+                  aria-label="打开完整探测页"
                   className="quick-probe-link"
-                  title="Open the pro probe page"
+                  title="打开完整探测页"
                   to="/probe"
                 >
-                  Pro Probe
+                  完整探测
                 </Link>
               </div>
               <ProbeFormFields
@@ -1878,7 +1950,7 @@ function HomePage() {
                   resultTone={quickProbe.resultTone}
                 />
                 <button className="button-dark quick-probe-action" disabled={quickProbe.submitting} type="submit">
-                  {quickProbe.submitting ? "Checking..." : "Probe"}
+                  {quickProbe.submitting ? "检测中..." : "立即探测"}
                 </button>
               </div>
             </form>
@@ -1886,13 +1958,13 @@ function HomePage() {
         </div>
       </section>
 
-      <Panel title="Featured boards" kicker="Model lanes">
+      <Panel title="重点榜单" kicker="模型赛道">
         <div className="mb-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
           <p className="max-w-2xl text-xs uppercase tracking-[0.16em] text-black/48">
-            Four tracked lanes with the strongest current rows.
+            展示当前表现最突出的 4 个已跟踪模型赛道。
           </p>
           <Link className="button-cream" to={LEADERBOARD_DIRECTORY_PATH}>
-            All model lanes
+            查看全部赛道
           </Link>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
@@ -1908,14 +1980,14 @@ function HomePage() {
 
       <section className="home-bridge">
         <p className="home-bridge-copy">
-          Methodology explains how relays are measured. Policy covers listing rules, sponsor separation, and review.
+          方法论会说明 relay 的测量与评分方式，政策页则解释收录规则、赞助分离与复核机制。
         </p>
         <div className="home-bridge-actions">
           <Link className="home-bridge-link" to="/methodology">
-            Methodology
+            方法论
           </Link>
           <Link className="home-bridge-link" to="/policy">
-            Policy
+            评估政策
           </Link>
         </div>
       </section>
@@ -1923,8 +1995,8 @@ function HomePage() {
       {data.highlights.length > 0 ? (
         <section className="panel">
           <div className="mb-4 space-y-2">
-            <p className="kicker">Sponsored placement</p>
-            <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">Sponsors</h2>
+            <p className="kicker">赞助展示</p>
+            <h2 className="text-3xl leading-[0.95] tracking-[-0.04em] md:text-[2.9rem]">赞助位</h2>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
             {data.highlights.map((relay) => (
@@ -1936,12 +2008,12 @@ function HomePage() {
                 <div className="min-w-0">
                   <p className="text-[1.22rem] tracking-[-0.03em]">{relay.name}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="signal-chip">{relay.badge}</span>
+                    <span className="signal-chip">{formatBadgeLabel(relay.badge)}</span>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="flex items-center justify-end gap-2 text-sm uppercase tracking-[0.12em]">
-                    <StatusDot status={relay.healthStatus} /> {relay.healthStatus}
+                    <StatusDot status={relay.healthStatus} /> {formatHealthStatusLabel(relay.healthStatus)}
                   </div>
                 </div>
               </Link>
@@ -1984,7 +2056,7 @@ function LeaderboardIndexPage() {
   );
 
   if (loading) return <LeaderboardDirectorySkeleton />;
-  if (error || !data) return <ErrorPanel message={error ?? "Unable to load leaderboard directory."} />;
+  if (error || !data) return <ErrorPanel message={error ?? "榜单目录加载失败。"} />;
 
   function updateDirectorySearch(next: { vendor?: string }) {
     const params = new URLSearchParams(searchParams);
@@ -2003,19 +2075,19 @@ function LeaderboardIndexPage() {
   return (
     <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
-        <p className="kicker">Leaderboard directory</p>
+        <p className="kicker">榜单目录</p>
         <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr] xl:items-end">
           <div>
             <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
-              Browse every model lane before drilling into a single board.
+              先浏览所有模型赛道，再进入你关心的单个榜单。
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
-              The directory groups relays by model. Open any model board to inspect the full ranked table, health state, latency, and pricing context for that lane.
+              目录会按照模型聚合 relay。打开任意模型榜单，即可查看该赛道的完整排名、健康状态、延迟与价格信息。
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 xl:justify-end">
-            <Link className="button-dark" to="/leaderboard">Open live board</Link>
-            <Link className="button-cream" to="/probe">Run probe</Link>
+            <Link className="button-dark" to="/leaderboard">打开实时榜单</Link>
+            <Link className="button-cream" to="/probe">开始探测</Link>
           </div>
         </div>
       </section>
@@ -2027,7 +2099,7 @@ function LeaderboardIndexPage() {
             onClick={() => updateDirectorySearch({ vendor: "all" })}
             type="button"
           >
-            All
+            全部
           </button>
           {vendorOptions.map((vendor) => (
             <button
@@ -2045,8 +2117,8 @@ function LeaderboardIndexPage() {
         </div>
         <p className="directory-filter-meta">
           {filteredBoards.length === data.boards.length
-            ? `${data.boards.length} lanes`
-            : `${filteredBoards.length} / ${data.boards.length} lanes`}
+            ? `${data.boards.length} 个赛道`
+            : `${filteredBoards.length} / ${data.boards.length} 个赛道`}
         </p>
       </section>
 
@@ -2057,17 +2129,17 @@ function LeaderboardIndexPage() {
       </div>
       {filteredBoards.length === 0 ? (
         <section className="directory-empty-state">
-          <p className="kicker">No matches</p>
-          <h2 className="text-3xl leading-[0.96] tracking-[-0.04em]">No leaderboard lanes match this filter.</h2>
+          <p className="kicker">没有匹配项</p>
+          <h2 className="text-3xl leading-[0.96] tracking-[-0.04em]">当前筛选条件下没有匹配的榜单赛道。</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-black/68">
-            Switch vendor filters to bring the full directory back.
+            请切换服务商筛选条件，恢复完整目录视图。
           </p>
           <button
             className="button-cream mt-5"
             onClick={() => setSearchParams(new URLSearchParams())}
             type="button"
           >
-            Reset filters
+            重置筛选
           </button>
         </section>
       ) : null}
@@ -2094,25 +2166,25 @@ function LeaderboardPage() {
   const degradedRelayCount = rows.filter((row) => row.healthStatus === "degraded").length;
 
   if (loading) return <LeaderboardPageSkeleton />;
-  if (error || !data) return <ErrorPanel message={error ?? "Unable to load leaderboard."} />;
+  if (error || !data) return <ErrorPanel message={error ?? "榜单加载失败。"} />;
 
   return (
     <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
-        <p className="kicker">Leaderboard</p>
+        <p className="kicker">榜单</p>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">{data.model.name}</h1>
-            <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/60">Measured at {new Date(data.measuredAt).toLocaleString()}</p>
+            <p className="mt-2 text-sm uppercase tracking-[0.16em] text-black/60">北京时间 {formatDateTime(data.measuredAt)}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="signal-chip">{trackedRelayCount} tracked relays</span>
-              <span className="signal-chip">{healthyRelayCount} healthy</span>
-              <span className="signal-chip">{degradedRelayCount} degraded</span>
+              <span className="signal-chip">已跟踪 {trackedRelayCount} 个 relay</span>
+              <span className="signal-chip">健康 {healthyRelayCount} 个</span>
+              <span className="signal-chip">降级 {degradedRelayCount} 个</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2.5">
-            <Link className="button-dark" to={LEADERBOARD_DIRECTORY_PATH}>All model lanes</Link>
-            <Link className="button-cream" to="/probe">Run probe</Link>
+            <Link className="button-dark" to={LEADERBOARD_DIRECTORY_PATH}>全部模型赛道</Link>
+            <Link className="button-cream" to="/probe">开始探测</Link>
           </div>
         </div>
       </section>
@@ -2121,12 +2193,12 @@ function LeaderboardPage() {
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="kicker">Switch model lane</p>
+                <p className="kicker">切换模型赛道</p>
                 <p className="text-sm leading-6 text-black/68">
-                  Jump across tracked boards without leaving the full ranking view.
+                  无需离开当前页面，就能快速切换到其他已跟踪榜单。
                 </p>
               </div>
-              <p className="directory-filter-meta">{directory.data.boards.length} tracked lanes</p>
+              <p className="directory-filter-meta">共 {directory.data.boards.length} 个已跟踪赛道</p>
             </div>
             <div className="leaderboard-model-switcher">
               {directory.data.boards.map((board) => (
@@ -2145,7 +2217,7 @@ function LeaderboardPage() {
           </div>
         </section>
       ) : null}
-      <Panel title="Ranked relay rows" kicker="Natural ranking">
+      <Panel title="Relay 排名" kicker="自然排序">
         {rows.length ? (
           <>
             <div className="space-y-3 md:hidden">
@@ -2157,14 +2229,14 @@ function LeaderboardPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-black/10">
-                    <th className="pb-2.5">Rank</th>
+                    <th className="pb-2.5">排名</th>
                     <th className="pb-2.5">Relay</th>
-                    <th className="pb-2.5">Health</th>
-                    <th className="pb-2.5">Score</th>
-                    <th className="pb-2.5">Avail 24h</th>
-                    <th className="pb-2.5">Latency p50</th>
-                    <th className="pb-2.5">Input</th>
-                    <th className="pb-2.5">Output</th>
+                    <th className="pb-2.5">状态</th>
+                    <th className="pb-2.5">评分</th>
+                    <th className="pb-2.5">24h 可用性</th>
+                    <th className="pb-2.5">P50 延迟</th>
+                    <th className="pb-2.5">输入</th>
+                    <th className="pb-2.5">输出</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2173,9 +2245,9 @@ function LeaderboardPage() {
                       <td className="py-3 text-2xl tracking-[-0.04em]">#{row.rank}</td>
                       <td className="py-3">
                         <Link to={`/relay/${row.relay.slug}`} className="text-[1.08rem] tracking-[-0.03em] hover:underline">{row.relay.name}</Link>
-                        <CompactBadgeList badges={row.badges} className="mt-2" />
+                        <CompactBadgeList badges={row.badges.map(formatBadgeLabel)} className="mt-2" />
                       </td>
-                      <td className="py-3 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {row.healthStatus}</span></td>
+                      <td className="py-3 text-sm uppercase tracking-[0.14em]"><span className="inline-flex items-center gap-2"><StatusDot status={row.healthStatus} /> {formatHealthStatusLabel(row.healthStatus)}</span></td>
                       <td className="py-3 text-[1.08rem] tracking-[-0.03em]">{row.score.toFixed(1)}</td>
                       <td className="py-3">{formatAvailability(row.availability24h)}</td>
                       <td className="py-3">{formatLatency(row.latencyP50Ms)}</td>
@@ -2189,10 +2261,10 @@ function LeaderboardPage() {
           </>
         ) : (
           <div className="directory-empty-state">
-            <p className="kicker">No rows</p>
-            <h2 className="text-3xl leading-[0.96] tracking-[-0.04em]">No relays are ranked in this lane yet.</h2>
+            <p className="kicker">暂无排名</p>
+            <h2 className="text-3xl leading-[0.96] tracking-[-0.04em]">这个赛道暂时还没有 relay 进入排名。</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-black/68">
-              Check back after the next measurement cycle or open another model lane from the board switcher.
+              可在下一轮测量完成后再来查看，或从上方切换到其他模型赛道。
             </p>
           </div>
         )}
@@ -2269,18 +2341,18 @@ function RelayLatencyChart({ slots }: { slots: DailyHistorySlot[] }) {
     const latencyMs = slot.point?.latencyP95Ms ?? null;
     const datum = {
       dateKey: slot.dateKey,
-      displayDate: new Date(`${slot.dateKey}T00:00:00.000Z`).toLocaleDateString(),
+      displayDate: formatDate(`${slot.dateKey}T00:00:00.000Z`),
       value: latencyMs ?? missingBarValue,
       fill: getLatencyToneColor(latencyMs),
       barTestId: "relay-latency-bar",
-      tooltipValue: latencyMs === null ? "No latency sample" : `P95 ${formatLatency(latencyMs)}`,
+      tooltipValue: latencyMs === null ? "暂无延迟样本" : `P95 ${formatLatency(latencyMs)}`,
     };
 
     return latencyMs === null
       ? datum
       : {
           ...datum,
-          tooltipMeta: `Tier ${latencyMs < 1000 ? "<1s" : latencyMs < 2000 ? "1-2s" : latencyMs < 4000 ? "2-4s" : "4s+"}`,
+          tooltipMeta: `档位 ${latencyMs < 1000 ? "<1s" : latencyMs < 2000 ? "1-2s" : latencyMs < 4000 ? "2-4s" : "4s+"}`,
         };
   });
 
@@ -2308,7 +2380,7 @@ function RelayLatencyLegend() {
         { label: "1-2s", toneClassName: "bg-yellow-400" },
         { label: "2-4s", toneClassName: "bg-orange-500" },
         { label: "4s+", toneClassName: "bg-red-500" },
-        { label: "No sample", toneClassName: "bg-zinc-300" },
+        { label: "无样本", toneClassName: "bg-zinc-300" },
       ].map((item) => (
         <span key={item.label} className="inline-flex items-center gap-1.5">
           <span className={clsx("h-2 w-2 rounded-full", item.toneClassName)} />
@@ -2324,11 +2396,11 @@ function RelayStatusChart({ slots }: { slots: DailyHistorySlot[] }) {
     const status = slot.point ? getAvailabilityTrendStatus(slot.point.availability) : "unknown";
     const datum = {
       dateKey: slot.dateKey,
-      displayDate: new Date(`${slot.dateKey}T00:00:00.000Z`).toLocaleDateString(),
+      displayDate: formatDate(`${slot.dateKey}T00:00:00.000Z`),
       value: 100,
       fill: getStatusToneColor(status),
       barTestId: "relay-status-bar",
-      tooltipValue: slot.point ? status : "No sample",
+      tooltipValue: slot.point ? formatHealthStatusLabel(status) : "无样本",
     };
 
     return slot.point
@@ -2359,10 +2431,10 @@ function RelayStatusLegend() {
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[0.64rem] uppercase tracking-[0.16em] text-black/48">
       {[
-        { label: "Stable", toneClassName: "bg-emerald-500" },
-        { label: "Degraded", toneClassName: "bg-amber-500" },
-        { label: "Down", toneClassName: "bg-red-500" },
-        { label: "No sample", toneClassName: "bg-zinc-300" },
+        { label: "稳定", toneClassName: "bg-emerald-500" },
+        { label: "降级", toneClassName: "bg-amber-500" },
+        { label: "不可用", toneClassName: "bg-red-500" },
+        { label: "无样本", toneClassName: "bg-zinc-300" },
       ].map((item) => (
         <span key={item.label} className="inline-flex items-center gap-1.5">
           <span className={clsx("h-2 w-2 rounded-full", item.toneClassName)} />
@@ -2437,7 +2509,7 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
   return (
     <>
       <button
-        aria-label="Inspect score breakdown"
+        aria-label="查看评分拆解"
         aria-expanded={open}
         className="surface-link w-full cursor-pointer p-3.5 text-left"
         data-testid="score-popover-toggle"
@@ -2445,13 +2517,13 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
-        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Score</p>
+        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">评分</p>
         <p className="mt-2 text-[2.2rem] leading-none tracking-[-0.05em]">{scoreSummary.total.toFixed(1)}</p>
-        <p className="mt-2 text-xs text-black/58">View breakdown</p>
+        <p className="mt-2 text-xs text-black/58">查看拆解</p>
       </button>
       {open && position ? createPortal(
         <div
-          aria-label="Score breakdown"
+          aria-label="评分拆解"
           className="fixed z-[140]"
           data-testid="score-popover"
           ref={popoverRef}
@@ -2460,7 +2532,7 @@ function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["s
         >
           <div className="surface-card border border-black/8 p-3 shadow-[rgba(127,99,21,0.18)_0_18px_40px]">
             <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2.5">
-              <p className="kicker">Breakdown</p>
+              <p className="kicker">评分拆解</p>
               <p className="text-sm tracking-[-0.03em] text-black/66">{scoreSummary.total.toFixed(1)}</p>
             </div>
             <div className="mt-2.5 space-y-1.5">
@@ -2487,7 +2559,7 @@ function StatusHistoryPanel({
   const measuredSlots = slots.filter((slot) => slot.point);
 
   if (slots.length === 0) {
-    return <p className="text-sm text-black/60">No thirty-day status samples yet.</p>;
+    return <p className="text-sm text-black/60">近 30 天还没有状态样本。</p>;
   }
 
   const healthyCount = measuredSlots.filter((slot) => slot.point && getAvailabilityTrendStatus(slot.point.availability) === "healthy").length;
@@ -2498,12 +2570,12 @@ function StatusHistoryPanel({
       <RelayStatusLegend />
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="surface-card px-3 py-2.5 text-sm">
-          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Stable days</p>
-          <p className="mt-2 text-black/76">{healthyCount} of {measuredSlots.length || 0}</p>
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">稳定天数</p>
+          <p className="mt-2 text-black/76">{healthyCount} / {measuredSlots.length || 0}</p>
         </div>
         <div className="surface-card px-3 py-2.5 text-sm">
-          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Coverage</p>
-          <p className="mt-2 text-black/76">{measuredSlots.length} of {slots.length}</p>
+          <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">覆盖度</p>
+          <p className="mt-2 text-black/76">{measuredSlots.length} / {slots.length}</p>
         </div>
       </div>
     </div>
@@ -2516,10 +2588,10 @@ function RelayModelsTable({ rows }: { rows: Array<RelayModelPricingRow | null> }
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-black/10">
-            <th className="pb-2.5 pl-2">Model</th>
-            <th className="w-[5.5rem] whitespace-nowrap pb-2.5">Status</th>
-            <th className="w-[5.5rem] whitespace-nowrap pb-2.5 text-right">Input</th>
-            <th className="w-[5.7rem] whitespace-nowrap pb-2.5 pr-2 text-right">Output</th>
+            <th className="pb-2.5 pl-2">模型</th>
+            <th className="w-[5.5rem] whitespace-nowrap pb-2.5">状态</th>
+            <th className="w-[5.5rem] whitespace-nowrap pb-2.5 text-right">输入</th>
+            <th className="w-[5.7rem] whitespace-nowrap pb-2.5 pr-2 text-right">输出</th>
           </tr>
         </thead>
         <tbody>
@@ -2532,7 +2604,7 @@ function RelayModelsTable({ rows }: { rows: Array<RelayModelPricingRow | null> }
                     <p className="mt-1 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
                   </td>
                   <td className="border-b border-black/8 py-3 pr-3 text-[0.68rem] uppercase tracking-[0.18em] text-black/52 whitespace-nowrap last:border-b-0">
-                    {row.supportStatus}
+                    {formatSupportStatusLabel(row.supportStatus)}
                   </td>
                   <td className="border-b border-black/8 py-3 pr-3 text-right text-sm tabular-nums whitespace-nowrap last:border-b-0">
                     {formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
@@ -2583,13 +2655,13 @@ function RelayPage() {
     [slug],
   );
   if (overview.loading) return <RelayPageSkeleton />;
-  if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Unable to load relay."} />;
+  if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Relay 详情加载失败。"} />;
 
   const snapshotMetrics = [
-    { label: "Availability 24h", value: formatAvailability(overview.data.availability24h) },
-    { label: "Latency p50", value: formatLatency(overview.data.latencyP50Ms) },
-    { label: "Latency p95", value: formatLatency(overview.data.latencyP95Ms) },
-    { label: "Models", value: overview.data.supportedModelsCount },
+    { label: "24h 可用性", value: formatAvailability(overview.data.availability24h) },
+    { label: "P50 延迟", value: formatLatency(overview.data.latencyP50Ms) },
+    { label: "P95 延迟", value: formatLatency(overview.data.latencyP95Ms) },
+    { label: "模型数", value: overview.data.supportedModelsCount },
   ];
 
   const latestPricingByModelKey = new Map<string, RelayPricingHistoryResponse["rows"][number]>();
@@ -2619,21 +2691,21 @@ function RelayPage() {
   return (
     <div className="space-y-4">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
-        <p className="kicker">Relay detail</p>
+        <p className="kicker">Relay 详情</p>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.16em]">
               <span className="inline-flex items-center gap-2">
                 <StatusDot status={overview.data.healthStatus} />
-                {overview.data.healthStatus}
+                {formatHealthStatusLabel(overview.data.healthStatus)}
               </span>
-              <span className="text-black/46">Measured {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
+              <span className="text-black/46">北京时间 {formatProbeMeasuredAt(overview.data.measuredAt)}</span>
             </div>
             <div>
               <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-[4.2rem]">{overview.data.relay.name}</h1>
               <p className="mt-2 break-all font-mono text-[0.8rem] text-black/62">{overview.data.relay.baseUrl}</p>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72">
-                {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "Recent evidence is still being accumulated for this relay."}
+                {HEALTH_STATUS_COPY[overview.data.healthStatus] ?? "这个 relay 的近期证据仍在持续积累中。"}
               </p>
             </div>
             {overview.data.relay.websiteUrl ? (
@@ -2644,7 +2716,7 @@ function RelayPage() {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Website
+                  访问官网
                 </a>
               </div>
             ) : null}
@@ -2667,26 +2739,26 @@ function RelayPage() {
       <section className="grid gap-4 xl:grid-cols-2">
         <Panel
           className="h-full"
-          title="Latency profile"
-          kicker="Thirty-day shape"
+          title="延迟画像"
+          kicker="近 30 天走势"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {history.loading || !history.data ? <p className="text-sm text-black/60">Loading trend...</p> : (
+          {history.loading || !history.data ? <p className="text-sm text-black/60">正在加载趋势...</p> : (
             <div className="space-y-3">
               <RelayLatencyChart slots={historySlots} />
               <RelayLatencyLegend />
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="surface-card px-3 py-2.5 text-sm">
-                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Window</p>
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">窗口</p>
                   <p className="mt-2 text-black/76">30d</p>
                 </div>
                 <div className="surface-card px-3 py-2.5 text-sm">
-                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Coverage</p>
-                  <p className="mt-2 text-black/76">{measuredHistorySlotCount} of 30 days</p>
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">覆盖度</p>
+                  <p className="mt-2 text-black/76">{measuredHistorySlotCount} / 30 天</p>
                 </div>
                 <div className="surface-card px-3 py-2.5 text-sm">
-                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Latest p95</p>
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">最新 P95</p>
                   <p className="mt-2 text-black/76">
                     {formatLatency(latestMeasuredHistoryPoint?.latencyP95Ms ?? null)}
                   </p>
@@ -2697,13 +2769,13 @@ function RelayPage() {
         </Panel>
         <Panel
           className="h-full"
-          title="Status"
-          kicker="Thirty-day availability"
+          title="状态"
+          kicker="近 30 天可用性"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
           {history.loading || !history.data ? (
-            <p className="text-sm text-black/60">Loading status...</p>
+            <p className="text-sm text-black/60">正在加载状态...</p>
           ) : (
             <StatusHistoryPanel slots={historySlots} />
           )}
@@ -2712,13 +2784,13 @@ function RelayPage() {
 
       <section className="grid gap-4">
         <Panel
-          title="Models"
-          kicker="Current pricing"
+          title="模型支持"
+          kicker="当前价格"
           headerClassName="mb-3"
           titleClassName="text-[2.2rem] md:text-[2.45rem]"
         >
-          {models.loading || !models.data ? <p className="text-sm text-black/60">Loading models...</p> : (
-            modelPricingRows.length === 0 ? <p className="text-sm text-black/60">No models published for this relay yet.</p> : (
+          {models.loading || !models.data ? <p className="text-sm text-black/60">正在加载模型...</p> : (
+            modelPricingRows.length === 0 ? <p className="text-sm text-black/60">这个 relay 还没有公开模型信息。</p> : (
             <>
               <div className="space-y-2.5 lg:hidden">
                 {modelPricingRows.map((row) => (
@@ -2728,17 +2800,17 @@ function RelayPage() {
                         <p className="text-lg tracking-[-0.03em]">{row.modelName}</p>
                         <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
                       </div>
-                      <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/50">{row.supportStatus}</p>
+                      <p className="text-[0.64rem] uppercase tracking-[0.18em] text-black/50">{formatSupportStatusLabel(row.supportStatus)}</p>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Input / 1M</p>
+                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">输入 / 1M</p>
                         <p className="mt-2 text-sm leading-5 text-black/78">
                           {formatPricePerMillion(row.currentPrice?.inputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
                         </p>
                       </div>
                       <div className="border border-black/8 bg-white/72 px-3 py-2.5">
-                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Output / 1M</p>
+                        <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">输出 / 1M</p>
                         <p className="mt-2 text-sm leading-5 text-black/78">
                           {formatPricePerMillion(row.currentPrice?.outputPricePer1M ?? null, row.currentPrice?.currency ?? "USD")}
                         </p>
@@ -2768,36 +2840,36 @@ function MethodologyPage() {
     [],
   );
   if (loading) return <MethodologyPageSkeleton />;
-  if (error || !data) return <ErrorPanel message={error ?? "Unable to load methodology."} />;
+  if (error || !data) return <ErrorPanel message={error ?? "方法论页面加载失败。"} />;
 
   return (
     <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
-        <p className="kicker">Methodology</p>
+        <p className="kicker">方法论</p>
         <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
           <div>
             <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
-              How we test and score relay performance.
+              我们如何测试并评估 relay 的综合表现。
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
-              Natural ranking blends five public signals: availability, latency, consistency, value, and stability.
-              Sponsor placement is handled outside this score so measured order remains readable.
+              自然排序综合了五项公开信号：可用性、延迟、一致性、性价比与稳定性。
+              赞助展示不会并入这个评分，因此实测排序始终保持清晰可读。
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link className="button-dark" to="/policy">Read evaluation policy</Link>
-              <Link className="button-cream" to="/probe">Run a probe</Link>
+              <Link className="button-dark" to="/policy">阅读评估政策</Link>
+              <Link className="button-cream" to="/probe">开始一次探测</Link>
             </div>
             <p className="mt-4 text-xs uppercase tracking-[0.16em] text-black/50">
-              Snapshot measured at {new Date(data.measuredAt).toLocaleString()}
+              快照时间：北京时间 {formatDateTime(data.measuredAt)}
             </p>
           </div>
           <div className="surface-card p-4">
-            <p className="kicker">Current scoring mix</p>
+            <p className="kicker">当前评分构成</p>
             <div className="mt-4 space-y-3">
               {Object.entries(data.weights).map(([label, value]) => (
                 <div key={label}>
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm uppercase tracking-[0.16em] text-black/62">{label}</p>
+                    <p className="text-sm uppercase tracking-[0.16em] text-black/62">{formatScoreMetricLabel(label as keyof RelayOverviewResponse["scoreSummary"])}</p>
                     <p className="font-mono text-sm text-black/74">{value}%</p>
                   </div>
                   <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/55">
@@ -2813,34 +2885,34 @@ function MethodologyPage() {
         </div>
       </section>
       <section className="grid gap-4 lg:grid-cols-[0.96fr_1.04fr]">
-        <Panel title="Health state language" kicker="Public taxonomy">
+        <Panel title="公开状态说明" kicker="状态口径">
           <div className="space-y-3">
             {data.healthStatuses.map((status) => (
               <div key={status} className="surface-card p-3.5">
                 <div className="flex items-center gap-3 text-sm uppercase tracking-[0.14em] text-black/72">
-                  <StatusDot status={status} /> {status}
+                  <StatusDot status={status} /> {formatHealthStatusLabel(status)}
                 </div>
                 <p className="mt-3 text-sm leading-6 text-black/68">
-                  {HEALTH_STATUS_COPY[status] ?? "Public status language is based on recent measured evidence."}
+                  {HEALTH_STATUS_COPY[status] ?? "公开状态文案基于最近一次的实测证据生成。"}
                 </p>
               </div>
             ))}
           </div>
         </Panel>
         <div className="space-y-4">
-          <Panel title="Badge cues" kicker="Confidence hints">
+          <Panel title="徽章含义" kicker="置信提示">
             <div className="grid gap-3 sm:grid-cols-2">
               {data.badges.map((badge) => (
                 <div key={badge} className="surface-card p-3.5">
-                  <span className="signal-chip">{badge}</span>
+                  <span className="signal-chip">{formatBadgeLabel(badge)}</span>
                   <p className="mt-3 text-sm leading-6 text-black/68">
-                    {BADGE_COPY[badge] ?? "This badge helps explain confidence, value, or current operational posture."}
+                    {BADGE_COPY[badge] ?? "这个徽章用于解释当前的置信度、性价比或运行状态。"}
                   </p>
                 </div>
               ))}
             </div>
           </Panel>
-          <Panel title="Interpretation notes" kicker="Reading the board">
+          <Panel title="阅读提示" kicker="如何理解榜单">
             <div className="space-y-3 text-sm leading-6 text-black/72">
               {data.notes.map((note) => (
                 <div key={note} className="surface-card p-3.5">
@@ -2848,9 +2920,9 @@ function MethodologyPage() {
                 </div>
               ))}
               <div className="surface-card p-3.5">
-                For listing rules, sponsor separation, and dispute handling, continue to the public policy page.
+                如需了解收录规则、赞助分离与争议处理，请继续阅读公开政策页。
                 {" "}
-                <Link className="underline" to="/policy">Read policy</Link>
+                <Link className="underline" to="/policy">查看政策</Link>
               </div>
             </div>
           </Panel>
@@ -2864,18 +2936,18 @@ function PolicyPage() {
   return (
     <div className="space-y-6">
       <section className="panel bg-[#fff0c2]">
-        <p className="kicker">Evaluation policy</p>
+        <p className="kicker">评估政策</p>
         <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
           <div>
             <h1 className="max-w-3xl text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">
-              The catalog stays neutral, observable, and operator-reviewable.
+              目录保持中立、可观测，并支持运营者申诉与复核。
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-black/72">
-              This page explains which decisions are measurement-driven, which are editorial or operational, and how operators can correct a listing.
+              这里会解释哪些决策由测量结果驱动，哪些属于运营或编辑判断，以及运营者如何修正收录信息。
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link className="button-dark" to="/submit">Submit a relay</Link>
-              <Link className="button-cream" to="/methodology">Read methodology</Link>
+              <Link className="button-dark" to="/submit">提交 Relay</Link>
+              <Link className="button-cream" to="/methodology">阅读方法论</Link>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -2889,50 +2961,50 @@ function PolicyPage() {
         </div>
       </section>
       <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Panel title="What affects leaderboard order" kicker="Measured inputs">
+        <Panel title="哪些因素会影响榜单顺序" kicker="测量输入">
           <div className="space-y-3 text-sm leading-6 text-black/72">
-            <div className="surface-card p-3.5">Observed availability and successful request continuity.</div>
-            <div className="surface-card p-3.5">Latency distribution and recent consistency for the specific model lane.</div>
-            <div className="surface-card p-3.5">Price efficiency relative to measured peers in the same category.</div>
-            <div className="surface-card p-3.5">Stability signals, incident recency, and confidence level from sample size.</div>
+            <div className="surface-card p-3.5">实测可用性，以及请求成功的连续性表现。</div>
+            <div className="surface-card p-3.5">特定模型赛道下的延迟分布与近期一致性。</div>
+            <div className="surface-card p-3.5">相对同类 relay 的价格效率与性价比。</div>
+            <div className="surface-card p-3.5">稳定性信号、事故新鲜度，以及样本量带来的置信度。</div>
           </div>
         </Panel>
-        <Panel title="What does not change natural rank" kicker="Boundaries">
+        <Panel title="哪些因素不会改变自然排名" kicker="边界说明">
           <div className="space-y-3 text-sm leading-6 text-black/72">
-            <div className="surface-card p-3.5">Sponsor packages, partner visibility, or promotional placement.</div>
-            <div className="surface-card p-3.5">Direct operator requests to move a row without supporting measurement changes.</div>
-            <div className="surface-card p-3.5">One-off anecdotes that are not backed by reproducible tests or fresh evidence.</div>
-            <div className="surface-card p-3.5">Probe success alone; public probe helps diagnose connectivity but does not define rank on its own.</div>
+            <div className="surface-card p-3.5">赞助套餐、合作露出或其他推广展示。</div>
+            <div className="surface-card p-3.5">缺乏测量变化支撑的人工调位请求。</div>
+            <div className="surface-card p-3.5">无法复现、也没有最新证据支撑的单次 anecdote。</div>
+            <div className="surface-card p-3.5">单独一次探测成功本身；公开探测用于诊断连通性，不直接定义排名。</div>
           </div>
         </Panel>
       </section>
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-        <Panel title="Operator review path" kicker="Corrections and disputes">
+        <Panel title="运营者复核路径" kicker="纠错与申诉">
           <div className="space-y-3 text-sm leading-6 text-black/72">
             <p className="surface-card p-3.5">
-              If your relay endpoint, supported models, or public metadata changed, submit an updated relay entry with the latest base URL and operator contact.
+              如果你的 relay 端点、支持模型或公开信息发生变化，请使用最新的基础 URL 与运营者联系方式重新提交更新。
             </p>
             <p className="surface-card p-3.5">
-              If you believe a public status is inaccurate, provide reproducible probe data, affected models, and the time window that should be rechecked.
+              如果你认为公开状态不准确，请提供可复现的探测数据、受影响模型与需要复查的时间窗口。
             </p>
             <p className="surface-card p-3.5">
-              Listings can be paused or marked under observation while evidence is refreshed, but sponsor separation remains intact during review.
+              在补充证据期间，条目可能会被暂停或标记为观察中，但赞助展示与自然排序的分离不会因此改变。
             </p>
           </div>
         </Panel>
-        <Panel title="Recommended operator workflow" kicker="Practical sequence">
+        <Panel title="建议的运营动作顺序" kicker="实践流程">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">1. Probe</p>
-              <p className="text-sm leading-6 text-black/68">Verify the public route, API family, and model behavior with the bounded probe.</p>
+              <p className="kicker !text-black/52">1. 探测</p>
+              <p className="text-sm leading-6 text-black/68">先用受限探测验证公开路由、API 协议族和模型行为是否正常。</p>
             </div>
             <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">2. Submit</p>
-              <p className="text-sm leading-6 text-black/68">Send clean URLs and operator contact info so the relay enters the review lane with context.</p>
+              <p className="kicker !text-black/52">2. 提交</p>
+              <p className="text-sm leading-6 text-black/68">提交规范的 URL 与运营者联系信息，让 relay 带着上下文进入审核队列。</p>
             </div>
             <div className="surface-card p-3.5">
-              <p className="kicker !text-black/52">3. Monitor</p>
-              <p className="text-sm leading-6 text-black/68">Watch the public leaderboard, incidents, and notes as the observation window fills in.</p>
+              <p className="kicker !text-black/52">3. 观察</p>
+              <p className="text-sm leading-6 text-black/68">随着观测窗口逐渐填满，持续关注公开榜单、事故记录与备注说明。</p>
             </div>
           </div>
         </Panel>
@@ -2970,7 +3042,7 @@ function SubmitPage() {
     const { errors, payload } = validateSubmitForm(state);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setError("Please fix the highlighted fields before submitting.");
+      setError("请先修正高亮字段后再提交。");
       return;
     }
 
@@ -2993,7 +3065,7 @@ function SubmitPage() {
       });
       setFieldErrors({});
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to submit relay.");
+      setError(reason instanceof Error ? reason.message : "提交 Relay 失败。");
     } finally {
       setSubmitting(false);
     }
@@ -3002,31 +3074,31 @@ function SubmitPage() {
   return (
     <section className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
       <div className="panel hero-panel min-h-0">
-        <p className="kicker">Submit a relay</p>
-        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">Nominate a relay for monitoring, ranking, or sponsor intake.</h1>
-        <p className="mt-4 max-w-xl text-black/70">Use the intake form to put a relay into review. Operational approval and sponsor placement are reviewed separately from natural ranking.</p>
+        <p className="kicker">提交 Relay</p>
+        <h1 className="text-4xl leading-[0.92] tracking-[-0.06em] md:text-5xl">把你的 relay 提交到监测、排名或赞助审核流程中。</h1>
+        <p className="mt-4 max-w-xl text-black/70">通过表单把 relay 送入审核队列。运营审批与赞助展示会独立处理，不会影响自然排名逻辑。</p>
         <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
           <div className="surface-card p-3.5">
-            <p className="kicker !text-black/52">Review first</p>
-            <p className="text-sm leading-6 text-black/72">Every relay enters an operator review lane before it appears anywhere public.</p>
+            <p className="kicker !text-black/52">先审核</p>
+            <p className="text-sm leading-6 text-black/72">每个 relay 都会先进入运营审核队列，确认后才会出现在公开页面。</p>
           </div>
           <div className="surface-card p-3.5">
-            <p className="kicker !text-black/52">Verification input</p>
-            <p className="text-sm leading-6 text-black/72">Provide a working key, test model, and a short introduction so the review queue can verify and classify the relay correctly.</p>
+            <p className="kicker !text-black/52">验证信息</p>
+            <p className="text-sm leading-6 text-black/72">请提供可用密钥、测试模型和简要说明，方便审核队列完成验证与归类。</p>
           </div>
           <div className="surface-card p-3.5">
-            <p className="kicker !text-black/52">Initial probe</p>
-            <p className="text-sm leading-6 text-black/72">Each submission runs a bounded probe immediately, so the review queue already has a first verification snapshot.</p>
+            <p className="kicker !text-black/52">初始探测</p>
+            <p className="text-sm leading-6 text-black/72">每次提交都会立即执行一次受限探测，让审核队列直接拿到首个验证快照。</p>
           </div>
         </div>
       </div>
       <form className="panel form-shell" noValidate onSubmit={handleSubmit}>
         <label className="form-field">
-          Relay name
+          中转站名称
           <input
             className="input-shell mt-2"
             type="text"
-            placeholder="Northwind Relay"
+            placeholder="北风中转站"
             required
             value={state.relayName}
             onChange={(event) => updateField("relayName", event.target.value)}
@@ -3034,7 +3106,7 @@ function SubmitPage() {
           {fieldErrors.relayName ? <span className="field-error">{fieldErrors.relayName}</span> : null}
         </label>
         <label className="form-field">
-          Base URL
+          基础 URL
           <input
             className="input-shell mt-2"
             type="url"
@@ -3046,7 +3118,7 @@ function SubmitPage() {
           {fieldErrors.baseUrl ? <span className="field-error">{fieldErrors.baseUrl}</span> : null}
         </label>
         <label className="form-field">
-          Website URL
+          网站地址
           <input
             className="input-shell mt-2"
             type="url"
@@ -3057,10 +3129,10 @@ function SubmitPage() {
           {fieldErrors.websiteUrl ? <span className="field-error">{fieldErrors.websiteUrl}</span> : null}
         </label>
         <label className="form-field">
-          Relay description
+          中转站简介
           <textarea
             className="input-shell mt-2 min-h-28"
-            placeholder="Explain what this relay is optimized for, who operates it, and anything the review queue should know before testing."
+            placeholder="请说明这个 relay 适合什么场景、由谁运营，以及测试前审核队列需要知道的事项。"
             required
             value={state.description}
             onChange={(event) => updateField("description", event.target.value)}
@@ -3068,7 +3140,7 @@ function SubmitPage() {
           {fieldErrors.description ? <span className="field-error">{fieldErrors.description}</span> : null}
         </label>
         <label className="form-field">
-          Contact email
+          联系邮箱
           <input
             className="input-shell mt-2"
             type="email"
@@ -3079,7 +3151,7 @@ function SubmitPage() {
           {fieldErrors.submitterEmail ? <span className="field-error">{fieldErrors.submitterEmail}</span> : null}
         </label>
         <label className="form-field">
-          Test API key
+          测试 API 密钥
           <input
             className="input-shell mt-2"
             type="password"
@@ -3092,7 +3164,7 @@ function SubmitPage() {
         </label>
         <div className="grid gap-4 md:grid-cols-[1fr_0.82fr]">
           <label className="form-field">
-            Test model
+            测试模型
             <input
               className="input-shell mt-2"
               type="text"
@@ -3104,7 +3176,7 @@ function SubmitPage() {
             {fieldErrors.testModel ? <span className="field-error">{fieldErrors.testModel}</span> : null}
           </label>
           <label className="form-field">
-            API type
+            接口兼容类型
             <select
               className="input-shell mt-2"
               value={state.compatibilityMode}
@@ -3116,14 +3188,14 @@ function SubmitPage() {
             </select>
           </label>
         </div>
-        <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Submitting..." : "Submit relay"}</button>
+        <button className="button-dark" disabled={submitting} type="submit">{submitting ? "提交中..." : "提交 Relay"}</button>
         {result ? (
           <div className="surface-card space-y-2 p-3.5">
-            <p className="text-sm form-feedback-success">Submission created: {result.id}</p>
+            <p className="text-sm form-feedback-success">提交成功，记录 ID：{result.id}</p>
             {result.probe ? (
               <>
                 <p className="text-sm leading-6 text-black/72">
-                  Initial probe: {result.probe.ok ? "passed" : "needs review"} · {result.probe.healthStatus}
+                  初始探测：{result.probe.ok ? "已通过" : "需要复核"} · {formatHealthStatusLabel(result.probe.healthStatus)}
                   {result.probe.httpStatus ? ` · ${result.probe.httpStatus}` : ""}
                 </p>
                 {result.probe.message ? <p className="text-sm leading-6 text-black/58">{result.probe.message}</p> : null}
@@ -3157,19 +3229,19 @@ function ProbePage() {
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr] xl:items-start">
         <section className="panel">
-          <p className="kicker">Self-check probe</p>
+          <p className="kicker">自助探测</p>
           <h1 className="text-[2.45rem] leading-[0.92] tracking-[-0.06em] md:text-5xl">
-            Run probe
+            运行探测
           </h1>
           <p className="form-note mt-4 text-sm leading-6">
-            Use the same base URL, key, and model that your application sends in production. Start with automatic mode unless you already know the required API family.
+            请使用你线上应用实际发送的基础 URL、密钥与模型。除非你已经明确知道所需协议族，否则建议从自动模式开始。
           </p>
           <form className="form-shell mt-4" onSubmit={handleSubmit}>
             <ProbeFormFields setState={setState} state={state} />
             <details className="surface-card p-4">
-              <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">Advanced / API type</summary>
+              <summary className="cursor-pointer font-mono text-sm uppercase tracking-[0.16em] text-black/70">高级选项 / 接口类型</summary>
               <label className="form-field mt-4">
-                Compatibility Mode
+                兼容模式
                 <select
                   className="input-shell mt-2"
                   value={state.compatibilityMode}
@@ -3186,14 +3258,14 @@ function ProbePage() {
                 </select>
               </label>
               <p className="mt-3 text-sm leading-6 text-black/60">
-                Automatic mode infers the adapter order from the model. Manual mode locks the probe to a single compatibility shape.
+                自动模式会根据模型推断适配顺序；手动模式则会把探测锁定在单一兼容协议形态上。
               </p>
             </details>
-            <button className="button-dark" disabled={submitting} type="submit">{submitting ? "Checking..." : "Run probe"}</button>
+            <button className="button-dark" disabled={submitting} type="submit">{submitting ? "检测中..." : "开始探测"}</button>
           </form>
         </section>
 
-        <Panel title="Probe result" kicker={result ? "Diagnostic output" : error ? "Request failed" : "Awaiting input"} className={!result && !error ? "panel-soft" : ""}>
+        <Panel title="探测结果" kicker={result ? "诊断输出" : error ? "请求失败" : "等待输入"} className={!result && !error ? "panel-soft" : ""}>
           {result ? (
             <>
               <div className={clsx("mb-5 border px-4 py-4", resultTone?.className)}>
@@ -3204,23 +3276,23 @@ function ProbePage() {
                 columnsClassName="sm:grid-cols-2 xl:grid-cols-4"
                 items={[
                   {
-                    label: "Connectivity",
-                    value: result.connectivity.ok ? "ok" : "failed",
+                    label: "连通性",
+                    value: result.connectivity.ok ? "正常" : "失败",
                     testId: "probe-connectivity-value",
                     cardClassName: clsx("probe-metric-card", getConnectivityCardTone(result.connectivity.ok)),
                     valueClassName: "text-[1.08rem] leading-[1]",
                     valueSpacingClassName: "mt-2",
                   },
                   {
-                    label: "Protocol",
-                    value: result.protocol.ok ? result.protocol.healthStatus : "unknown",
+                    label: "协议",
+                    value: result.protocol.ok ? formatHealthStatusLabel(result.protocol.healthStatus) : "未知",
                     testId: "probe-protocol-value",
                     cardClassName: clsx("probe-metric-card", getProtocolCardTone(result.protocol.healthStatus, result.protocol.ok)),
                     valueClassName: "text-[1.08rem] leading-[1]",
                     valueSpacingClassName: "mt-2",
                   },
                   {
-                    label: "Latency",
+                    label: "延迟",
                     value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-",
                     testId: "probe-latency-value",
                     cardClassName: "probe-metric-card",
@@ -3228,7 +3300,7 @@ function ProbePage() {
                     valueSpacingClassName: "mt-2",
                   },
                   {
-                    label: "HTTP status",
+                    label: "HTTP 状态码",
                     value: formatProbeHttpStatus(result.protocol.httpStatus),
                     testId: "probe-http-status-value",
                     cardClassName: "probe-metric-card",
@@ -3239,10 +3311,10 @@ function ProbePage() {
               />
               <div className="mt-5 space-y-4">
                 <div className="surface-card p-4">
-                  <p className="kicker">Resolved route</p>
+                  <p className="kicker">解析结果</p>
                   <div className="mt-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="kicker !text-black/52">Host</p>
+                      <p className="kicker !text-black/52">主机</p>
                       <p
                         className="mt-1 break-all font-mono text-sm leading-6 tracking-[-0.02em] text-black/78"
                         data-testid="probe-host-value"
@@ -3258,7 +3330,7 @@ function ProbePage() {
                         data-testid="probe-used-url-value"
                         title={result.usedUrl ?? undefined}
                     >
-                      {result.usedUrl ?? "No resolved endpoint was captured."}
+                      {result.usedUrl ?? "本次没有记录到最终解析端点。"}
                     </p>
                     {result.usedUrl ? (
                       <button
@@ -3267,25 +3339,25 @@ function ProbePage() {
                         onClick={handleCopyUsedUrl}
                         type="button"
                       >
-                        {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
+                        {copyState === "copied" ? "已复制" : copyState === "failed" ? "复制失败" : "复制"}
                       </button>
                     ) : null}
                   </div>
                   <dl className="mt-4 grid gap-x-4 gap-y-3 sm:grid-cols-2">
                     <div>
-                      <dt className="kicker !text-black/52">Compatibility</dt>
+                      <dt className="kicker !text-black/52">兼容模式</dt>
                       <dd className="mt-1 text-sm leading-6 break-words text-black/78" data-testid="probe-mode-value">
                         {formatProbeCompatibilityMode(result.compatibilityMode)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="kicker !text-black/52">Detection</dt>
+                      <dt className="kicker !text-black/52">识别方式</dt>
                       <dd className="mt-1 text-sm leading-6 break-words text-black/78" data-testid="probe-detection-value">
                         {formatProbeDetectionMode(result.detectionMode)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="kicker !text-black/52">Model</dt>
+                      <dt className="kicker !text-black/52">模型</dt>
                       <dd
                         className="mt-1 text-sm leading-6 break-words text-black/78"
                         data-testid="probe-model-value"
@@ -3295,7 +3367,7 @@ function ProbePage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="kicker !text-black/52">Measured at</dt>
+                      <dt className="kicker !text-black/52">测量时间</dt>
                       <dd
                         className="mt-1 text-sm leading-6 text-black/78"
                         data-testid="probe-measured-at-value"
@@ -3313,7 +3385,7 @@ function ProbePage() {
                 ) : null}
                 <details className="surface-card p-4">
                   <summary className="cursor-pointer font-mono text-[0.72rem] uppercase tracking-[0.16em] text-black/68">
-                    Execution trace
+                    执行轨迹
                   </summary>
                   {attemptTrace.length > 0 ? (
                     <div className="mt-4 space-y-3">
@@ -3327,7 +3399,7 @@ function ProbePage() {
                               #{index + 1} {attempt.label}
                             </p>
                             <p className="text-xs uppercase tracking-[0.16em]">
-                              {attempt.matched ? "Matched" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "No response"}
+                              {attempt.matched ? "已匹配" : attempt.httpStatus ? `HTTP ${attempt.httpStatus}` : "无响应"}
                             </p>
                           </div>
                           <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
@@ -3336,45 +3408,45 @@ function ProbePage() {
                     </div>
                   ) : (
                     <p className="mt-4 text-sm leading-6 text-black/68">
-                      No request attempts were recorded for this run.
+                      本次运行没有记录到请求尝试。
                     </p>
                   )}
                 </details>
                 {failureGuidance ? (
                   <div className="surface-card p-4">
-                    <p className="kicker">Failure interpretation</p>
+                    <p className="kicker">失败解读</p>
                     <div className="space-y-3 text-sm leading-6 text-black/72">
-                      <p><span className="font-medium text-black/90">Source:</span> {failureGuidance.source}</p>
-                      <p><span className="font-medium text-black/90">Meaning:</span> {failureGuidance.meaning}</p>
-                      <p><span className="font-medium text-black/90">Next step:</span> {failureGuidance.nextStep}</p>
+                      <p><span className="font-medium text-black/90">来源：</span>{failureGuidance.source}</p>
+                      <p><span className="font-medium text-black/90">含义：</span>{failureGuidance.meaning}</p>
+                      <p><span className="font-medium text-black/90">下一步：</span>{failureGuidance.nextStep}</p>
                     </div>
                   </div>
                 ) : null}
                 {!result.ok && result.detectionMode === "auto" ? (
                   <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
-                    If the automatic match looks wrong, rerun the probe with a manual compatibility override in the advanced section.
+                    如果你觉得自动识别结果不对，请在高级选项中手动指定兼容模式后重新探测。
                   </div>
                 ) : null}
               </div>
             </>
           ) : error ? (
             <div className="border border-[#b42318]/20 bg-[#fff2ef] px-4 py-4 text-[#8d2d17]" role="alert">
-              <p className="kicker !text-current/70">Probe request failed</p>
-              <p className="text-xl tracking-[-0.04em]">The relay check did not complete.</p>
+              <p className="kicker !text-current/70">探测请求失败</p>
+              <p className="text-xl tracking-[-0.04em]">这次 relay 检查未能完成。</p>
               <p className="mt-3 text-sm leading-6 text-current/85">{error}</p>
               <p className="mt-2 text-sm leading-6 text-current/80">
-                Recheck the base URL, key, compatibility mode, and upstream route, then try again.
+                请重新检查基础 URL、密钥、兼容模式和上游路由后再重试。
               </p>
             </div>
           ) : (
             <div className="space-y-3 text-sm leading-6 text-black/70">
               <p className="text-sm leading-6 text-black/70">
-                The result panel will show connectivity, protocol status, compatibility detection, the resolved endpoint, and the request trace used to reach the upstream route.
+                结果面板会展示连通性、协议状态、兼容模式识别结果、最终解析端点，以及到达上游路由时使用的请求轨迹。
               </p>
               <ul className="m-0 list-disc space-y-2 pl-5 text-black/66">
-                <li>Connectivity covers reachability and latency to the tested relay host.</li>
-                <li>Protocol checks whether the selected API family responds with a valid shape and health state.</li>
-                <li>Trace detail shows the exact endpoint path and request attempts the probe used.</li>
+                <li>连通性会展示目标 relay 主机是否可达，以及对应延迟。</li>
+                <li>协议检查会确认所选 API 协议族是否返回有效结构和健康状态。</li>
+                <li>轨迹详情会展示探测实际使用的端点路径与请求尝试记录。</li>
               </ul>
             </div>
           )}
@@ -3390,7 +3462,7 @@ function NotFoundPage() {
     const timer = window.setTimeout(() => navigate("/"), 2000);
     return () => window.clearTimeout(timer);
   }, [navigate]);
-  return <ErrorPanel message="Page not found. Returning home..." />;
+  return <ErrorPanel message="页面不存在，正在返回首页..." />;
 }
 
 export function App() {
