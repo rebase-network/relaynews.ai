@@ -110,8 +110,11 @@ test("public site renders the main discovery flow", async ({ page }) => {
   expect(latencyChartBox).not.toBeNull();
   expect(statusChartBox).not.toBeNull();
   expect(Math.abs(latencyChartBox!.width - statusChartBox!.width)).toBeLessThan(2);
-  await page.getByLabel("Inspect score breakdown").click();
+  await page.getByTestId("score-popover-toggle").click();
+  await expect(page.getByTestId("score-popover")).toBeVisible();
   await expect(page.getByText("Score breakdown")).toBeVisible();
+  await page.getByRole("heading", { name: "Aurora Relay" }).click();
+  await expect(page.getByTestId("score-popover")).toHaveCount(0);
 });
 
 test("submit flow works from the public site", async ({ page }) => {

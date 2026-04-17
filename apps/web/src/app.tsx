@@ -16,7 +16,7 @@ import {
   type PublicSubmissionResponse,
 } from "@relaynews/shared";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Link as RouterLink,
   NavLink as RouterNavLink,
@@ -1503,7 +1503,7 @@ function RelayPageSkeleton() {
   return (
     <div aria-busy="true" className="space-y-6">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
+        <div className="relative z-20 grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
           <div className="space-y-4">
             <div className="space-y-3">
               <SkeletonBlock className="skeleton-pill w-[10rem]" />
@@ -2591,35 +2591,77 @@ function RelayStatusLegend() {
 }
 
 function ScorePopover({ scoreSummary }: { scoreSummary: RelayOverviewResponse["scoreSummary"] }) {
+  const [open, setOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const entries = (["availability", "latency", "consistency", "value", "stability"] as const).map((label) => [
     label,
     scoreSummary[label],
   ] as const);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!popoverRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   return (
-    <details className="relative [&_summary::-webkit-details-marker]:hidden">
-      <summary
+    <div ref={popoverRef} className="relative">
+      <button
         aria-label="Inspect score breakdown"
-        className="surface-link list-none cursor-pointer p-3.5 text-left"
+        aria-expanded={open}
+        className="surface-link w-full cursor-pointer p-3.5 text-left"
+        data-testid="score-popover-toggle"
+        onClick={() => setOpen((value) => !value)}
+        type="button"
       >
         <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">Score</p>
         <p className="mt-2 text-[2.2rem] leading-none tracking-[-0.05em]">{scoreSummary.total.toFixed(1)}</p>
         <p className="mt-2 text-xs text-black/58">View breakdown</p>
-      </summary>
-      <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[16rem] lg:left-auto lg:right-0 lg:w-72">
-        <div className="surface-card p-3.5 shadow-[rgba(127,99,21,0.18)_0_18px_40px]">
-          <p className="kicker">Score breakdown</p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {entries.map(([label, value]) => (
-              <div key={label} className="border border-black/8 bg-white/72 px-3 py-2.5">
-                <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">{formatScoreMetricLabel(label)}</p>
-                <p className="mt-2 text-lg tracking-[-0.03em] text-black/82">{value.toFixed(1)}</p>
-              </div>
-            ))}
+      </button>
+      {open ? (
+        <div
+          aria-label="Score breakdown"
+          className="mt-2 w-full min-w-0"
+          data-testid="score-popover"
+          role="dialog"
+        >
+          <div className="surface-card border border-black/8 p-3 shadow-[rgba(127,99,21,0.18)_0_18px_40px]">
+            <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-2.5">
+              <p className="kicker">Score breakdown</p>
+              <p className="text-sm tracking-[-0.03em] text-black/66">Total {scoreSummary.total.toFixed(1)}</p>
+            </div>
+            <div className="mt-2.5 space-y-1.5">
+              {entries.map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-4 border border-black/8 bg-white/72 px-3 py-2">
+                  <p className="font-mono text-[0.64rem] uppercase tracking-[0.18em] text-black/46">{formatScoreMetricLabel(label)}</p>
+                  <p className="text-base tracking-[-0.03em] text-black/82">{value.toFixed(1)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </details>
+      ) : null}
+    </div>
   );
 }
 
@@ -2762,7 +2804,7 @@ function RelayPage() {
 
   return (
     <div className="space-y-4">
-      <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
+      <section className="panel overflow-visible bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
         <p className="kicker">Relay detail</p>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
           <div className="space-y-4">
@@ -2795,7 +2837,7 @@ function RelayPage() {
           </div>
           <ScorePopover scoreSummary={overview.data.scoreSummary} />
         </div>
-        <div className="mt-4">
+        <div className="relative z-10 mt-4">
           <MetricGrid
             columnsClassName="grid-cols-2 lg:grid-cols-4"
             items={snapshotMetrics.map((item) => ({
