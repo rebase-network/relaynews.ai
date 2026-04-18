@@ -20,7 +20,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
 
   return (
     <form className="panel form-shell submit-form-panel" noValidate onSubmit={handleSubmit}>
-      <SubmitSection title="基础信息" description="这些资料会进入站点目录和运营审核。">
+      <SubmitSection title="基础信息">
         <div className="grid gap-3 md:grid-cols-2">
           <label className="form-field">
             中转站名称
@@ -71,18 +71,18 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
         </div>
       </SubmitSection>
 
-      <SubmitSection title="站点介绍" description="写清楚站点定位、支持模型和价格策略，方便社区整理资料。">
-        <label className="form-field">
-          中转站简介
+      <SubmitSection title="站点介绍">
+        <div className="form-field">
           <textarea
             className="input-shell mt-2 min-h-32"
+            aria-label="中转站简介"
             placeholder="请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表"
             required
             value={state.description}
             onChange={(event) => updateField("description", event.target.value)}
           />
           {fieldErrors.description ? <span className="field-error">{fieldErrors.description}</span> : null}
-        </label>
+        </div>
       </SubmitSection>
 
       <SubmitSection
@@ -106,34 +106,43 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
                 </button>
               </div>
               <div className="grid gap-2.5 md:grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto] md:items-center">
-                <input
-                  aria-label="模型"
-                  className="input-shell submit-price-input"
-                  type="text"
-                  placeholder="模型，例如 openai-gpt-5.4"
-                  value={row.modelKey}
-                  onChange={(event) => updateModelPriceRow(row.id, "modelKey", event.target.value)}
-                />
-                <input
-                  aria-label="Input价格"
-                  className="input-shell submit-price-input"
-                  type="number"
-                  min="0"
-                  step="0.0001"
-                  placeholder="Input价格"
-                  value={row.inputPricePer1M}
-                  onChange={(event) => updateModelPriceRow(row.id, "inputPricePer1M", event.target.value)}
-                />
-                <input
-                  aria-label="Output价格"
-                  className="input-shell submit-price-input"
-                  type="number"
-                  min="0"
-                  step="0.0001"
-                  placeholder="Output价格"
-                  value={row.outputPricePer1M}
-                  onChange={(event) => updateModelPriceRow(row.id, "outputPricePer1M", event.target.value)}
-                />
+                <div className="submit-price-field">
+                  <span className="submit-price-mobile-label md:hidden">模型</span>
+                  <input
+                    aria-label="模型"
+                    className="input-shell submit-price-input"
+                    type="text"
+                    placeholder="例如 openai-gpt-5.4"
+                    value={row.modelKey}
+                    onChange={(event) => updateModelPriceRow(row.id, "modelKey", event.target.value)}
+                  />
+                </div>
+                <div className="submit-price-field">
+                  <span className="submit-price-mobile-label md:hidden">Input价格</span>
+                  <input
+                    aria-label="Input价格"
+                    className="input-shell submit-price-input"
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    placeholder="0.00"
+                    value={row.inputPricePer1M}
+                    onChange={(event) => updateModelPriceRow(row.id, "inputPricePer1M", event.target.value)}
+                  />
+                </div>
+                <div className="submit-price-field">
+                  <span className="submit-price-mobile-label md:hidden">Output价格</span>
+                  <input
+                    aria-label="Output价格"
+                    className="input-shell submit-price-input"
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    placeholder="0.00"
+                    value={row.outputPricePer1M}
+                    onChange={(event) => updateModelPriceRow(row.id, "outputPricePer1M", event.target.value)}
+                  />
+                </div>
                 <div className="hidden items-end justify-end md:flex">
                   <button className="button-cream !px-4 !py-2" type="button" onClick={() => removeModelPriceRow(row.id)}>
                     {state.modelPrices.length === 1 && index === 0 ? "清空" : "删除"}
@@ -196,7 +205,7 @@ function SubmitSection({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -205,7 +214,7 @@ function SubmitSection({
       <div className="submit-section-header">
         <div>
           <p className="kicker !mb-0">{title}</p>
-          <p className="mt-1 text-sm leading-6 text-black/62">{description}</p>
+          {description ? <p className="mt-1 text-sm leading-6 text-black/62">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
