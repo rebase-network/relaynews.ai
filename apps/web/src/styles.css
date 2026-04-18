@@ -1281,6 +1281,40 @@ textarea {
   padding-bottom: 1.2rem;
 }
 
+.methodology-map-card {
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 247, 226, 0.92));
+}
+
+.methodology-map-list {
+  margin-top: 0.95rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.methodology-map-link {
+  display: block;
+  border-top: 1px solid rgba(31, 31, 31, 0.08);
+  padding-top: 0.85rem;
+  text-decoration: none;
+}
+
+.methodology-map-title {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: rgba(31, 31, 31, 0.92);
+}
+
+.methodology-map-copy {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: rgba(31, 31, 31, 0.64);
+}
+
 .methodology-hero-meta {
   margin: 0.95rem 0 0;
   font-family: var(--font-mono);
@@ -1288,6 +1322,62 @@ textarea {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(31, 31, 31, 0.5);
+}
+
+.methodology-section-shell {
+  border: 1px solid rgba(31, 31, 31, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 249, 236, 0.92));
+}
+
+.methodology-governance-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 248, 228, 0.96), rgba(255, 243, 209, 0.94));
+}
+
+.methodology-section-head {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.methodology-section-label {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.54);
+}
+
+.methodology-section-title {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.methodology-section-copy {
+  margin: 0.55rem 0 0;
+  max-width: 44rem;
+  font-size: 0.96rem;
+  line-height: 1.72;
+  color: rgba(31, 31, 31, 0.68);
+}
+
+.methodology-section-meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.46);
+}
+
+.methodology-section-grid,
+.methodology-governance-top {
+  display: grid;
+  gap: 1rem;
 }
 
 .methodology-weight-card {
@@ -1373,6 +1463,19 @@ textarea {
   border: 1px solid rgba(31, 31, 31, 0.08);
   background: rgba(255, 255, 255, 0.68);
   padding: 0.9rem;
+}
+
+.methodology-governance-card {
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 246, 221, 0.84));
+}
+
+.methodology-governance-copy {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.72;
+  color: rgba(31, 31, 31, 0.7);
 }
 
 .policy-pillar-title {
@@ -1914,6 +2017,21 @@ textarea {
   .leaderboard-hero-actions {
     justify-content: flex-end;
     align-self: start;
+  }
+
+  .methodology-section-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .methodology-section-grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    align-items: start;
+  }
+
+  .methodology-governance-top {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    align-items: start;
   }
 
   .policy-sequence-grid {

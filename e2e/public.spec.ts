@@ -183,7 +183,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
 test("legacy policy route redirects to the merged methodology section", async ({ page }) => {
   await page.goto("/policy");
   await expect(page).toHaveURL(/\/methodology#governance$/);
-  await expect(page.locator("#governance .kicker")).toHaveText("我们怎么做");
+  await expect(page.locator("#governance").getByRole("heading", { name: "目录如何保持中立与可复核" })).toBeVisible();
 });
 
 test("submit flow works from the public site", async ({ page }) => {
