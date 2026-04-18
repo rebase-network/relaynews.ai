@@ -1302,41 +1302,44 @@ textarea {
 
 .methodology-hero,
 .policy-hero {
-  padding-bottom: 1.2rem;
+  padding-bottom: 1.35rem;
 }
 
 .methodology-map-card {
-  padding: 1rem;
+  padding: 0.92rem 0.96rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 247, 226, 0.92));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 248, 232, 0.82));
+  border-color: rgba(31, 31, 31, 0.06);
+  box-shadow: none;
 }
 
 .methodology-map-list {
-  margin-top: 0.95rem;
+  margin-top: 0.78rem;
   display: grid;
-  gap: 0.9rem;
+  gap: 0.72rem;
 }
 
 .methodology-map-link {
   display: block;
   border-top: 1px solid rgba(31, 31, 31, 0.08);
-  padding-top: 0.85rem;
+  padding-top: 0.72rem;
   text-decoration: none;
 }
 
 .methodology-map-title {
   margin: 0;
-  font-size: 1.08rem;
-  line-height: 1.28;
-  letter-spacing: -0.02em;
+  font-size: 1.02rem;
+  line-height: 1.34;
+  letter-spacing: -0.01em;
   color: rgba(31, 31, 31, 0.92);
+  font-weight: 600;
 }
 
 .methodology-map-copy {
-  margin: 0.35rem 0 0;
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: rgba(31, 31, 31, 0.64);
+  margin: 0.28rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.58;
+  color: rgba(31, 31, 31, 0.74);
 }
 
 .methodology-hero-meta {
@@ -1345,7 +1348,7 @@ textarea {
   font-size: 0.68rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(31, 31, 31, 0.5);
+  color: rgba(31, 31, 31, 0.58);
 }
 
 .methodology-section-shell {
@@ -1361,8 +1364,8 @@ textarea {
 
 .methodology-section-head {
   display: grid;
-  gap: 0.7rem;
-  margin-bottom: 1rem;
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
 }
 
 .methodology-section-label {
@@ -1376,47 +1379,47 @@ textarea {
 
 .methodology-section-title {
   margin: 0;
-  font-size: 2.22rem;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  font-size: 2.12rem;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
 }
 
 .methodology-section-copy {
-  margin: 0.48rem 0 0;
+  margin: 0.58rem 0 0;
   max-width: 42rem;
-  font-size: 0.95rem;
-  line-height: 1.68;
-  color: rgba(31, 31, 31, 0.68);
+  font-size: 0.98rem;
+  line-height: 1.74;
+  color: rgba(31, 31, 31, 0.8);
 }
 
 .methodology-section-meta {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin: 0.7rem 0 0;
+  margin: 0.88rem 0 0;
   border: 1px solid rgba(31, 31, 31, 0.08);
-  background: rgba(255, 255, 255, 0.74);
-  padding: 0.32rem 0.58rem;
-  font-size: 0.76rem;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.36rem 0.62rem;
+  font-size: 0.78rem;
   line-height: 1.4;
   letter-spacing: 0.01em;
-  color: rgba(31, 31, 31, 0.58);
+  color: rgba(31, 31, 31, 0.68);
 }
 
 .methodology-section-grid,
 .methodology-governance-top {
   display: grid;
-  gap: 1rem;
+  gap: 1.28rem;
 }
 
 .methodology-weight-card {
-  padding: 1rem;
+  padding: 1.08rem;
 }
 
 .methodology-weight-list {
   margin-top: 1rem;
   display: grid;
-  gap: 0.9rem;
+  gap: 0.98rem;
 }
 
 .methodology-weight-row {
@@ -1433,9 +1436,9 @@ textarea {
 
 .methodology-weight-label {
   margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.4;
-  color: rgba(31, 31, 31, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.48;
+  color: rgba(31, 31, 31, 0.78);
 }
 
 .methodology-weight-value {
@@ -1454,7 +1457,7 @@ textarea {
 .policy-sequence-grid,
 .policy-pillars-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.88rem;
 }
 
 .methodology-status-row,
@@ -1483,37 +1486,37 @@ textarea {
 .policy-list-row,
 .policy-step-copy {
   margin: 0.45rem 0 0;
-  font-size: 0.88rem;
-  line-height: 1.58;
-  color: rgba(31, 31, 31, 0.66);
+  font-size: 0.91rem;
+  line-height: 1.66;
+  color: rgba(31, 31, 31, 0.8);
 }
 
 .policy-pillar {
   border: 1px solid rgba(31, 31, 31, 0.08);
-  background: rgba(255, 255, 255, 0.68);
-  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1rem;
 }
 
 .methodology-governance-card {
-  padding: 1rem;
+  padding: 1.08rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 246, 221, 0.84));
 }
 
 .methodology-governance-copy {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.68;
-  color: rgba(31, 31, 31, 0.7);
+  font-size: 0.98rem;
+  line-height: 1.74;
+  color: rgba(31, 31, 31, 0.82);
 }
 
 .policy-pillar-title {
   margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(31, 31, 31, 0.58);
+  font-size: 0.96rem;
+  line-height: 1.36;
+  letter-spacing: -0.01em;
+  color: rgba(31, 31, 31, 0.88);
+  font-weight: 600;
 }
 
 .policy-step-row,
@@ -1537,6 +1540,12 @@ textarea {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(31, 31, 31, 0.62);
+}
+
+.methodology-section-panel,
+.policy-compare-panel,
+.policy-process-panel {
+  padding: 1.04rem;
 }
 
 .form-field {
@@ -1748,6 +1757,18 @@ textarea {
   .methodology-badge-grid,
   .policy-pillars-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .methodology-hero {
+    padding-bottom: 1.5rem;
+  }
+
+  .methodology-section-shell {
+    padding: 1.35rem;
+  }
+
+  .methodology-section-head {
+    margin-bottom: 1.65rem;
   }
 }
 
@@ -2049,13 +2070,15 @@ textarea {
   }
 
   .methodology-section-grid {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(0, 0.98fr) minmax(0, 1.02fr);
     align-items: start;
+    gap: 1.45rem;
   }
 
   .methodology-governance-top {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
     align-items: start;
+    gap: 1.45rem;
   }
 
   .policy-sequence-grid {
