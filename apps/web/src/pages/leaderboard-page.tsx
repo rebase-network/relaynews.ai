@@ -111,7 +111,7 @@ export function LeaderboardPage() {
           <div className="space-y-3">
             <p className="kicker !mb-1">榜单</p>
             <div className="space-y-2">
-              <h1 className="text-[2.6rem] leading-[0.94] tracking-[-0.05em] md:text-[3.35rem]">{data.model.name}</h1>
+              <h1 className="text-[2.6rem] leading-[0.94] tracking-[-0.05em] md:text-[3.1rem]">{data.model.name}</h1>
               <p className="text-sm leading-6 text-black/64">
                 以最近一轮自动化测试为基础，综合可用性、延迟、稳定性、价格与可信度生成当前排名。
               </p>

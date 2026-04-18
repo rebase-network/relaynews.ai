@@ -86,9 +86,9 @@ export function PolicyPage() {
     <div className="space-y-5">
       <section className="panel policy-hero bg-[#fff0c2]">
         <p className="kicker">我们怎么做</p>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:items-start">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:items-start">
           <div className="policy-hero-copy">
-            <h1 className="max-w-3xl text-[2.55rem] leading-[0.94] tracking-[-0.05em] md:text-[3.35rem]">
+            <h1 className="max-w-3xl text-[2.55rem] leading-[0.94] tracking-[-0.05em] md:text-[3rem]">
               目录保持中立、可观测，并支持运营者申诉与复核。
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-black/70">

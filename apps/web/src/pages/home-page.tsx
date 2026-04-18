@@ -96,7 +96,7 @@ export function HomePage() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.14fr)_24rem] xl:items-start">
           <div className="order-2 md:order-1">
             <p className="kicker !mb-3 !text-black/60">公开目录与实测榜单</p>
-            <h1 className="max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[4rem]">
+            <h1 className="max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.07em] md:text-5xl xl:text-[3.6rem]">
               发现优质中转站点，快速测试API可用性，建立公开站点目录
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-black/72 md:mt-4 md:text-base md:leading-7">
@@ -203,7 +203,7 @@ export function HomePage() {
               <p className="text-sm leading-6 text-black/66">独立展示，不参与榜单排序。</p>
             </div>
           </div>
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className={clsx("grid gap-3", data.highlights.length > 1 ? "lg:grid-cols-2" : "home-sponsor-grid-single")}>
             {data.highlights.map((relay) => (
               <Link
                 key={relay.slug}

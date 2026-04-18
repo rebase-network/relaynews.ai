@@ -95,7 +95,7 @@ export function MethodologyPage() {
         <p className="kicker">评测方式</p>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] xl:items-start">
           <div className="methodology-hero-copy">
-            <h1 className="max-w-3xl text-[2.55rem] leading-[0.94] tracking-[-0.05em] md:text-[3.35rem]">
+            <h1 className="max-w-3xl text-[2.55rem] leading-[0.94] tracking-[-0.05em] md:text-[3.05rem]">
               我们如何测试并评估站点服务质量。
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-black/70">

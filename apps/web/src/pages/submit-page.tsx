@@ -115,10 +115,10 @@ export function SubmitPage() {
   }
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <div className="panel hero-panel submit-hero-panel min-h-0">
         <p className="kicker">提交站点</p>
-        <h1 className="text-[2.15rem] leading-[0.94] tracking-[-0.05em] md:text-[2.85rem] xl:text-[3.15rem]">
+        <h1 className="text-[2.15rem] leading-[0.94] tracking-[-0.05em] md:text-[2.75rem] xl:text-[2.9rem]">
           把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-6 text-black/70">

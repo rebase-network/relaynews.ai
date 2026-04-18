@@ -648,7 +648,7 @@ textarea {
 
 .home-sponsor-card {
   display: flex;
-  min-height: 8.25rem;
+  min-height: 7.7rem;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
@@ -1896,9 +1896,24 @@ textarea {
 }
 
 @media (min-width: 1024px) {
+  .home-sponsor-grid-single {
+    max-width: 32rem;
+  }
+
   .submit-hero-points {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.8rem;
+  }
+
+  .leaderboard-hero-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .leaderboard-hero-actions {
+    justify-content: flex-end;
+    align-self: start;
   }
 
   .policy-sequence-grid {
