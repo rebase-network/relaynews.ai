@@ -451,7 +451,7 @@ test.describe("public metadata smoke", () => {
     });
 
     await page.goto("/methodology?from=metadata#governance");
-    await expect(page.getByRole("heading", { name: "我们如何测试并评估站点服务质量。" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "我们如何测试并评估站点服务质量" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/methodology",
       descriptionPattern: /评分构成|赞助分离|复核路径/i,

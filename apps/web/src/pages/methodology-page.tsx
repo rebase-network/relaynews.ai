@@ -23,41 +23,44 @@ const {
 const PAGE_MAP = [
   {
     title: "评分逻辑",
-    copy: "当前权重、公开状态与徽章含义",
+    copy: "当前权重、状态定义与徽章含义",
     to: "/methodology#scoring",
   },
   {
     title: "收录与复核",
-    copy: "排名依据、赞助边界与运营者申诉流程",
+    copy: "排名依据、赞助边界与复核流程",
     to: "/methodology#governance",
   },
 ] as const;
 
 const RANKING_SIGNALS = [
-  "实测可用性，以及请求成功的连续性表现。",
-  "特定模型分类下的延迟分布与近期一致性。",
-  "相对同类站点的价格效率与性价比。",
-  "稳定性信号、事故新鲜度，以及样本量带来的置信度。",
+  "可用性与连续成功率。",
+  "同模型分类下的延迟分布与近期一致性。",
+  "相对同类站点的价格效率。",
+  "稳定性、事故新鲜度与样本置信度。",
 ] as const;
 
 const RANKING_EXCLUSIONS = [
-  "赞助套餐、合作露出或其他推广展示。",
-  "缺乏测量变化支撑的人工调位请求。",
-  "无法复现、也没有最新证据支撑的单次 anecdote。",
-  "单独一次测试成功本身；公开测试用于诊断连通性，不直接定义排名。",
+  "赞助展示或其他推广合作。",
+  "没有测量证据支撑的人工调位请求。",
+  "无法复现、缺少最新证据的单次个例反馈。",
+  "一次自助测试的成功结果；它只用于诊断，不直接决定排名。",
 ] as const;
 
 const REVIEW_STEPS = [
-  "如果站点端点、支持模型或公开信息发生变化，请重新提交最新资料。",
-  "如果你认为公开状态不准确，请提供可复现的测试数据、受影响模型与时间窗口。",
-  "补充证据期间，条目可能会暂停或标记为观察中，但赞助展示与评测排名仍保持分离。",
+  "资料、端点或支持模型变化后，请重新提交最新信息。",
+  "若公开状态不准确，请提供可复现的时间窗口、模型和测试证据。",
+  "补充证据期间，条目可能进入观察或暂停展示，但赞助展示与评测排名仍保持分离。",
 ] as const;
 
 const OPERATOR_SEQUENCE = [
-  "先用受限测试验证公开路由、API 协议族和模型行为是否正常。",
-  "再提交规范的 URL、运营者联系信息与必要说明。",
-  "最后持续观察公开榜单、状态变化与备注说明。",
+  "先做一次受限测试，确认路由、协议族和模型行为。",
+  "再提交 URL、联系方式和必要说明。",
+  "最后持续观察公开榜单、状态变化和备注。",
 ] as const;
+
+const METHODOLOGY_PANEL_TITLE_CLASS_NAME =
+  "text-[1.42rem] leading-[1.08] tracking-[-0.03em] md:text-[1.78rem]";
 
 export function MethodologyPage() {
   const location = useLocation();
@@ -92,15 +95,15 @@ export function MethodologyPage() {
         <p className="kicker">评测方式</p>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:items-start">
           <div className="methodology-hero-copy">
-            <h1 className="max-w-3xl text-[2.55rem] leading-[0.94] tracking-[-0.05em] md:text-[3.05rem]">
-              我们如何测试并评估站点服务质量。
+            <h1 className="max-w-3xl text-[2.42rem] leading-[1.03] tracking-[-0.035em] md:text-[2.92rem]">
+              我们如何测试并评估站点服务质量
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-black/70">
               评测综合五项公开信号：可用性、延迟、一致性、性价比与稳定性。
               赞助方展示不会并入评分，因此榜单排序始终只看测试结果。
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link className="button-dark" to="/methodology#governance">我们怎么做</Link>
+              <Link className="button-dark" to="/methodology#governance">收录与复核</Link>
               <Link className="button-cream" to="/probe">开始测试</Link>
             </div>
             <p className="methodology-hero-meta">
@@ -127,10 +130,10 @@ export function MethodologyPage() {
             <p className="methodology-section-label">评分逻辑</p>
             <h2 className="methodology-section-title">公开排名如何生成</h2>
             <p className="methodology-section-copy">
-              排名只看自动化测试得到的公开证据。你可以在这里快速看懂当前权重、状态定义以及榜单里的徽章含义。
+              排名只看自动化测试得到的公开证据。这里集中说明当前权重、状态定义，以及榜单里出现的徽章含义。
             </p>
+            <p className="methodology-section-meta">五项公开信号 / 赞助不参与排序</p>
           </div>
-          <p className="methodology-section-meta">五项公开信号 / 赞助不参与排序</p>
         </div>
         <div className="methodology-section-grid">
           <div className="surface-card methodology-weight-card">
@@ -155,7 +158,11 @@ export function MethodologyPage() {
             </div>
           </div>
           <div className="grid gap-4">
-            <Panel title="公开状态说明" className="methodology-section-panel">
+            <Panel
+              title="公开状态说明"
+              className="methodology-section-panel"
+              titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+            >
               <div className="methodology-status-list">
                 {data.healthStatuses.map((status) => (
                   <div key={status} className="methodology-status-row">
@@ -169,7 +176,11 @@ export function MethodologyPage() {
                 ))}
               </div>
             </Panel>
-            <Panel title="徽章含义" className="methodology-section-panel">
+            <Panel
+              title="徽章含义"
+              className="methodology-section-panel"
+              titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+            >
               <div className="methodology-badge-grid">
                 {data.badges.map((badge) => (
                   <div key={badge} className="methodology-badge-row">
@@ -191,15 +202,15 @@ export function MethodologyPage() {
             <p className="methodology-section-label">收录与复核</p>
             <h2 className="methodology-section-title">目录如何保持中立与可复核</h2>
             <p className="methodology-section-copy">
-              这里解释哪些因素会影响公开排名，哪些内容不会改变评测结果，以及站点运营者遇到问题时应如何纠正资料和提交证据。
+              这里解释哪些因素会影响公开排名，哪些内容不会改变评测结果，以及站点运营者遇到问题时应如何纠正资料和补充证据。
             </p>
+            <p className="methodology-section-meta">赞助独立展示 / 支持申诉复核</p>
           </div>
-          <p className="methodology-section-meta">赞助独立展示 / 支持申诉复核</p>
         </div>
         <div className="methodology-governance-top">
           <div className="surface-card methodology-governance-card">
             <p className="methodology-governance-copy">
-              如果你是站点运营者，建议先确认公开 Base URL、支持模型与测试结果，再提交资料或发起复核。目录会优先保留可验证、可复现、可持续观测的信息。
+              如果你是站点运营者，建议先确认公开 Base URL、支持模型与测试结果，再提交资料或发起复核。目录会优先保留可验证、可复现、可持续观察的信息。
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
               <Link className="button-dark" to="/submit">提交站点</Link>
@@ -216,14 +227,22 @@ export function MethodologyPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <Panel title="哪些因素会影响榜单顺序" className="policy-compare-panel">
+          <Panel
+            title="哪些因素会影响榜单顺序"
+            className="policy-compare-panel"
+            titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+          >
             <div className="policy-list">
               {RANKING_SIGNALS.map((item) => (
                 <div key={item} className="policy-list-row">{item}</div>
               ))}
             </div>
           </Panel>
-          <Panel title="哪些因素不会改变评测排名" className="policy-compare-panel">
+          <Panel
+            title="哪些因素不会改变评测排名"
+            className="policy-compare-panel"
+            titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+          >
             <div className="policy-list">
               {RANKING_EXCLUSIONS.map((item) => (
                 <div key={item} className="policy-list-row">{item}</div>
@@ -232,7 +251,11 @@ export function MethodologyPage() {
           </Panel>
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <Panel title="运营者复核路径" className="policy-process-panel">
+          <Panel
+            title="运营者复核路径"
+            className="policy-process-panel"
+            titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+          >
             <div className="policy-step-list">
               {REVIEW_STEPS.map((item, index) => (
                 <div key={item} className="policy-step-row">
@@ -242,7 +265,11 @@ export function MethodologyPage() {
               ))}
             </div>
           </Panel>
-          <Panel title="建议的运营动作顺序" className="policy-process-panel">
+          <Panel
+            title="建议的运营动作顺序"
+            className="policy-process-panel"
+            titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
+          >
             <div className="policy-sequence-grid">
               {OPERATOR_SEQUENCE.map((item, index) => (
                 <div key={item} className="policy-sequence-step">
