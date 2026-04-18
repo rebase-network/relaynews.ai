@@ -189,7 +189,7 @@ export function HomePage() {
           <Link className="home-bridge-link" to="/methodology">
             评测方式
           </Link>
-          <Link className="home-bridge-link" to="/policy">
+          <Link className="home-bridge-link" to="/methodology#governance">
             我们怎么做
           </Link>
         </div>

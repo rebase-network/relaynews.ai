@@ -21,8 +21,8 @@ for each route, and the primary data source that should back it.
 | `/leaderboard/directory` | Directory for browsing all tracked model categories | CSR in public SPA | `GET /public/leaderboard-directory` |
 | `/leaderboard/:modelKey` | Main leaderboard for one model category | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
 | `/relay/:slug` | Relay detail page with overview and trend charts | CSR in public SPA | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history`, `GET /public/relay/:slug/incidents` |
-| `/methodology` | Public explanation of the `评测方式` page and scoring logic | CSR in public SPA | static content or `GET /public/methodology` |
-| `/policy` | Public explanation of the `我们怎么做` page, sponsor separation, and dispute handling | CSR in public SPA | static content |
+| `/methodology` | Public explanation of the `评测方式` page, plus merged sponsor separation, intake, and review rules | CSR in public SPA | static content or `GET /public/methodology` |
+| `/policy` | Legacy compatibility redirect to the merged `我们怎么做` section on `/methodology` | CSR redirect in public SPA | none |
 | `/submit` | Public submission entry with initial automated verification | CSR in public SPA | `POST /public/submissions` |
 
 ## Tooling Routes
@@ -81,7 +81,7 @@ The expected operator path is:
 The homepage is expected to include:
 - hero copy with primary CTA and quick-test entry
 - featured model leaderboard blocks
-- a bridge into `评测方式` and `我们怎么做`
+- a bridge into `评测方式` and the merged `我们怎么做` section
 - sponsor highlight cards
 
 For MVP, homepage data should be built and served as one atomic page-shaped snapshot
@@ -98,7 +98,7 @@ The leaderboard page is expected to include:
 - ranked table with score, availability, latency, and price
 - model switch pills for tracked categories
 - explicit sponsor separation messaging for `评测排名`
-- links to `评测方式` and `我们怎么做`
+- links to `评测方式` and the merged `我们怎么做` section
 
 ## Relay Detail Page Modules
 

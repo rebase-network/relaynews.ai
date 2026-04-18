@@ -157,7 +157,7 @@ export function LeaderboardPage() {
         </p>
         <div className="leaderboard-note-links">
           <Link className="home-bridge-link" to="/methodology">评测方式</Link>
-          <Link className="home-bridge-link" to="/policy">我们怎么做</Link>
+          <Link className="home-bridge-link" to="/methodology#governance">我们怎么做</Link>
         </div>
       </section>
       <Panel title="站点评测排名" headerClassName="mb-3" titleClassName="text-[2.15rem] md:text-[2.45rem]">

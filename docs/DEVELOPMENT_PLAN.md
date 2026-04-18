@@ -113,8 +113,8 @@ Execution order for the desktop polish pass:
    - simplify nested card structures
    - make public forms feel like guided consumer workflows rather than admin tooling
    - give result and detail pages clearer desktop reading order
-4. methodology and policy
-   - shift from repeated card stacks toward more editorial, grouped, and comparative layouts
+4. methodology and governance content
+   - keep `评测方式` as the single information page and merge `我们怎么做` into grouped, comparative sections
 
 Acceptance goals for the desktop pass:
 - each first screen should present one clear primary action or information target

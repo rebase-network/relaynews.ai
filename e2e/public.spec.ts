@@ -180,6 +180,12 @@ test("public site renders the main discovery flow", async ({ page }) => {
   await expectRelayDetailModules(page);
 });
 
+test("legacy policy route redirects to the merged methodology section", async ({ page }) => {
+  await page.goto("/policy");
+  await expect(page).toHaveURL(/\/methodology#governance$/);
+  await expect(page.locator("#governance .kicker")).toHaveText("我们怎么做");
+});
+
 test("submit flow works from the public site", async ({ page }) => {
   test.skip(
     isDeployedRun && !allowDeployedWrites,
@@ -442,6 +448,14 @@ test.describe("public metadata smoke", () => {
       canonicalPath: "/leaderboard",
       descriptionPattern: /评测排名|赞助方展示|relay/i,
       titlePattern: /GPT 5\.4|站点榜单|relaynew\.ai/i,
+    });
+
+    await page.goto("/methodology?from=metadata#governance");
+    await expect(page.getByRole("heading", { name: "我们如何测试并评估站点服务质量。" })).toBeVisible();
+    await expectPageMetadata(page, {
+      canonicalPath: "/methodology",
+      descriptionPattern: /评分构成|赞助分离|复核路径/i,
+      titlePattern: /评测方式|relaynew\.ai/i,
     });
 
     await page.goto("/submit?from=metadata");

@@ -31,7 +31,7 @@
 | sponsor | 赞助方展示 / 赞助商 | 必须与评测排名区分；首页模块可写“赞助商” |
 | natural ranking | 评测排名 | 不得与赞助方展示混淆 |
 | methodology | 评测方式 | 导航、正文、帮助文案统一用法 |
-| policy | 我们怎么做 | 面向普通用户的公开规则说明页名称 |
+| policy | 我们怎么做 | 作为 `/policy` 到 `/methodology#governance` 的兼容入口保留 |
 | health status | 健康状态 | 公共页面统一表达 |
 | degraded | 降级 | 表示服务可达但状态变差 |
 | down | 不可用 | 表示当前不可正常服务 |

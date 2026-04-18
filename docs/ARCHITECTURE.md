@@ -185,8 +185,8 @@ Assets.
 - public routes render through the public SPA shell on `relaynew.ai` and fetch data
   from the backend API
 - the public route set now includes `/`, `/leaderboard`, `/leaderboard/directory`,
-  `/leaderboard/:modelKey`, `/relay/:slug`, `/methodology`, `/policy`, `/submit`,
-  and `/probe`
+  `/leaderboard/:modelKey`, `/relay/:slug`, `/methodology`, `/submit`, and `/probe`;
+  `/policy` remains only as a compatibility redirect into the merged governance section
 - admin routes render through a separate admin SPA shell on `admin.relaynew.ai`
 - probe flows and chart modules stay client-rendered
 - the probe page should default to URL + key + model input, with compatibility override
