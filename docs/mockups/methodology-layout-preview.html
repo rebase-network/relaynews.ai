@@ -378,17 +378,18 @@
 
       .ordered-row::before {
         content: counter(ordered-item, decimal-leading-zero);
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-start;
+        display: block;
         min-width: 24px;
-        height: 18px;
-        padding-top: 1px;
+        padding-top: 2px;
         font-size: 10px;
-        line-height: 1;
+        line-height: 1.2;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: rgba(31, 31, 31, 0.4);
+      }
+
+      .ordered-row .stack-body {
+        margin-top: 0;
       }
 
       .metric-head {
