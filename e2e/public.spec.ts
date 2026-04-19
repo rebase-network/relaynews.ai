@@ -324,7 +324,7 @@ test("public probe flow returns a diagnostic result", async ({ page }) => {
   await page.getByRole("button", { name: "开始测试" }).click();
 
   await expect(page.getByText("测试结果")).toBeVisible();
-  await expect(page.getByText(/测试通过|协议状态降级|协议检查失败|连通性失败/)).toBeVisible();
+  await expect(page.getByText(/测试通过|协议状态降级|协议检查失败|连通性失败/).first()).toBeVisible();
   await expect(page.getByTestId("probe-host-value")).toContainText(new URL(probeUrl).host);
   await expect(page.getByTestId("probe-connectivity-value")).toHaveText(/\S+/);
   await expect(page.getByTestId("probe-protocol-value")).toHaveText(/\S+/);

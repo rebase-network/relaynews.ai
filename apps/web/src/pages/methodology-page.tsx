@@ -60,7 +60,7 @@ const OPERATOR_SEQUENCE = [
 ] as const;
 
 const METHODOLOGY_PANEL_TITLE_CLASS_NAME =
-  "text-[1.22rem] leading-[1.18] tracking-[-0.015em] md:text-[1.48rem]";
+  "text-[1.12rem] leading-[1.24] tracking-[-0.01em] md:text-[1.32rem]";
 
 export function MethodologyPage() {
   const location = useLocation();
@@ -90,10 +90,10 @@ export function MethodologyPage() {
   if (error || !data) return <ErrorPanel message={error ?? "评测方式页面加载失败。"} />;
 
   return (
-    <div className="space-y-5">
+    <div className="methodology-page-shell space-y-7 lg:space-y-8">
       <section className="panel methodology-hero bg-[#fff0c2]">
         <p className="kicker">评测方式</p>
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(19rem,0.82fr)] xl:items-start">
+        <div className="methodology-hero-grid">
           <div className="methodology-hero-copy">
             <h1 className="max-w-3xl text-[2.3rem] leading-[1.1] tracking-[-0.02em] md:text-[2.82rem]">
               我们如何测试并评估站点服务质量
@@ -102,15 +102,16 @@ export function MethodologyPage() {
               评测只看公开测试信号：可用性、延迟、一致性、性价比与稳定性。
               赞助展示不会并入评分，榜单排序只由自动化测试结果生成。
             </p>
+            <p className="methodology-hero-support">
+              <span className="methodology-hero-support-label">最近快照</span>
+              北京时间 {formatDateTime(data.measuredAt)}
+            </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
               <Link className="button-dark" to="/methodology#governance">收录与复核</Link>
               <Link className="button-cream" to="/probe">开始测试</Link>
             </div>
-            <p className="methodology-hero-meta">
-              快照时间：北京时间 {formatDateTime(data.measuredAt)}
-            </p>
           </div>
-          <div className="surface-card methodology-map-card">
+          <nav aria-label="评测方式页内导航" className="surface-card methodology-map-card">
             <p className="kicker">本页内容</p>
             <div className="methodology-map-list">
               {PAGE_MAP.map((item) => (
@@ -120,7 +121,7 @@ export function MethodologyPage() {
                 </Link>
               ))}
             </div>
-          </div>
+          </nav>
         </div>
       </section>
 
@@ -157,7 +158,7 @@ export function MethodologyPage() {
               ))}
             </div>
           </div>
-          <div className="grid gap-4">
+          <div className="methodology-scoring-side">
             <Panel
               title="公开状态说明"
               className="methodology-section-panel"
@@ -208,7 +209,15 @@ export function MethodologyPage() {
           </div>
         </div>
         <div className="methodology-governance-top">
-          <div className="surface-card methodology-governance-card">
+          <div className="policy-pillars-grid methodology-governance-principles">
+            {POLICY_PILLARS.map((pillar) => (
+              <div key={pillar.title} className="policy-pillar">
+                <p className="policy-pillar-title">{pillar.title}</p>
+                <p className="policy-pillar-copy">{pillar.body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="surface-card methodology-governance-card methodology-governance-action">
             <p className="methodology-governance-copy">
               如果你是站点运营者，建议先确认公开 Base URL、支持模型与测试结果，再提交资料或发起复核。目录优先保留可验证、能复测、能持续观察的信息。
             </p>
@@ -217,19 +226,11 @@ export function MethodologyPage() {
               <Link className="button-cream" to="/probe">先做一次测试</Link>
             </div>
           </div>
-          <div className="policy-pillars-grid">
-            {POLICY_PILLARS.map((pillar) => (
-              <div key={pillar.title} className="policy-pillar">
-                <p className="policy-pillar-title">{pillar.title}</p>
-                <p className="policy-pillar-copy">{pillar.body}</p>
-              </div>
-            ))}
-          </div>
         </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="methodology-governance-compare">
           <Panel
             title="哪些因素会影响榜单顺序"
-            className="policy-compare-panel"
+            className="policy-compare-panel methodology-compare-panel"
             titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
           >
             <div className="policy-list">
@@ -240,7 +241,7 @@ export function MethodologyPage() {
           </Panel>
           <Panel
             title="哪些因素不会改变评测排名"
-            className="policy-compare-panel"
+            className="policy-compare-panel methodology-compare-panel"
             titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
           >
             <div className="policy-list">
@@ -250,10 +251,10 @@ export function MethodologyPage() {
             </div>
           </Panel>
         </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="methodology-governance-flow">
           <Panel
             title="运营者复核路径"
-            className="policy-process-panel"
+            className="policy-process-panel methodology-flow-panel"
             titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
           >
             <div className="policy-step-list">
@@ -267,7 +268,7 @@ export function MethodologyPage() {
           </Panel>
           <Panel
             title="建议的运营动作顺序"
-            className="policy-process-panel"
+            className="policy-process-panel methodology-flow-panel"
             titleClassName={METHODOLOGY_PANEL_TITLE_CLASS_NAME}
           >
             <div className="policy-sequence-grid">
