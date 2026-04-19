@@ -21,8 +21,8 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
   return (
     <form className="panel form-shell submit-form-panel" noValidate onSubmit={handleSubmit}>
       <SubmitSection title="基础信息">
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="form-field">
+        <div className="submit-basic-grid">
+          <label className="form-field submit-form-field">
             中转站名称
             <input
               className="input-shell mt-2"
@@ -34,7 +34,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
             />
             {fieldErrors.relayName ? <span className="field-error">{fieldErrors.relayName}</span> : null}
           </label>
-          <label className="form-field">
+          <label className="form-field submit-form-field">
             Base URL
             <input
               className="input-shell mt-2"
@@ -46,7 +46,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
             />
             {fieldErrors.baseUrl ? <span className="field-error">{fieldErrors.baseUrl}</span> : null}
           </label>
-          <label className="form-field">
+          <label className="form-field submit-form-field">
             站点网站
             <input
               className="input-shell mt-2"
@@ -57,7 +57,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
             />
             {fieldErrors.websiteUrl ? <span className="field-error">{fieldErrors.websiteUrl}</span> : null}
           </label>
-          <label className="form-field">
+          <label className="form-field submit-form-field">
             联系方式
             <input
               className="input-shell mt-2"
@@ -72,9 +72,9 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
       </SubmitSection>
 
       <SubmitSection title="站点介绍">
-        <div className="form-field">
+        <div className="form-field submit-form-field">
           <textarea
-            className="input-shell mt-2 min-h-32"
+            className="input-shell mt-2 min-h-32 submit-description-input"
             aria-label="中转站简介"
             placeholder="请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表"
             required
@@ -88,7 +88,11 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
       <SubmitSection
         title="支持模型及价格表"
         description="每行填写一个模型及对应的 Input / Output 价格"
-        actions={<button className="button-cream !px-4 !py-2" type="button" onClick={addModelPriceRow}>添加一行</button>}
+        actions={
+          <button className="button-cream submit-inline-button" type="button" onClick={addModelPriceRow}>
+            添加一行
+          </button>
+        }
       >
         <div className="submit-price-table">
           <div className="submit-price-head hidden grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto] gap-3 md:grid">
@@ -101,11 +105,11 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
             <div key={row.id} className="submit-price-row">
               <div className="mb-2 flex items-center justify-between gap-3 md:hidden">
                 <span className="text-[0.68rem] uppercase tracking-[0.18em] text-black/48">第 {index + 1} 行</span>
-                <button className="button-cream !px-3.5 !py-1.5" type="button" onClick={() => removeModelPriceRow(row.id)}>
+                <button className="button-cream submit-inline-button submit-inline-button-mobile" type="button" onClick={() => removeModelPriceRow(row.id)}>
                   {state.modelPrices.length === 1 && index === 0 ? "清空" : "删除"}
                 </button>
               </div>
-              <div className="grid gap-2.5 md:grid-cols-[minmax(0,1.18fr)_repeat(2,minmax(0,0.78fr))_auto] md:items-center">
+              <div className="submit-price-row-grid">
                 <div className="submit-price-field">
                   <span className="submit-price-mobile-label md:hidden">模型</span>
                   <input
@@ -144,7 +148,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
                   />
                 </div>
                 <div className="hidden items-end justify-end md:flex">
-                  <button className="button-cream !px-4 !py-2" type="button" onClick={() => removeModelPriceRow(row.id)}>
+                  <button className="button-cream submit-inline-button" type="button" onClick={() => removeModelPriceRow(row.id)}>
                     {state.modelPrices.length === 1 && index === 0 ? "清空" : "删除"}
                   </button>
                 </div>
@@ -155,8 +159,24 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
         </div>
       </SubmitSection>
 
+      <SubmitSection title="测试凭证">
+        <label className="form-field submit-form-field">
+          测试API Key
+          <input
+            aria-label="测试API Key"
+            className="input-shell mt-2"
+            type="password"
+            placeholder="sk-monitoring-or-relay-key"
+            required
+            value={state.testApiKey}
+            onChange={(event) => updateField("testApiKey", event.target.value)}
+          />
+          {fieldErrors.testApiKey ? <span className="field-error">{fieldErrors.testApiKey}</span> : null}
+        </label>
+      </SubmitSection>
+
       {result ? (
-        <div className="surface-card space-y-2 p-4">
+        <div className="surface-card submit-feedback-card">
           <p className="text-sm form-feedback-success">提交成功，记录 ID：{result.id}</p>
           {result.probe ? (
             <>
@@ -175,18 +195,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
       <div className="submit-submit-bar">
         <div className="submit-submit-grid">
           <div className="submit-submit-main">
-            <label className="form-field">
-              测试API Key
-              <input
-                className="input-shell mt-2"
-                type="password"
-                placeholder="sk-monitoring-or-relay-key"
-                required
-                value={state.testApiKey}
-                onChange={(event) => updateField("testApiKey", event.target.value)}
-              />
-              {fieldErrors.testApiKey ? <span className="field-error">{fieldErrors.testApiKey}</span> : null}
-            </label>
+            <p className="submit-submit-title">确认后提交</p>
             <p className="submit-submit-copy">提交后会先进入人工审核，确认无误后再正式进入 Relay 目录与后续评测流程。</p>
           </div>
           <button className="button-dark w-full sm:w-auto sm:min-w-[9rem]" disabled={submitting} type="submit">
@@ -212,9 +221,9 @@ function SubmitSection({
   return (
     <div className="surface-card submit-section">
       <div className="submit-section-header">
-        <div>
-          <p className="kicker !mb-0">{title}</p>
-          {description ? <p className="mt-1 text-sm leading-6 text-black/62">{description}</p> : null}
+        <div className="submit-section-head">
+          <h2 className="submit-section-title">{title}</h2>
+          {description ? <p className="submit-section-description">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>

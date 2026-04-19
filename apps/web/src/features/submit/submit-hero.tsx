@@ -1,11 +1,11 @@
 export function SubmitHero() {
   return (
     <div className="panel hero-panel submit-hero-panel min-h-0">
-      <p className="kicker">提交站点</p>
-      <h1 className="text-[2.15rem] leading-[0.94] tracking-[-0.05em] md:text-[2.75rem] xl:text-[2.9rem]">
+      <p className="submit-hero-label">提交站点</p>
+      <h1 className="submit-hero-title">
         把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可
       </h1>
-      <p className="mt-3 max-w-xl text-sm leading-6 text-black/70">
+      <p className="submit-hero-copy">
         请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。
       </p>
       <div className="submit-hero-points">

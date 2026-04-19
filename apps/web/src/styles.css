@@ -1063,34 +1063,70 @@ textarea {
   box-shadow: currentColor 0 0 0 3px inset;
 }
 
-.submit-hero-panel {
+.submit-page-shell {
   display: grid;
   gap: 1rem;
+  align-items: start;
+}
+
+.submit-hero-panel {
+  display: grid;
+  align-self: start;
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.submit-hero-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(31, 31, 31, 0.56);
+}
+
+.submit-hero-title {
+  max-width: 12.2em;
+  margin: 0;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+
+.submit-hero-copy {
+  max-width: 32rem;
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.68;
+  color: rgba(31, 31, 31, 0.74);
 }
 
 .submit-hero-points {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.72rem;
 }
 
 .submit-hero-point {
   border-top: 1px solid rgba(31, 31, 31, 0.12);
-  padding-top: 0.78rem;
+  padding-top: 0.72rem;
 }
 
 .submit-hero-point-title {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  font-size: 0.64rem;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(31, 31, 31, 0.54);
+  color: rgba(31, 31, 31, 0.52);
 }
 
 .submit-hero-point-copy {
-  margin: 0.38rem 0 0;
-  font-size: 0.85rem;
-  line-height: 1.65;
+  margin: 0.34rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.62;
   color: rgba(31, 31, 31, 0.68);
 }
 
@@ -1103,8 +1139,30 @@ textarea {
   gap: 0.75rem;
 }
 
+.submit-basic-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.submit-form-field {
+  font-family: inherit;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: rgba(31, 31, 31, 0.72);
+}
+
+.submit-form-field .input-shell {
+  color: rgba(31, 31, 31, 0.88);
+}
+
 .submit-section {
   padding: 0.95rem 1rem;
+}
+
+.submit-section-head {
+  max-width: 36rem;
 }
 
 .submit-section-header {
@@ -1115,33 +1173,66 @@ textarea {
   padding-bottom: 0.75rem;
 }
 
+.submit-section-title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: rgba(31, 31, 31, 0.92);
+}
+
+.submit-section-description {
+  margin: 0.32rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.58;
+  color: rgba(31, 31, 31, 0.62);
+}
+
 .submit-section-body {
-  margin-top: 0.9rem;
+  margin-top: 0.82rem;
+}
+
+.submit-description-input {
+  min-height: 8rem;
+}
+
+.submit-inline-button {
+  padding: 0.56rem 0.92rem !important;
+  font-size: 0.72rem;
+}
+
+.submit-inline-button-mobile {
+  padding: 0.46rem 0.8rem !important;
 }
 
 .submit-price-table {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.48rem;
 }
 
 .submit-price-head {
-  padding: 0 0.12rem;
+  padding: 0 0.18rem;
   font-family: var(--font-mono);
   font-size: 0.66rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(31, 31, 31, 0.48);
+  color: rgba(31, 31, 31, 0.54);
 }
 
 .submit-price-row {
   border: 1px solid rgba(31, 31, 31, 0.08);
-  background: rgba(255, 255, 255, 0.76);
-  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.74rem;
+}
+
+.submit-price-row-grid {
+  display: grid;
+  gap: 0.72rem;
 }
 
 .submit-price-field {
   display: grid;
-  gap: 0.38rem;
+  gap: 0.34rem;
 }
 
 .submit-price-mobile-label {
@@ -1153,22 +1244,28 @@ textarea {
 }
 
 .submit-price-input {
-  min-height: 2.7rem;
-  padding: 0.74rem 0.82rem;
-  font-size: 0.92rem;
+  min-height: 2.6rem;
+  padding: 0.68rem 0.78rem;
+  font-size: 0.9rem;
   line-height: 1.35;
 }
 
 .submit-price-input::placeholder {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   letter-spacing: 0;
-  color: rgba(31, 31, 31, 0.3);
+  color: rgba(31, 31, 31, 0.4);
+}
+
+.submit-feedback-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.94rem 1rem;
 }
 
 .submit-submit-bar {
   border: 1px solid rgba(31, 31, 31, 0.08);
-  background: rgba(255, 255, 255, 0.72);
-  padding: 1rem;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 0.95rem 1rem;
 }
 
 .submit-submit-grid {
@@ -1178,7 +1275,14 @@ textarea {
 
 .submit-submit-main {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.35rem;
+}
+
+.submit-submit-title {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.3;
+  color: rgba(31, 31, 31, 0.88);
 }
 
 .submit-submit-copy {
@@ -1824,6 +1928,17 @@ textarea {
     justify-content: space-between;
   }
 
+  .submit-basic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 1rem;
+  }
+
+  .submit-price-row-grid {
+    grid-template-columns: minmax(0, 1.22fr) repeat(2, minmax(7.2rem, 0.82fr)) auto;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
   .submit-submit-grid {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
@@ -2134,9 +2249,27 @@ textarea {
     max-width: 32rem;
   }
 
+  .submit-page-shell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .submit-hero-panel {
+    padding-top: 1.08rem;
+    padding-bottom: 1.04rem;
+  }
+
+  .submit-hero-title {
+    max-width: none;
+    font-size: clamp(2.12rem, 3vw, 2.68rem);
+  }
+
+  .submit-hero-copy {
+    max-width: 26rem;
+  }
+
   .submit-hero-points {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8rem;
+    gap: 0.64rem;
   }
 
   .leaderboard-hero-shell {
