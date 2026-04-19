@@ -357,6 +357,41 @@
         padding-top: 12px;
       }
 
+      .ordered-list {
+        display: grid;
+        gap: 12px;
+        margin: 18px 0 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: ordered-item;
+      }
+
+      .ordered-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        border-top: 1px solid rgba(31, 31, 31, 0.08);
+        padding-top: 12px;
+        counter-increment: ordered-item;
+      }
+
+      .ordered-row::before {
+        content: counter(ordered-item, decimal-leading-zero);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 26px;
+        border: 1px solid rgba(31, 31, 31, 0.08);
+        background: rgba(255, 240, 194, 0.82);
+        font-size: 11px;
+        line-height: 1;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(31, 31, 31, 0.64);
+      }
+
       .metric-head {
         display: flex;
         justify-content: space-between;
@@ -729,68 +764,68 @@
         <div class="card-grid-4">
           <article class="editorial-card">
             <h3 class="card-title">会影响排名</h3>
-            <div class="stack-list">
-              <div class="stack-row">
+            <ol class="ordered-list">
+              <li class="ordered-row">
                 <p class="stack-body">可用性与连续成功率</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">同模型下的延迟与近期一致性</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">相对同类站点的价格效率</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">稳定性、事故新鲜度与样本置信度</p>
-              </div>
-            </div>
+              </li>
+            </ol>
           </article>
 
           <article class="editorial-card">
             <h3 class="card-title">不会改变排名</h3>
-            <div class="stack-list">
-              <div class="stack-row">
+            <ol class="ordered-list">
+              <li class="ordered-row">
                 <p class="stack-body">赞助展示或其他推广合作</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">没有测试证据支撑的人工调位</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">无法复现、缺少最新证据的个例反馈</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">单次自助测试结果，它只用于诊断</p>
-              </div>
-            </div>
+              </li>
+            </ol>
           </article>
 
           <article class="editorial-card">
             <h3 class="card-title">复核路径</h3>
-            <div class="stack-list">
-              <div class="stack-row">
+            <ol class="ordered-list">
+              <li class="ordered-row">
                 <p class="stack-body">资料、端点或支持模型变化后，重新提交最新信息。</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">若公开状态不准确，提供可复现的时间窗口、模型和测试证据。</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">补充证据期间，条目可能进入观察或暂停展示，但赞助展示仍与评测排名分离。</p>
-              </div>
-            </div>
+              </li>
+            </ol>
           </article>
 
           <article class="editorial-card">
             <h3 class="card-title">建议动作顺序</h3>
-            <div class="stack-list">
-              <div class="stack-row">
+            <ol class="ordered-list">
+              <li class="ordered-row">
                 <p class="stack-body">先做一次受限测试，确认路由与模型行为。</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">再提交 URL、联系方式和必要说明。</p>
-              </div>
-              <div class="stack-row">
+              </li>
+              <li class="ordered-row">
                 <p class="stack-body">最后持续观察公开榜单、状态变化和备注。</p>
-              </div>
-            </div>
+              </li>
+            </ol>
           </article>
         </div>
 
