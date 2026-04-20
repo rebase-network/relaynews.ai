@@ -159,9 +159,8 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
         </div>
       </SubmitSection>
 
-      <SubmitSection title="测试凭证">
-        <label className="form-field submit-form-field">
-          测试API Key
+      <SubmitSection title="测试API Key">
+        <div className="submit-key-field">
           <input
             aria-label="测试API Key"
             className="input-shell mt-2"
@@ -172,7 +171,7 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
             onChange={(event) => updateField("testApiKey", event.target.value)}
           />
           {fieldErrors.testApiKey ? <span className="field-error">{fieldErrors.testApiKey}</span> : null}
-        </label>
+        </div>
       </SubmitSection>
 
       {result ? (
