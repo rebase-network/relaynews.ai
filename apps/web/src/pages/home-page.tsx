@@ -203,7 +203,7 @@ export function HomePage() {
               <p className="text-sm leading-6 text-black/66">独立展示，不参与榜单排序。</p>
             </div>
           </div>
-          <div className={clsx("grid gap-3", data.highlights.length > 1 ? "lg:grid-cols-2" : "home-sponsor-grid-single")}>
+          <div className={clsx("grid gap-3", data.highlights.length > 1 && "lg:grid-cols-2")}>
             {data.highlights.map((relay) => (
               <Link
                 key={relay.slug}
