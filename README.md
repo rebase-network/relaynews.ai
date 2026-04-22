@@ -102,6 +102,42 @@ scripts/
 - Archived historical audits and mockups: `docs/archive/`
 - Agent collaboration guide: `AGENTS.md`
 
+## Core Doc Responsibilities
+
+Use this section when you are not sure which document should answer a question.
+
+| Topic | Canonical document | What it owns |
+|---|---|---|
+| Visual tone and UI inspiration | `DESIGN.md` | Visual language, color / typography direction, and style references; not the shipped information architecture |
+| Product roadmap and phase order | `docs/DEVELOPMENT_PLAN.md` | Current delivery baseline, phased priorities, and near-term execution order |
+| System topology and runtime boundaries | `docs/ARCHITECTURE.md` | Runtime split, component responsibilities, cache model, security model, and data flow |
+| Page / route map | `docs/ROUTES.md` | Public, tooling, and admin route inventory plus route-to-data-source mapping |
+| Public API request / response shapes | `docs/API_CONTRACT_V1.md` | Public endpoint contracts, payload fields, and versioning rules |
+| Database structure and read models | `docs/DATABASE_SCHEMA.md` | Table design, state taxonomy, retention, aggregation tables, and public read models |
+| Public probe threat model | `docs/PROBE_SECURITY.md` | Public self-check security rules, network controls, secret handling, and bounded probe behavior |
+| Test strategy | `docs/TESTING_STRATEGY.md` | Playwright-first coverage model, local / staging / deployed test usage, and narrow non-E2E exceptions |
+| Deployment topology | `docs/DEPLOYMENT.md` | Production publish boundaries, runtime topology, and required environment inputs |
+| Technical operations runbooks | `docs/TECHNICAL_OPERATIONS.md` | Step-by-step deploy, rollback, auth, backup / restore, data cleanup, and troubleshooting procedures |
+| Admin daily operations | `docs/ADMIN_OPERATIONS.md` | Chinese operator-facing workflows, page responsibilities, and daily handling rules |
+| Cloudflare frontend build settings | `docs/CLOUDFLARE_WORKERS_BUILDS.md` | Cloudflare Workers Builds dashboard values, watch paths, and post-setup checks |
+| Localization conventions | `docs/LOCALIZATION_ZH_CN.md` | Simplified Chinese wording and localization constraints |
+| Open design gaps | `docs/OPEN_DESIGN_ISSUES.md` | Unresolved design decisions that still need explicit closure |
+
+## Quick Lookup
+
+| If you want to know... | Read this first |
+|---|---|
+| how the system is split across browser, Cloudflare, API, and PostgreSQL | `docs/ARCHITECTURE.md` |
+| which page calls which API or data source | `docs/ROUTES.md` |
+| what a public API must return | `docs/API_CONTRACT_V1.md` |
+| where homepage / leaderboard / relay detail data is stored | `docs/DATABASE_SCHEMA.md` |
+| how the public probe must stay safe | `docs/PROBE_SECURITY.md` |
+| how to publish or rollback production | `docs/TECHNICAL_OPERATIONS.md` |
+| which production surface is published through which path | `docs/DEPLOYMENT.md` |
+| how to configure Cloudflare Workers Builds for `web` and `admin` | `docs/CLOUDFLARE_WORKERS_BUILDS.md` |
+| how operators use the admin console day to day | `docs/ADMIN_OPERATIONS.md` |
+| what to test locally or in deployed smoke mode | `docs/TESTING_STRATEGY.md` |
+
 ## Working Agreements
 
 - use TypeScript across frontend and backend
