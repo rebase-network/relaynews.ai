@@ -11,6 +11,63 @@
 本文不覆盖后台业务操作细节；运营同学的后台使用方式请看
 `docs/ADMIN_OPERATIONS.md`。
 
+## 0. 高频速查
+
+### 0.1 常用命令
+
+先看服务状态：
+
+```bash
+./ops/manage.sh status
+./ops/manage.sh health
+./ops/manage.sh logs 200
+```
+
+发布远端 API：
+
+```bash
+./ops/manage.sh deploy
+```
+
+回滚远端 API：
+
+```bash
+./ops/manage.sh rollback
+./ops/manage.sh rollback 20260415094500
+```
+
+发布 API Edge：
+
+```bash
+./ops/manage-api-edge.sh preview
+./ops/manage-api-edge.sh deploy
+```
+
+进入远端主机：
+
+```bash
+./ops/manage.sh ssh
+```
+
+### 0.2 值班最小检查清单
+
+每次发布后或值班接手时，至少确认：
+
+- `./ops/manage.sh health` 正常
+- `https://relaynew.ai` 可打开
+- `https://a.relaynew.ai` 可打开
+- `https://api.relaynew.ai/public/home-summary` 返回 JSON
+- 如果后台开启鉴权，匿名访问 `/admin/overview` 返回 `401`
+- `./ops/manage.sh status` 中 `api_build_ref` 与预期版本一致
+
+### 0.3 关键路径
+
+- SSH 主机：`rebase@rebase.host`
+- 远端应用目录：`/home/rebase/apps/relaynews-api`
+- 当前 release：`/home/rebase/apps/relaynews-api/current`
+- 共享环境文件：`/home/rebase/apps/relaynews-api/shared/api.env`
+- 备份目录建议：`/home/rebase/apps/relaynews-api/shared/backups`
+
 ## 1. 当前环境概览
 
 ### 1.1 线上入口
@@ -43,7 +100,7 @@
 - `./ops/manage-tunnel.sh`：Cloudflare Tunnel 配置脚本
 - `./ops/send-telegram.sh`：Telegram 通知脚本
 
-## 2. 部署
+## 2. 部署 Runbook
 
 ### 2.1 部署原则
 
@@ -54,7 +111,13 @@
 
 ### 2.2 后端 API 部署
 
-首次初始化：
+标准顺序：
+
+1. 确认本地代码已提交
+2. 确认远端 `api.env` 已更新
+3. 执行 `./ops/manage.sh deploy`
+4. 执行发布后检查
+5. 如有异常，优先回滚
 
 ```bash
 ./ops/manage.sh bootstrap
@@ -121,7 +184,30 @@
 - 如开启了后台鉴权，后台先出现登录页，再进入 `/relays`
 - 首页、榜单页、后台 Relay 列表至少能正常返回，不出现统一 5xx
 
-## 3. 鉴权
+### 2.6 紧急回滚
+
+当发布后出现明显异常时，优先回滚远端 API：
+
+```bash
+./ops/manage.sh releases
+./ops/manage.sh rollback
+```
+
+如需指定版本：
+
+```bash
+./ops/manage.sh rollback 20260415094500
+```
+
+回滚后重复执行：
+
+```bash
+./ops/manage.sh status
+./ops/manage.sh health
+./ops/manage.sh logs 200
+```
+
+## 3. 鉴权 Runbook
 
 ### 3.1 当前鉴权模型
 
@@ -174,7 +260,7 @@ curl -i -u 'admin:replace-with-a-strong-password' \
 - 如果加了 Cloudflare Access，仍建议保留 API Basic Auth 作为第二层保护
 - 本地开发可留空 `ADMIN_AUTH_USERNAME` 和 `ADMIN_AUTH_PASSWORD`，生产环境不建议留空
 
-## 4. 备份与恢复
+## 4. 备份与恢复 Runbook
 
 ### 4.1 备份原则
 
@@ -211,6 +297,12 @@ docker compose -f "$COMPOSE_FILE" exec -T postgres \
 echo "$backup_file"
 EOF
 ```
+
+备份完成后应记录：
+
+- 备份文件完整路径
+- 备份时间
+- 触发原因，例如“发布前备份”或“清理前备份”
 
 ### 4.3 恢复数据库
 
@@ -263,7 +355,18 @@ curl --fail --silent --show-error http://127.0.0.1:${API_HOST_PORT}/health
 - `https://relaynew.ai`
 - `https://a.relaynew.ai`
 
-## 5. 数据清理
+### 4.4 恢复后的追加动作
+
+恢复完成后建议再执行一次：
+
+```bash
+docker compose -f ops/docker-compose.api.yml exec -T api \
+  tsx apps/api/src/scripts/refresh-public.ts
+```
+
+避免首页与榜单仍引用旧快照或缺少快照。
+
+## 5. 数据清理 Runbook
 
 ### 5.1 适用场景
 
@@ -280,6 +383,14 @@ curl --fail --silent --show-error http://127.0.0.1:${API_HOST_PORT}/health
 - 先备份，再清理
 - 清理后立即刷新公开快照
 - 清理后要通知运营重新录入模型、Relay、价格表和测试 Key
+
+标准顺序：
+
+1. 先做数据库备份
+2. 再执行 `TRUNCATE`
+3. 立即刷新公开快照
+4. 验证空快照是否生成
+5. 通知运营开始初始化录入
 
 ### 5.3 清理当前业务数据
 
@@ -352,9 +463,20 @@ EOF
 4. 配置测试 Key
 5. 将需要公开展示的 Relay 置为 `active`
 
-## 6. 故障排除
+## 6. 故障排除 Runbook
 
-### 6.1 常用检查命令
+### 6.1 故障定位矩阵
+
+| 现象 | 第一检查点 | 常见处理 |
+|---|---|---|
+| `/health` 失败 | `./ops/manage.sh status` | 看容器状态与日志，必要时重启或回滚 |
+| 后台显示无法连接管理 API | `curl -i https://api.relaynew.ai/admin/overview` | 先分辨是 `401`、`5xx` 还是浏览器侧失败 |
+| 首页 / 榜单返回 500 | `/public/home-summary` 是否有快照 | 执行公开快照刷新 |
+| 发布后仍像旧版本 | `./ops/manage.sh status` 的 `api_build_ref` | 重新 deploy 或 rollback |
+| API Edge 不通 | 远端 API 是否健康、`cloudflared` 是否正常 | 查日志，必要时重新发布 API Edge |
+| 清理后前台没内容 | `relays` / `models` 是否为空 | 这通常是预期结果，通知运营补录 |
+
+### 6.2 常用检查命令
 
 ```bash
 ./ops/manage.sh status
@@ -375,7 +497,7 @@ EOF
 ./ops/manage.sh remote 'uname -a'
 ```
 
-### 6.2 API 健康正常，但后台无法登录
+### 6.3 API 健康正常，但后台无法登录
 
 排查顺序：
 
@@ -399,7 +521,7 @@ EOF
    - `5xx`：看 API 日志
    - `blocked` / `failed`：看本地网络、浏览器插件或代理
 
-### 6.3 首页或榜单接口返回 500
+### 6.4 首页或榜单接口返回 500
 
 常见原因：
 
@@ -430,7 +552,7 @@ curl -s https://api.relaynew.ai/public/home-summary
 curl -s https://api.relaynew.ai/public/leaderboard-directory
 ```
 
-### 6.4 发布后怀疑仍是旧版本
+### 6.5 发布后怀疑仍是旧版本
 
 检查：
 
@@ -448,7 +570,7 @@ curl -s https://api.relaynew.ai/public/leaderboard-directory
 - 重新执行 `./ops/manage.sh deploy`
 - 如需恢复旧版本，用 `./ops/manage.sh rollback`
 
-### 6.5 API Edge 无法访问
+### 6.6 API Edge 无法访问
 
 检查顺序：
 
@@ -469,7 +591,7 @@ curl -s https://api.relaynew.ai/public/leaderboard-directory
 ./ops/manage-api-edge.sh deploy
 ```
 
-### 6.6 清理后前台没有数据
+### 6.7 清理后前台没有数据
 
 这通常不是故障，而是预期结果。
 
@@ -481,9 +603,9 @@ curl -s https://api.relaynew.ai/public/leaderboard-directory
 
 这时应先让运营补录模型和 Relay，而不是继续查代码。
 
-## 7. 交接建议
+## 7. 值班交接清单
 
-建议把以下信息一起交给技术运维值班人员：
+交接时建议至少同步以下信息：
 
 - 远端主机登录方式
 - `api.env` 的保管位置
@@ -492,7 +614,7 @@ curl -s https://api.relaynew.ai/public/leaderboard-directory
 - Cloudflare 账号与 Workers Builds 入口
 - Telegram 通知脚本使用方式
 
-如果后续运维动作增多，可以继续在本文补充：
+如果后续运维动作增多，可继续在本文补充：
 
 - 周期性备份策略
 - 告警与监控接入方式
