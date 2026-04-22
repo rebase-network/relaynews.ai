@@ -173,12 +173,4 @@ build:web:prod
 build:admin:prod
 ```
 
-## Required Operating Model
-
-- `relaynews-web` -> GitHub auto-deploy enabled; use this as the only production deploy path
-- `relaynews-admin` -> GitHub auto-deploy enabled; use this as the only production deploy path
-- `relaynews-api-edge` -> manual deploy `./ops/manage-api-edge.sh deploy`
-- `apps/api` on the remote server -> manual deploy through `./ops/manage.sh deploy`
-
-This keeps the public and admin frontends fast to ship while preserving tighter
-control over the API path.
+For the overall production publish model, see `docs/DEPLOYMENT.md`.

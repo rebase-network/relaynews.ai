@@ -11,7 +11,7 @@
 - API 服务部署
 - 数据库手工维护
 
-这些事项仍应按 `docs/DEPLOYMENT.md` 处理，不能从后台页面直接完成。
+这些事项仍应按 `docs/TECHNICAL_OPERATIONS.md` 处理，不能从后台页面直接完成。
 
 ## 进入后台前的准备
 
@@ -29,7 +29,7 @@
 注意事项：
 
 - 登录态保存在浏览器 `sessionStorage`，刷新页面通常不会丢失；退出登录或关闭当前浏览器会话后需要重新登录。
-- 生产环境应始终开启管理员认证；相关配置见 `docs/DEPLOYMENT.md`。
+- 生产环境应始终开启管理员认证；相关配置见 `docs/TECHNICAL_OPERATIONS.md`。
 
 ### 时间口径
 
