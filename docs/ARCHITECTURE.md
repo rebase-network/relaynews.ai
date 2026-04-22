@@ -7,7 +7,9 @@ and leaderboard discovery.
 
 The product should:
 - publish public leaderboards for relays and models
-- show relay health, latency, price, and incident history
+- show relay health, latency, supported models, and current pricing signals on the
+  public relay page, while keeping price-history and incident APIs available for
+  later expansion
 - provide a self-check probe tool for user-supplied API endpoints
 - support future paid placements without mixing them into natural rankings
 - follow the visual system defined in `DESIGN.md`
@@ -27,8 +29,11 @@ The product should:
   or appear on public directory, leaderboard, and relay detail pages
 - The public probe should stay model-first by default and use compatibility auto-detection
   with an optional advanced override
-- Relay detail pages use a small first-paint contract and can progressively load
-  secondary modules after hydration
+- The current public relay detail page focuses on overview, 30-day latency/status
+  history, and supported-model pricing summary; standalone incident and full
+  price-history panels are not rendered in the shipped UI yet
+- The admin SPA uses `/relays` as its effective landing page; `GET /admin/overview`
+  currently remains as an auth/bootstrap endpoint rather than a primary visible page
 
 ### Technology Stack
 - Frontend: React Router v7 + TypeScript + Tailwind + shadcn/ui
@@ -187,7 +192,8 @@ Assets.
 - the public route set now includes `/`, `/leaderboard`, `/leaderboard/directory`,
   `/leaderboard/:modelKey`, `/relay/:slug`, `/methodology`, `/submit`, and `/probe`;
   `/policy` remains only as a compatibility redirect into the merged governance section
-- admin routes render through a separate admin SPA shell on `admin.relaynew.ai`
+- admin routes render through a separate admin SPA shell on `admin.relaynew.ai`, with
+  `/` redirecting to `/relays` after the initial auth/bootstrap check
 - probe flows and chart modules stay client-rendered
 - the probe page should default to URL + key + model input, with compatibility override
   hidden behind advanced controls

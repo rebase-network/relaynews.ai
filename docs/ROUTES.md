@@ -1,6 +1,6 @@
 # Routes
 
-This document lists the planned route structure for `relaynew.ai`, the rendering mode
+This document lists the current route structure for `relaynew.ai`, the rendering mode
 for each route, and the primary data source that should back it.
 
 ## Rendering Rules
@@ -20,7 +20,7 @@ for each route, and the primary data source that should back it.
 | `/leaderboard` | Default full leaderboard view for the primary model category | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
 | `/leaderboard/directory` | Directory for browsing all tracked model categories | CSR in public SPA | `GET /public/leaderboard-directory` |
 | `/leaderboard/:modelKey` | Main leaderboard for one model category | CSR in public SPA | `GET /public/leaderboard/:modelKey` |
-| `/relay/:slug` | Relay detail page with overview and trend charts | CSR in public SPA | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history`, `GET /public/relay/:slug/incidents` |
+| `/relay/:slug` | Relay detail page with overview, 30-day history, and supported-model pricing summary | CSR in public SPA | `GET /public/relay/:slug/overview`, `GET /public/relay/:slug/history`, `GET /public/relay/:slug/models`, `GET /public/relay/:slug/pricing-history` |
 | `/methodology` | Public explanation of the `评测方式` page, plus merged sponsor separation, intake, and review rules | CSR in public SPA | static content or `GET /public/methodology` |
 | `/policy` | Legacy compatibility redirect to the merged `我们怎么做` section on `/methodology` | CSR redirect in public SPA | none |
 | `/submit` | Public submission entry with initial automated verification | CSR in public SPA | `POST /public/submissions` |
@@ -38,17 +38,18 @@ These routes live on the dedicated admin hostname. They are not mirrored under
 
 | Route | Purpose | Render | Primary Data Source |
 |---|---|---|---|
-| `/` | Admin dashboard landing page | CSR in admin SPA | `GET /admin/overview` |
+| `/` | Admin auth/bootstrap entry that redirects to `/relays` | CSR in admin SPA | `GET /admin/overview` (bootstrap only) |
 | `/relays` | Active / paused Relay catalog, manual relay creation, and full relay editor | CSR in admin SPA | `GET /admin/relays` |
 | `/relays/history` | Archived Relay history and reactivation entry | CSR in admin SPA | `GET /admin/relays` |
 | `/intake` | Pending submission queue for new Relay submissions | CSR in admin SPA | `GET /admin/submissions` |
 | `/intake/history` | Approved / rejected / archived submission history | CSR in admin SPA | `GET /admin/submissions` |
-| `/sponsors` | Sponsor placement management | CSR in admin SPA | `GET /admin/sponsors` |
+| `/sponsors` | Sponsor record management with relay link, placement, status, and time window | CSR in admin SPA | `GET /admin/sponsors` |
 | `/models` | Model catalog management for activation and price units | CSR in admin SPA | `GET /admin/models` |
 
 ### Secondary Admin Routes
 
-These routes still exist, but they are no longer the primary daily workflow center.
+These routes still exist, but they are no longer shown in the primary admin navigation
+and are used mainly as direct maintenance / debugging surfaces.
 
 | Route | Purpose | Render | Primary Data Source |
 |---|---|---|---|
@@ -105,11 +106,11 @@ The leaderboard page is expected to include:
 The relay detail page is expected to include:
 - relay identity and endpoint summary
 - current health snapshot
-- 24h and 7d latency and availability charts
-- supported models list
-- pricing summary and history
-- incident timeline
+- 30-day latency and availability charts
+- supported models list enriched with the latest known input / output price
 - explanatory badges and score summary
+- no standalone `价格历史` or `事故时间线` block in the current shipped UI, even
+  though the backend still exposes those APIs
 
 ### Relay Detail Loading Boundary
 
@@ -122,8 +123,7 @@ First-paint critical:
 Hydration or secondary loads:
 - history chart buckets
 - supported models list
-- pricing history
-- incident timeline
+- pricing enrichment for the supported-model table
 
 ## Test Page Modules (`/probe`)
 
@@ -148,8 +148,12 @@ The test page is expected to include:
 - `/public/relay/:slug/overview` should return a single summary payload for first paint
 - `/public/relay/:slug/history` should return chart buckets, not raw probe rows
 - `/public/relay/:slug/models` should return supported model rows only
-- `/public/relay/:slug/pricing-history` should return price change points or chart-ready buckets
-- `/public/relay/:slug/incidents` should return timeline-ready incident records
+- `/public/relay/:slug/pricing-history` should return price change points or chart-ready
+  buckets; the current relay page uses it to enrich the model table with latest price
+  data instead of rendering a dedicated history panel
+- `/public/relay/:slug/incidents` should return timeline-ready incident records; the
+  endpoint remains implemented even though the current public relay page does not
+  render a dedicated incidents section
 - `/probe` must only call the public-safe test endpoint described in `docs/PROBE_SECURITY.md`
 - `/public/probe/check` should accept an optional `compatibilityMode` override while
   still defaulting to model-driven automatic detection

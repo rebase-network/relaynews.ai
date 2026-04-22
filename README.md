@@ -5,11 +5,13 @@ health, pricing comparison, and leaderboard discovery.
 
 ## Product Scope
 
-The site is planned to provide:
+The site currently provides:
 - public leaderboards for relay and model combinations
-- relay detail pages with health, latency, and price history
+- relay detail pages with health snapshots, latency/status history, supported models,
+  and the latest known per-model pricing
 - a self-check probe tool for user-supplied relay endpoints
-- methodology pages that explain ranking and scoring
+- a merged methodology page that explains ranking, sponsor separation, intake rules,
+  and review / reconsideration guidance
 - submit and sponsor flows that stay separate from natural rankings
 
 ## Current Architecture

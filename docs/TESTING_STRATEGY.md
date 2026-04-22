@@ -22,8 +22,8 @@ acceptance, with only a few narrow exceptions where browser tests are not enough
 The main browser suite should cover:
 - homepage snapshot rendering
 - leaderboard page loading, model switching, and empty/error states
-- relay detail page rendering for overview, history, models, pricing history, and
-  incidents
+- relay detail page rendering for overview, 30-day history, supported-model pricing,
+  and the intentional absence of standalone `价格历史` / `事故时间线` sections
 - methodology page rendering and basic navigation integrity
 - public submit flow success and validation states
 - mobile navigation routing and critical responsive layout checks
@@ -46,10 +46,11 @@ Follow-up coverage to add:
 ### Admin Pages
 
 The browser suite should cover the critical operational flows:
-- relay catalog create and edit flows
+- relay catalog create, edit, pause, archive, and reactivate flows
 - submission review actions
 - sponsor placement management
-- price record management
+- model delete and catalog maintenance
+- direct price-record and credential maintenance compatibility surfaces
 
 ## Test Environments
 
@@ -139,7 +140,8 @@ These tests help catch contract regressions earlier than full browser failures.
 - public-route smoke coverage should include head metadata checks for critical pages,
   especially `title`, `meta[name=description]`, and `canonical`
 - the public suite currently exercises homepage, leaderboard, relay detail, submit,
-  probe, mobile navigation, and route-level metadata checks
+  probe, mobile navigation, route-level metadata checks, and the trimmed relay-detail
+  layout that omits standalone incident / price-history panels
 - `pnpm test` runs the package-level verification layer: API tests plus frontend and
   edge-worker typechecks
 - `pnpm test:e2e` starts an isolated PostgreSQL test container, seeds the API

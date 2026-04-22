@@ -54,18 +54,19 @@
 - `paused` 状态的 Relay 仍可编辑，但不会参与测试，也不会出现在目录和榜单里。
 - `archived` 状态的 Relay 会离开当前 Relay 列表，只在 `Relay历史` 中展示；后续可重新激活。
 - API Key 的新增、轮换和替换属于管理员操作，但日常入口应围绕 Relay 编辑完成，而不是先从独立密钥中心开始。
+- 管理后台没有单独的可见“概览页”；实际默认进入的是 `Relay` 列表，`GET /admin/overview` 主要用于登录校验与后台 bootstrap。
 
 ## 建议的日常处理顺序
 
 建议按下面顺序完成每天的后台处理：
 
-1. 先看 `概览`，确认待审核提交数、活跃 Relay 规模和赞助位情况。
-2. 进入 `提交记录`，优先处理所有 `pending` 记录。
-3. 对已通过审核的站点，转到 `Relay` 列表继续完善资料、价格表、站点状态和测试 Key。
-4. 如需查看过往审批结果，使用 `提交历史`。
-5. 如需处理下线站点、恢复旧站点或查看归档 Relay，使用 `Relay历史`。
-6. 如有商务合作，再处理 `赞助位`。
-7. 如需维护模型目录、价格单位或开关，进入 `模型`。
+1. 先进入 `提交记录`，优先处理所有 `pending` 记录。
+2. 对已通过审核的站点，转到 `Relay` 列表继续完善资料、价格表、站点状态和测试 Key。
+3. 如需查看过往审批结果，使用 `提交历史`。
+4. 如需处理下线站点、恢复旧站点或查看归档 Relay，使用 `Relay历史`。
+5. 如有商务合作，再处理 `赞助位`。
+6. 如需维护模型目录、价格单位或开关，进入 `模型`。
+7. 只有在做补充排查时，再通过直达 URL 进入 `密钥` 或 `价格` 页面。
 
 ## 页面职责总览
 
@@ -73,17 +74,16 @@
 
 | 页面 | 路由 | 当前用途 | 主要接口 |
 |---|---|---|---|
-| 概览 | `/` | 查看核心统计与推荐工作顺序 | `GET /admin/overview` |
-| Relay | `/relays` | 查看 active / paused Relay，手动新增、编辑、暂停、归档、重新激活 | `GET/POST/PATCH/DELETE /admin/relays` |
-| Relay历史 | `/relays/history` | 查看 archived Relay，并执行重新激活 | `GET /admin/relays` |
+| Relay | `/relays` | 默认入口；查看 active / paused Relay，手动新增、用右侧抽屉查看详情、编辑、暂停、归档、重新激活 | `GET/POST/PATCH/DELETE /admin/relays` |
+| Relay历史 | `/relays/history` | 查看 archived Relay，用右侧抽屉回看详情、编辑或重新激活 | `GET /admin/relays` |
 | 提交记录 | `/intake` | 处理当前待审核提交 | `GET /admin/submissions`、`POST /admin/submissions/:id/review` |
-| 提交历史 | `/intake/history` | 查看 approved / rejected / archived 的提交记录 | `GET /admin/submissions` |
-| 赞助位 | `/sponsors` | 查看、新增、编辑、删除赞助位计划 | `GET/POST/PATCH/DELETE /admin/sponsors` |
-| 模型 | `/models` | 维护模型目录、价格单位与启停状态 | `GET/POST/PATCH /admin/models` |
+| 提交历史 | `/intake/history` | 查看 approved / rejected / archived 的提交记录，并在右侧抽屉回看原始资料与审核结果 | `GET /admin/submissions` |
+| 赞助位 | `/sponsors` | 管理赞助记录；当前实现仍包含关联 Relay、placement、状态与起止时间窗口 | `GET/POST/PATCH/DELETE /admin/sponsors` |
+| 模型 | `/models` | 维护模型目录、价格单位与启停状态，并支持删除 | `GET/POST/PATCH/DELETE /admin/models` |
 
 ### 次级工具页面
 
-这些页面仍然存在，但已经不是主导航中的日常入口：
+这些页面仍然存在，但当前实现里不在主导航中，通常只在补充运维或历史排查时直接访问：
 
 | 页面 | 路由 | 当前用途 | 主要接口 |
 |---|---|---|---|
@@ -151,10 +151,11 @@
 
 - 查看当前 `active` 与 `paused` 的 Relay 列表
 - 手动新增 Relay
-- 编辑现有 Relay
+- 在右侧抽屉查看现有 Relay 详情
+- 在右侧抽屉编辑现有 Relay
 - 将 Relay 暂停或归档
 - 将 `paused` Relay 重新激活
-- 打开 Relay 的完整编辑界面
+- 在需要时查看 Relay 的当前监测 Key 摘要与模型价格表
 
 当前 Relay 信息应包含：
 
@@ -186,6 +187,7 @@
 - 如果站点只是临时维护，优先使用 `paused`，不要直接 `archived`。
 - 如果站点确实已经不再对外提供服务，再考虑归档。
 - 价格信息的日常维护优先在 Relay 编辑表单里完成，而不是先去旧的价格页。
+- 当前手动新增 Relay 时，需要同时提供至少一行模型价格和一个测试 Key，这样创建完成后才能直接进入现有测试流程。
 
 ### 3. Relay历史
 
@@ -216,7 +218,7 @@
 
 ### 5. 密钥（次级工具）
 
-当前页面仍可直接访问，但不再是主工作流入口。
+当前页面仍可直接访问，但不再是主工作流入口，也不在主导航中。
 
 适用场景：
 
@@ -252,6 +254,7 @@
 
 - 赞助位展示与自然排名严格分离。
 - 赞助不会改写榜单结果，也不会影响自动化测试分数。
+- 当前后台实现仍保留 `placement`、`status`、`startAt`、`endAt` 这些字段；如果后续要继续简化赞助管理，需要以实际代码变更为准。
 
 ### 8. 模型
 
@@ -303,7 +306,7 @@
 
 - `提交记录` -> `Relay`
 
-后续若继续精简后台，这两个页面仍有可能进一步弱化。
+后续若继续精简后台，这两个页面仍有可能进一步弱化，但目前实现仍完整保留对应 API 和页面。
 
 ## 建议的值班检查清单
 

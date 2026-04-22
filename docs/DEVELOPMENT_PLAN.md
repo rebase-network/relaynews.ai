@@ -11,20 +11,31 @@ The following decisions are already in place and should be treated as the starti
 - public API contract v1: `docs/API_CONTRACT_V1.md`
 - routing and rendering split: `docs/ROUTES.md`
 - public probe safety model: `docs/PROBE_SECURITY.md`
-- initial PostgreSQL migration: `apps/api/db/migrations/0001_initial.sql`
+- executable PostgreSQL migrations through `apps/api/db/migrations/0001` to `0004`
 
 ## Current Delivery Status
 
-As of `2026-04-18`, the repository is no longer in greenfield setup mode.
+As of `2026-04-22`, the repository is no longer in greenfield setup mode.
 
 Implemented and in daily use:
 - monorepo workspace with `web`, `admin`, `api`, `api-edge`, and `shared`
 - shared public contracts, shared submission contracts, and runtime validation
 - public website routes for homepage, leaderboard, leaderboard directory, relay detail,
-  the `评测方式`, `我们怎么做`, `提交站点`, and `站点测试` pages
-- admin routes for relay management, submission review, credentials, sponsors, and prices
+  merged `评测方式` / `我们怎么做`, `提交站点`, and `站点测试`
+- public `/policy` compatibility redirect into `/methodology#governance`
+- admin routes centered on Relay, Relay历史, 提交记录, 提交历史, 赞助位, and 模型,
+  with direct-url compatibility surfaces for credentials and prices
 - public submission intake with initial bounded verification
 - public-safe probe endpoint with compatibility auto-detection and optional override
+- relay lifecycle flow where submission approval moves the reviewed record into
+  history, creates or links a relay entry, syncs submitted model prices, transfers
+  the active credential to the relay, and triggers the first relay-owned monitoring run
+- manual relay creation / edit flows with model-price rows and relay-owned test key
+- page and feature refactors that split oversized `web` / `admin` entry files into
+  route pages, drawers, feature modules, and shared helpers
+- current relay detail UI trimmed to overview, 30-day history, and model support with
+  latest known pricing; standalone incident and full price-history sections remain API
+  surfaces rather than rendered public modules
 - Playwright-first browser coverage for public flows, admin flows, metadata smoke,
   and deployed smoke modes
 
@@ -33,15 +44,17 @@ initial scaffolding.
 
 ## Current Reprioritization
 
-The next implementation stage is no longer "add more standalone admin pages".
-The priority is to simplify the operator workflow, tighten the relay lifecycle rules,
-and reduce the maintenance cost caused by oversized frontend entry files.
+The core relay workflow simplification and first round of page/component splitting have
+already landed. The next stage should focus on hardening and polishing the current
+surfaces instead of reopening large information-architecture changes.
 
 ### Product Direction
 
 - converge admin operations around two main centers:
   - `提交记录`: current queue + history
   - `Relay`: active/paused list + archived history + full editor
+- keep `/relays` as the effective admin landing route; `GET /admin/overview` remains
+  useful for auth/bootstrap and coarse health checks, but not as a first-class UI page
 - treat `提交记录` as the review trail rather than the long-term working surface:
   - `pending` submissions stay in the current queue
   - `approved` submissions move to submission history and create or link a relay entry
@@ -64,6 +77,9 @@ and reduce the maintenance cost caused by oversized frontend entry files.
   forcing all entries to originate from public submissions
 - keep API key rotation and recovery as admin-only actions attached to the relay
   record or backend workflow, not as a separate primary navigation center
+- keep sponsor management documented as currently implemented: the backend and admin UI
+  still store explicit placement, status, start time, and end time, even if future UX
+  simplification remains desirable
 
 ### Engineering Direction
 
@@ -83,44 +99,22 @@ and reduce the maintenance cost caused by oversized frontend entry files.
   - relay pause/archive/reactivation
   - active-only public visibility and monitoring
 
-### Desktop Web UI Polish Plan
+### Current Desktop Web Baseline
 
-The next public-web polish pass should prioritize desktop readability and visual
-hierarchy before any further mobile-specific refresh.
+The latest shipped public UI baseline already includes:
+- tightened homepage hero layout with metrics aligned into a single row
+- leaderboard hero and model-switch surfaces that are more compact than earlier
+  card-stack iterations
+- a merged methodology / governance page under `/methodology`
+- a simplified relay detail page that prioritizes history and model support over
+  extra secondary sections
+- a submit form with denser model-price rows and consumer-style flow instead of
+  admin-like stacked controls
 
-Primary findings from the current desktop audit:
-- page containers, data cards, and helper cards overuse the same warm `panel` and
-  `surface-card` treatment, flattening visual hierarchy
-- large Chinese headlines are set too tightly, while many helper labels rely on
-  very small uppercase mono text that feels cramped and noisy
-- the homepage hero, leaderboard hero, and submit-page hero each compete with nearby
-  functional modules instead of establishing one clear desktop focal point
-- explanatory copy is often split across multiple medium-weight cards, pushing the
-  main task content below the fold on desktop
-- information pages such as `评测方式` and `我们怎么做` read like card stacks rather than
-  designed editorial pages
-
-Execution order for the desktop polish pass:
-1. shared visual system
-   - reduce decorative density in secondary cards
-   - establish clearer tiers for page shell, primary task blocks, and helper blocks
-   - relax desktop headline spacing and reduce reliance on ultra-small uppercase labels
-2. homepage and leaderboard
-   - keep one obvious hero focal point
-   - demote helper explanations so rankings and discovery remain the first desktop task
-   - distinguish sponsor presentation more clearly from natural ranking previews
-3. submit, probe, and relay detail
-   - simplify nested card structures
-   - make public forms feel like guided consumer workflows rather than admin tooling
-   - give result and detail pages clearer desktop reading order
-4. methodology and governance content
-   - keep `评测方式` as the single information page and merge `我们怎么做` into grouped, comparative sections
-
-Acceptance goals for the desktop pass:
-- each first screen should present one clear primary action or information target
-- helper copy should no longer outweigh the main task content on desktop
-- sponsor, ranking, explanation, and form surfaces should feel visually distinct
-- Playwright coverage should continue to pass for critical public flows and metadata
+Remaining polish work should stay incremental:
+- keep reducing redundant helper copy without losing explainability
+- avoid re-growing oversized page entry files after the current component split
+- preserve sponsor / ranking visual separation as the UI continues to tighten
 
 ## Delivery Principles
 
@@ -262,18 +256,19 @@ Work items:
 - implement page modules for:
   - history charts
   - supported models
-  - pricing history
-  - incident timeline
+  - supported-model pricing enrichment from `pricing-history`
+  - keep standalone price-history and incident sections behind API contracts until
+    the public UI explicitly needs them again
 - keep overview as the first-paint payload and load secondary modules after hydration
 - use seeded rows or fixture snapshot/aggregate data for relay history and incidents
   until Phase 6 live monitoring jobs are operating
 - add Playwright acceptance coverage for relay detail modules
 
 Exit criteria:
-- relay detail page covers all modules defined in `docs/ROUTES.md`
+- relay detail page matches the shipped module set defined in `docs/ROUTES.md`
 - page reads come from documented sources in `docs/DATABASE_SCHEMA.md`
-- relay detail APIs and page modules are contract-complete even if some data is still
-  fixture-backed for development
+- relay detail APIs are contract-complete even if some UI modules remain intentionally
+  unrendered in the current public page
 - relay detail browser coverage validates the seeded or fixture-backed experience
 
 ## Phase 6: Monitoring, Aggregation, And Snapshots
@@ -416,7 +411,8 @@ Exit criteria:
 - relay detail first-paint overview works
 
 ### M4: Relay Detail Integrated
-- history, models, pricing history, and incident timeline are contract-complete
+- history, models, pricing history, and incident endpoints are contract-complete
+- the public relay page ships the trimmed layout defined in `docs/ROUTES.md`
 - relay detail works against seeded or fixture-backed data where live producers are
   not yet authoritative
 
