@@ -44,7 +44,9 @@ Rules:
 - `POST /public/submissions` belongs to the public boundary and is no longer owned
   by the admin route module
 - `POST /public/submissions` persists the submitter-provided `testApiKey` and
-  `testModel` into `probe_credentials` for the review workflow
+  the resolved initial test model into `probe_credentials` for the review workflow
+- when `testModel` is omitted, the current implementation derives it from the first
+  submitted `modelPrices` row before running the bounded verification
 - shared schemas for public submissions live in `packages/shared/src/submissions.ts`
 
 ### Admin APIs
@@ -63,6 +65,8 @@ Rules:
 - admin routes are owned by `apps/api/src/routes/admin.ts`
 - admin routes are protected by admin authorization
 - admin routes must not receive CDN cache headers
+- `GET /admin/overview` currently acts mainly as the admin auth/bootstrap probe used
+  by the SPA before redirecting the UI into `/relays`
 
 ## Current Shared Schema Split
 

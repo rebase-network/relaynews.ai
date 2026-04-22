@@ -14,7 +14,7 @@ The goal is to support:
 ## Schema Design Principles
 
 - PostgreSQL is the source of truth
-- raw probe data is append-only and retained for 7 days
+- raw probe data is append-only, with a 7-day retention target for monitoring rows
 - public pages do not query raw tables directly
 - public pages read snapshot or pre-aggregated tables
 - only abnormal or sampled payload evidence should be stored in detail
@@ -57,6 +57,9 @@ The current executable schema is built by these migrations, in order:
 Concrete choices in that migration:
 - UUID primary keys use `gen_random_uuid()`, so the database enables `pgcrypto`
 - mutable tables use `updated_at` triggers
+- the original `submissions` table still carries legacy `submitter_name` and
+  `submitter_email` columns for compatibility, even though current intake flows write
+  `contact_info` instead
 - `probe_region` is concrete in the schema and defaults to `global`
 - current shared API contracts only expose the `global` region; additional regions
   should not be treated as public MVP surface until the contracts and snapshot jobs
@@ -70,6 +73,9 @@ Concrete choices in that migration:
   and non-negative numeric fields
 - `0004_submission_prices_and_contacts.sql` adds relay and submission contact info,
   plus a normalized `submission_model_prices` table for submission-scoped price rows
+- `0002_probe_credentials.sql` enforces exactly one credential owner on each row via
+  `CHECK (num_nonnulls(submission_id, relay_id) = 1)` and partial unique indexes for
+  one active credential per submission or relay
 
 ## Core Entities
 
@@ -180,6 +186,9 @@ Indexes:
 Notes:
 - at least one price field should be present on each row
 - public APIs may expose unknown price fields as `null`
+- the current public relay page does not render a standalone price-history chart;
+  instead it consumes the latest rows from this table to enrich the supported-model
+  table with the most recent known price per model
 
 ### submissions
 Candidate relay submissions from users or operators.
@@ -299,6 +308,10 @@ Indexes:
 Notes:
 - `sponsors` is the canonical source of truth for active paid placement windows
 - public rendering must not infer paid placement from `relays.is_sponsored`
+- the current homepage `highlights` lane is derived from sponsor rows where:
+  - `status = 'active'`
+  - the current measured time falls inside `[start_at, end_at]`
+  - the linked relay is also `active`
 
 ## Monitoring Tables
 
@@ -339,9 +352,12 @@ Notes:
   for execution, either on this row or in a companion detection history table
 - public self-check probe results should remain separate from platform monitoring rows
   unless secret-free, opt-in persistence is explicitly required
+- current implementation already keeps `/public/probe/check` results out of this table;
+  only relay-owned monitoring runs and related reprobes write here
 - do not store full payloads for every successful request
 - use `sample_key` only for abnormal or sampled cases
 - if volume grows later, partition by day or convert to a Timescale hypertable
+- automated cleanup for the 7-day retention target is not wired yet in the current API process
 
 ### relay_protocol_detections
 Planned follow-up table for compatibility detection history.
@@ -517,6 +533,7 @@ Suggested `snapshot_key` examples:
 Notes:
 - this snapshot table powers both model leaderboard pages and the
   `/public/leaderboard-directory` preview payload used by the directory page
+- the current refresh job writes at most the top 20 rows per model snapshot
 
 ### relay_overview_snapshots
 Stores one fast summary row per relay for the detail page.
@@ -535,6 +552,14 @@ Suggested columns:
 - `badges_json` jsonb not null default '[]'::jsonb
 - `measured_at` timestamptz not null
 - `updated_at` timestamptz not null default now()
+
+Notes:
+- `incidents_7d` is currently a count of incident rows whose `started_at` falls inside
+  the last 7 days
+- `starting_input_price_per_1m` and `starting_output_price_per_1m` are derived from the
+  minimum currently known latest price rows for that relay
+- the current relay page uses this table for hero / first-paint summary data, then
+  loads history and model/pricing details separately
 
 ### home_summary_snapshots
 Stores the homepage snapshot payload.
@@ -556,19 +581,26 @@ Notes:
   defined in `docs/API_CONTRACT_V1.md`
 - `latestIncidents` remains part of the homepage snapshot contract even when the
   current homepage UI does not render a dedicated incidents block
+- current homepage payload building also caps:
+  - leaderboard preview rows to 5 per model block
+  - sponsor highlights to 4 distinct sponsored relays
 
 ## Retention And Jobs
 
-Recommended scheduled jobs:
-- every 1 minute: run probe scheduling
-- every 1 minute: execute probe batches
-- every 5 minutes: build `relay_status_5m` and `relay_latency_5m`
-- every 1 hour: build `relay_score_hourly`
-- every 5 minutes or 15 minutes: rebuild snapshot tables
-- daily: delete `probe_results_raw` older than 7 days
-- daily: delete stale `probe_error_samples` according to policy
+Current runtime behavior:
+- the API process runs one `node-cron` task every 5 minutes
+- each tick loads relay-owned credentials where both `probe_credentials.status = 'active'`
+  and `relays.status = 'active'`
+- each successful relay run writes raw probe rows, updates relay-model support rows,
+  refreshes the touched 5-minute / hourly aggregates, and then rebuilds public snapshots
+- admin write flows such as relay edits, submission review, sponsor changes, model
+  changes, price changes, and `/admin/refresh-public` also rebuild public snapshots immediately
 
-MVP execution assumption:
+Current gaps / follow-up work:
+- automated deletion of `probe_results_raw` older than the 7-day target is not yet scheduled
+- automated cleanup of stale `probe_error_samples` is not yet scheduled
+
+Execution assumption:
 - the API scheduler is single-instance
 - if the API service is later scaled horizontally, scheduling and rebuild jobs
   must use PostgreSQL-backed coordination such as advisory locks or job leases
@@ -587,15 +619,18 @@ MVP execution assumption:
   - source: `relay_overview_snapshots` joined with `relays`
 - `GET /public/relay/:slug/history`
   - source: `relay_status_5m` and `relay_latency_5m`
-  - window mapping:
-    - `24h`: direct reads from 5-minute buckets
-    - `7d`: direct reads from 5-minute buckets, downsampled for response size if needed
-    - `30d`: read-time rollup from persisted 5-minute buckets into 1-hour response buckets for MVP
+  - current implementation reads persisted 5-minute buckets for every supported window
+    and applies a simple stride downsampling before returning the response:
+    - `24h`: every 2nd point
+    - `7d`: every 4th point
+    - `30d`: every 8th point
 - `GET /public/relay/:slug/models`
   - source: `relay_models` joined with `models`
+  - read model: exclude rows whose relay-model support status is `unsupported`
 - `GET /public/relay/:slug/pricing-history`
   - source: `relay_prices`
-  - read model: return price change points ordered by `effective_from`
+  - read model: return price change points ordered by `effective_from`, while excluding
+    relay-model pairs currently marked `unsupported`
 - `GET /public/relay/:slug/incidents`
   - source: `incident_events`
 
@@ -605,6 +640,6 @@ MVP execution assumption:
 - The public probe threat model and required controls live in `docs/PROBE_SECURITY.md`.
 - Internal and admin APIs can continue to evolve alongside implementation, but should
   stay consistent with the routing and responsibility split defined in `docs/ARCHITECTURE.md`.
-- MVP public history reads use persisted 5-minute health and latency windows plus
-  read-time rollups; the first version does not define separate persisted 24-hour
-  health-history tables.
+- MVP public history reads use persisted 5-minute health and latency windows with
+  response-time downsampling; the first version does not define separate persisted
+  24-hour or 30-day history tables.
