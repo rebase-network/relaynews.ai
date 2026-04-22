@@ -83,8 +83,8 @@ export function HomePage() {
   );
   const quickProbe = useProbeController(DEFAULT_PROBE_STATE);
   usePageMetadata({
-    title: "relaynew.ai｜中转站监控、榜单与测试",
-    description: "面向中国用户的中转站点目录与评测平台，提供站点榜单、API 测试与站点提交入口。",
+    title: "relaynew.ai｜大模型API服务站监控、榜单与测试",
+    description: "面向中国用户的大模型API服务站目录与评测平台，提供站点榜单、API 测试与站点提交入口。",
   });
 
   if (loading) return <HomePageSkeleton />;

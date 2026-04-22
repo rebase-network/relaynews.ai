@@ -23,11 +23,11 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
       <SubmitSection title="基础信息">
         <div className="submit-basic-grid">
           <label className="form-field submit-form-field">
-            中转站名称
+            大模型API服务站名称
             <input
               className="input-shell mt-2"
               type="text"
-              placeholder="北风中转站"
+              placeholder="北风大模型API服务站"
               required
               value={state.relayName}
               onChange={(event) => updateField("relayName", event.target.value)}
@@ -75,8 +75,8 @@ export function SubmitForm({ controller }: { controller: SubmitFormController })
         <div className="form-field submit-form-field">
           <textarea
             className="input-shell mt-2 min-h-32 submit-description-input"
-            aria-label="中转站简介"
-            placeholder="请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表"
+            aria-label="大模型API服务站简介"
+            placeholder="请提供大模型API服务站的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表"
             required
             value={state.description}
             onChange={(event) => updateField("description", event.target.value)}

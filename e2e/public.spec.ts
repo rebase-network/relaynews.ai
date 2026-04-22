@@ -32,7 +32,7 @@ function getAdminApiHeaders() {
 }
 
 async function gotoHome(page: Page) {
-  const heroHeading = page.getByRole("heading", { name: /发现优质中转站点/i });
+  const heroHeading = page.getByRole("heading", { name: /发现优质大模型API服务站/i });
   const fetchError = page.getByText("Failed to fetch");
 
   await page.goto("/");
@@ -113,7 +113,7 @@ async function expectPageMetadata(page: Page, expectation: {
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await gotoHome(page);
-  await expect(page.getByRole("heading", { name: /发现优质中转站点/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /发现优质大模型API服务站/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "开始测试" })).toBeVisible();
   await expect(page.getByText("快速测试", { exact: true })).toBeVisible();
@@ -198,11 +198,11 @@ test("submit flow works from the public site", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /把你的Relay站点信息提交，收录到站点目录中/i })).toBeVisible();
   await expect(page.getByText(/这些信息将由社区运营志愿者整理后作为站点说明和价格表/)).toBeVisible();
   await expect(page.getByText(/提交后会立即执行一次自动测试，后续会持续测试/)).toBeVisible();
-  await page.getByLabel("中转站名称").fill(relayName);
+  await page.getByLabel("大模型API服务站名称").fill(relayName);
   await page.getByLabel("Base URL").fill(relayBaseUrl);
   await page.getByLabel("站点网站").fill("https://example.com");
   await page.getByLabel("联系方式").fill("Telegram: @beacon_ops");
-  await page.getByLabel("中转站简介").fill("Playwright 中文提交流程覆盖，用于验证公开站点审核入口。");
+  await page.getByLabel("大模型API服务站简介").fill("Playwright 中文提交流程覆盖，用于验证公开站点审核入口。");
   await page.getByLabel("模型").fill("openai-gpt-5.4");
   await page.getByLabel("Input价格").fill("4.6");
   await page.getByLabel("Output价格").fill("13.2");
@@ -215,11 +215,11 @@ test("submit flow works from the public site", async ({ page }) => {
 
 test("submit flow validates malformed relay URLs before sending", async ({ page }) => {
   await page.goto("/submit");
-  await page.getByLabel("中转站名称").fill("Broken Relay");
+  await page.getByLabel("大模型API服务站名称").fill("Broken Relay");
   await page.getByLabel("Base URL").fill("relay.example.ai");
   await page.getByLabel("站点网站").fill("not-a-url");
   await page.getByLabel("联系方式").fill("");
-  await page.getByLabel("中转站简介").fill("");
+  await page.getByLabel("大模型API服务站简介").fill("");
   await page.getByLabel("模型").fill("");
   await page.getByRole("button", { name: "提交" }).click();
 
@@ -397,7 +397,7 @@ test("homepage prioritizes quick probe on mobile", async ({ page }) => {
   await gotoHome(page);
 
   const quickProbeHeading = page.getByText("快速测试", { exact: true });
-  const heroHeading = page.getByRole("heading", { name: /发现优质中转站点/i });
+  const heroHeading = page.getByRole("heading", { name: /发现优质大模型API服务站/i });
   const quickProbeBox = await quickProbeHeading.boundingBox();
   const heroHeadingBox = await heroHeading.boundingBox();
 
@@ -439,7 +439,7 @@ test.describe("public metadata smoke", () => {
     await expectPageMetadata(page, {
       canonicalPath: "/",
       descriptionPattern: /站点榜单|API 测试|提交入口/i,
-      titlePattern: /relaynew\.ai|中转站监控|榜单与测试/i,
+      titlePattern: /relaynew\.ai|大模型API服务站监控|榜单与测试/i,
     });
 
     await page.goto("/leaderboard?foo=bar#metadata");

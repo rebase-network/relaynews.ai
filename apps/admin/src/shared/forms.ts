@@ -171,7 +171,7 @@ export function validatePriceForm(form: PriceFormState) {
   const errors: PriceFormErrors = {};
 
   if (!payload.relayId) {
-    errors.relayId = "请选择中转站。";
+    errors.relayId = "请选择大模型API服务站。";
   }
 
   if (!payload.modelId) {
@@ -261,7 +261,7 @@ export function validateProbeCredentialForm(form: ProbeCredentialFormState) {
   const errors: ProbeCredentialFormErrors = {};
 
   if (!payload.ownerId) {
-    errors.ownerId = payload.ownerType === "relay" ? "请选择中转站。" : "请选择归属对象。";
+    errors.ownerId = payload.ownerType === "relay" ? "请选择大模型API服务站。" : "请选择归属对象。";
   }
 
   if (!payload.apiKey) {

@@ -6,7 +6,7 @@ export function SubmitHero() {
         把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可
       </h1>
       <p className="submit-hero-copy">
-        请提供中转站点的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。
+        请提供大模型API服务站的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。
       </p>
       <div className="submit-hero-points">
         <div className="submit-hero-point">

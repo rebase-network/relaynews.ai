@@ -44,13 +44,13 @@ export function CredentialCreatePanel({
       </div>
       <div className="grid gap-2.5">
         <label className="field-label">
-          中转站
+          大模型API服务站
           <select
             className="field-input"
             value={createForm.ownerId}
             onChange={(event) => onUpdateField("ownerId", event.target.value)}
           >
-            <option value="">请选择中转站</option>
+            <option value="">请选择大模型API服务站</option>
             {relayOwnerOptions.map((owner) => (
               <option key={owner.id} value={owner.id}>
                 {getRelayOptionLabel(owner)}

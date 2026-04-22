@@ -49,7 +49,7 @@ export function RelayEditorForm({
         <div className="grid gap-3 md:grid-cols-2">
           <label className="field-label">
             站点名字
-            <input className="field-input" placeholder="北风中转站" value={form.name} onChange={(event) => onUpdateForm("name", event.target.value)} />
+            <input className="field-input" placeholder="北风大模型API服务站" value={form.name} onChange={(event) => onUpdateForm("name", event.target.value)} />
             <FieldError message={fieldErrors.name} />
           </label>
           <label className="field-label">

@@ -242,7 +242,7 @@ export function formatCompatibilityMode(mode: ProbeCompatibilityMode) {
 
 export function formatOverviewMetricLabel(label: string) {
   const labels: Record<string, string> = {
-    relays: "中转站总数",
+    relays: "大模型API服务站总数",
     pendingSubmissions: "待审核提交",
     activeSponsors: "投放中赞助位",
     priceRecords: "价格记录",

@@ -107,7 +107,7 @@ export const HEALTH_STATUS_COPY: Record<string, string> = {
 export const BADGE_COPY: Record<string, string> = {
   "low-latency": "在当前模型分类中多次测得低延迟表现。",
   "high-stability": "观测窗口内波动较小，连续性表现较强。",
-  "high-value": "相较同模型分类其他中转站，价格与质量的平衡更有竞争力。",
+  "high-value": "相较同模型分类其他大模型API服务站，价格与质量的平衡更有竞争力。",
   "sample-size-low": "当前样本量仍偏少，解读结论时需要保留谨慎。",
   "under-observation": "该站点已公开展示，但证据仍在继续积累或复核中。",
 };
@@ -949,7 +949,7 @@ export function validateSubmitForm(state: SubmitFormState) {
   }));
 
   if (!relayName) {
-    errors.relayName = "请填写中转站名称。";
+    errors.relayName = "请填写大模型API服务站名称。";
   }
 
   if (!baseUrl) {
