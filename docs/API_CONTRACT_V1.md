@@ -184,12 +184,8 @@ Required fields:
 
 Notes:
 - homepage modules should already be shaped for rendering
-- `highlights` is the sponsor-highlight lane used by the current homepage sponsor cards
-- current snapshot building derives `highlights` from sponsor rows that are active
-  for the current measured window and linked to `active` relays
+- `highlights` is the sponsor-highlight lane used by the homepage sponsor cards
 - `latestIncidents` can be an empty array in the first version
-- the current homepage UI does not render a dedicated incidents section even though
-  `latestIncidents` remains part of the payload contract
 - when non-empty, `latestIncidents[]` uses the `Incident Summary` shape
 
 ### GET /public/leaderboard-directory
@@ -227,8 +223,8 @@ Response:
 
 Notes:
 - each `boards[]` item reuses the same preview-row shape as homepage leaderboard previews
-- current implementation omits model boards that have no materialized leaderboard rows
-- current implementation returns up to 5 preview rows per board
+- boards without usable rows may be omitted
+- the response may cap preview rows per board
 - this endpoint is read-only and safe for CDN caching
 
 ### GET /public/leaderboard/:modelKey
@@ -376,9 +372,7 @@ Required point fields:
 Notes:
 - this endpoint returns chart-ready aggregate data only
 - it must not expose raw probe rows
-- the current public relay page requests `window=30d`
-- the current implementation downsamples the persisted bucket series before returning
-  it, so long windows stay chart-friendly without exposing every raw 5-minute point
+- long windows may be downsampled before the response is returned
 
 ### GET /public/relay/:slug/models
 
@@ -461,10 +455,7 @@ Required row fields:
 Notes:
 - `inputPricePer1M` and `outputPricePer1M` may be `null` when a relay exposes only
   one side of the price schedule
-- the current public relay page uses this endpoint to enrich the supported-model table
-  with the latest known prices rather than rendering a standalone price-history panel
-- the current implementation excludes pricing rows for relay-model pairs that are
-  currently marked `unsupported`
+- rows for relay-model pairs that are currently marked `unsupported` may be excluded
 
 ### GET /public/relay/:slug/incidents
 
@@ -505,25 +496,6 @@ Required row fields:
 Notes:
 - `endedAt` is nullable and is `null` while an incident is still active
 - incident severity is negative-only in MVP: `degraded`, `down`, `paused`, `unknown`
-- the endpoint is implemented and stable, but the current public relay page does not
-  render a dedicated incidents panel
-
-## Relay Detail Boundary
-
-First-paint critical contract:
-- `GET /public/relay/:slug/overview`
-
-Secondary contract, safe to load after hydration:
-- `GET /public/relay/:slug/history`
-- `GET /public/relay/:slug/models`
-- `GET /public/relay/:slug/pricing-history`
-- `GET /public/relay/:slug/incidents`
-
-Current shipped UI notes:
-- the public relay page currently renders overview, history, and supported models
-- `pricing-history` is consumed as a data source for latest-price enrichment
-- `incidents` remains an available API contract even though the page does not show
-  a standalone incident timeline section today
 
 ### GET /public/methodology
 
@@ -556,8 +528,6 @@ Response:
 ```
 
 Notes:
-- this payload currently comes from a small server-owned static builder rather than a
-  dedicated editable CMS table
 - the page copy on `/methodology` combines scoring explanation with sponsor
   separation, intake, and reconsideration guidance
 
@@ -617,12 +587,6 @@ Notes:
   submitted `modelPrices` row before running the initial bounded verification
 - `modelPrices` must contain at least one row, and each row must include `modelKey`
   plus at least one non-null price field
-- submit-time test keys are part of the operator review workflow and may be stored in
-  submission-owned credential records until the review is completed
-- the initial bounded verification result is written back to that submission-owned
-  credential record and also returned as the concise `probe` summary in the response
-- approving the submission later creates or links a relay record and moves the
-  submission into submission history rather than leaving it in the active queue
 
 ## Versioning Guidance
 

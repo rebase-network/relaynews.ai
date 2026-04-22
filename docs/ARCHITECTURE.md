@@ -187,15 +187,12 @@ The MVP currently uses a client-rendered SPA deployed on Cloudflare Workers Stat
 Assets.
 
 ### Current Route Model
-- public routes render through the public SPA shell on `relaynew.ai` and fetch data
-  from the backend API
-- the public route set now includes `/`, `/leaderboard`, `/leaderboard/directory`,
-  `/leaderboard/:modelKey`, `/relay/:slug`, `/methodology`, `/submit`, and `/probe`;
-  `/policy` remains only as a compatibility redirect into the merged governance section
+- public content routes render through the public SPA shell on `relaynew.ai`; the
+  concrete route inventory lives in `docs/ROUTES.md`
 - admin routes render through a separate admin SPA shell on `a.relaynew.ai`, with
   `/` redirecting to `/relays` after the initial auth/bootstrap check
-- probe flows and chart modules stay client-rendered
-- the probe page should default to URL + key + model input, with compatibility override
+- `/policy` remains only as a compatibility redirect into `/methodology`
+- probe flows and chart modules stay client-rendered, with compatibility override
   hidden behind advanced controls
 
 ### Forward Compatibility
@@ -211,17 +208,11 @@ Assets.
 The MVP uses one main cache layer only: Cloudflare CDN cache.
 
 ### Cacheable Endpoints
-Public read-only endpoints under `/public/*` should be cacheable.
-Examples:
-- `/public/home-summary`
-- `/public/leaderboard-directory`
-- `/public/leaderboard/:modelKey`
-- `/public/relay/:slug/overview`
-- `/public/relay/:slug/history`
-- `/public/relay/:slug/models`
-- `/public/relay/:slug/pricing-history`
-- `/public/relay/:slug/incidents`
-- `/public/methodology`
+Public read-only content endpoints under `/public/*` should be cacheable.
+
+The canonical endpoint inventory lives in `docs/API_CONTRACT_V1.md`, while
+`docs/ROUTES.md` maps those endpoints back to page surfaces. In practice, the
+cacheable set covers homepage, leaderboard, relay detail, and methodology reads.
 
 ### Suggested Response Headers
 

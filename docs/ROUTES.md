@@ -37,17 +37,8 @@ The current backend transport boundary is split into three practical surfaces.
 
 ### Public content APIs
 
-These are read-only, page-facing content endpoints:
-
-- `GET /public/home-summary`
-- `GET /public/leaderboard-directory`
-- `GET /public/leaderboard/:modelKey`
-- `GET /public/relay/:slug/overview`
-- `GET /public/relay/:slug/history`
-- `GET /public/relay/:slug/models`
-- `GET /public/relay/:slug/pricing-history`
-- `GET /public/relay/:slug/incidents`
-- `GET /public/methodology`
+These are the read-only, page-facing content endpoints documented in
+`docs/API_CONTRACT_V1.md`.
 
 Rules:
 
@@ -202,34 +193,14 @@ The test page is expected to include:
 
 ## Data Contract Notes
 
-- `/public/home-summary` should return homepage modules that are already aggregated
-- `/public/leaderboard/:modelKey` should return a ready-to-render row list
-- `/public/relay/:slug/overview` should return a single summary payload for first paint
-- `/public/relay/:slug/history` should return chart buckets, not raw probe rows
-- `/public/relay/:slug/models` should return supported model rows only
-- `/public/relay/:slug/pricing-history` should return price change points or chart-ready
-  buckets; the current relay page uses it to enrich the model table with latest price
-  data instead of rendering a dedicated history panel
-- `/public/relay/:slug/incidents` should return timeline-ready incident records; the
-  endpoint remains implemented even though the current public relay page does not
-  render a dedicated incidents section
-- `/probe` must only call the public-safe test endpoint described in `docs/PROBE_SECURITY.md`
-- `/public/probe/check` should accept an optional `compatibilityMode` override while
-  still defaulting to model-driven automatic detection
-- `/public/submissions` should require `contactInfo`, `modelPrices`, and `testApiKey`;
-  `testModel` may be omitted and derived from the first submitted model row
-- `/public/submissions` should persist submission-scoped model-price rows separately
-  from the main submission record and return a concise initial probe summary
-- `/admin/submissions` should expose contact info, model-price rows, approved-relay
-  linkage, and the current preferred credential summary for each submission
-- `/admin/relays` should expose relay metadata, contact info, model-price rows, and
-  the currently preferred credential summary used for relay operations
+- public content payload shapes and field rules live in `docs/API_CONTRACT_V1.md`
+- `/probe` must only call the public-safe test endpoint described in
+  `docs/PROBE_SECURITY.md`
 - public directory, leaderboard, and relay detail routes should only read relays with
   `status = active`
-- approving a submission should move the active credential from the submission owner
-  into the target relay owner rather than duplicating keys across tables
-- approving a submission should immediately activate the relay and trigger its first
-  relay-owned monitoring run so the public site can pick it up without a second manual step
+- approving a submission should activate the relay, move the reviewed submission to
+  history, transfer the active credential to the target relay owner, and trigger the
+  first relay-owned monitoring run
 - `/submissions` may remain as a compatibility redirect to `/intake`, but new operator
   links should point at `/intake`
 - admin routes on `a.relaynew.ai` should never rely on CDN-cached responses

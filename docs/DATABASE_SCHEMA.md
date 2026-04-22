@@ -216,12 +216,12 @@ Notes:
 - the current public submission UI writes `contact_info`; legacy `submitter_name`
   and `submitter_email` columns may still exist for backward compatibility but are
   no longer the primary intake fields
-- once approved, the operational relay record lives in `relays`, and `approved_relay_id` links the review record back to that catalog entry
+- once approved, the operational relay record lives in `relays`, and
+  `approved_relay_id` links the review record back to that catalog entry
 - `pending` rows are the active review queue, while `approved`, `rejected`, and
   `archived` rows are treated as history
-- `POST /public/submissions` is the review-flow entry point and persists the
-  submitter-provided test credential into `probe_credentials` for immediate
-  verification and later review follow-up
+- public submission intake persists the submitter-provided test credential into
+  `probe_credentials` for immediate verification and later review follow-up
 - submission-scoped model-price rows live in `submission_model_prices` instead of
   being flattened into the submission row itself
 
@@ -278,8 +278,7 @@ Notes:
 - exactly one owner should be present on each row: either `submission_id` or `relay_id`
 - key rotation should create a new active row and mark the previous row as `rotated` or `revoked`
 - initial submit-time probes should write their latest verification snapshot back to this table
-- `POST /public/probe/check` is the separate self-check route and should not
-  persist user-supplied probe keys by default
+- the public self-check route should not persist user-supplied probe keys by default
 - when a submission is approved, the active monitoring credential should move from
   the submission owner to the approved relay owner, either by transferring the row
   or by rotating into a new `relay_id`-owned credential record
@@ -605,33 +604,31 @@ Execution assumption:
 - if the API service is later scaled horizontally, scheduling and rebuild jobs
   must use PostgreSQL-backed coordination such as advisory locks or job leases
 
-## Public Read Mapping
+## Public Read Models
 
-- `GET /public/home-summary`
+- homepage
   - source: `home_summary_snapshots`
   - key: `home:full-page`
-- `GET /public/leaderboard-directory`
+- leaderboard directory and per-model leaderboards
   - source: `leaderboard_snapshots`
   - read model: aggregate the top preview rows per tracked model from current global snapshots
-- `GET /public/leaderboard/:modelKey`
-  - source: `leaderboard_snapshots`
-- `GET /public/relay/:slug/overview`
+- relay detail first paint
   - source: `relay_overview_snapshots` joined with `relays`
-- `GET /public/relay/:slug/history`
+- relay history
   - source: `relay_status_5m` and `relay_latency_5m`
   - current implementation reads persisted 5-minute buckets for every supported window
     and applies a simple stride downsampling before returning the response:
     - `24h`: every 2nd point
     - `7d`: every 4th point
     - `30d`: every 8th point
-- `GET /public/relay/:slug/models`
+- relay supported models
   - source: `relay_models` joined with `models`
   - read model: exclude rows whose relay-model support status is `unsupported`
-- `GET /public/relay/:slug/pricing-history`
+- relay pricing history or latest-price enrichment
   - source: `relay_prices`
   - read model: return price change points ordered by `effective_from`, while excluding
     relay-model pairs currently marked `unsupported`
-- `GET /public/relay/:slug/incidents`
+- relay incidents
   - source: `incident_events`
 
 ## Notes
