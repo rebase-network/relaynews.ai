@@ -6,6 +6,7 @@ export const probeResolvedCompatibilityModeSchema = z.enum([
   "openai-responses",
   "openai-chat-completions",
   "anthropic-messages",
+  "google-gemini-generate-content",
 ]);
 
 export const probeCompatibilityModeSchema = z.enum([

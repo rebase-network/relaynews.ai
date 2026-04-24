@@ -150,7 +150,9 @@ test("probe compatibility defaults and response diagnostics parse", () => {
   assert.equal(response.compatibilityMode, "openai-responses");
   assert.equal(response.attemptedModes[0], "openai-responses");
   assert.equal(probeCompatibilityModeSchema.safeParse("auto").success, true);
+  assert.equal(probeCompatibilityModeSchema.safeParse("google-gemini-generate-content").success, true);
   assert.equal(probeResolvedCompatibilityModeSchema.safeParse("auto").success, false);
+  assert.equal(probeResolvedCompatibilityModeSchema.safeParse("google-gemini-generate-content").success, true);
 });
 
 test("methodology payload parses", () => {

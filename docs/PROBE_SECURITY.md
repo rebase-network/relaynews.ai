@@ -67,6 +67,7 @@ auto
 openai-responses
 openai-chat-completions
 anthropic-messages
+google-gemini-generate-content
 ```
 
 Behavior rules:

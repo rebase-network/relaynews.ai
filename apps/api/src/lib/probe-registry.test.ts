@@ -5,6 +5,7 @@ import {
   buildProbeAttempts,
   getAutoProbeModes,
   inferProbeFamilyFromPath,
+  inferProbeFamilyFromTarget,
   inferProbeModeFromPath,
   inferProbeModelFamily,
   probeAdapterRegistry,
@@ -39,6 +40,29 @@ test("chat-oriented non-openai model names prefer chat completions first", () =>
   ]);
 });
 
+test("google gemini native targets resolve to the native generate-content adapter", () => {
+  assert.equal(
+    inferProbeModeFromPath("/v1beta/models/gemini-2.5-flash:generateContent"),
+    "google-gemini-generate-content",
+  );
+  assert.equal(
+    inferProbeModeFromPath("/v1beta/models/gemini-2.5-flash:streamGenerateContent"),
+    "google-gemini-generate-content",
+  );
+  assert.equal(
+    inferProbeFamilyFromPath("/v1beta/models/gemini-2.5-flash:generateContent"),
+    "gemini-native",
+  );
+  assert.equal(
+    inferProbeFamilyFromTarget(new URL("https://generativelanguage.googleapis.com")),
+    "gemini-native",
+  );
+  assert.deepEqual(
+    getAutoProbeModes("gemini-2.5-flash", new URL("https://generativelanguage.googleapis.com")),
+    ["google-gemini-generate-content"],
+  );
+});
+
 test("path hints can override model-family ordering during auto detection", () => {
   assert.equal(inferProbeFamilyFromPath("/openai"), "openai");
   assert.equal(inferProbeFamilyFromPath("/v1/chat/completions"), "chat-first");
@@ -65,6 +89,26 @@ test("manual compatibility mode only builds attempts for the requested adapter",
 
   assert.ok(attempts.length > 0);
   assert.ok(attempts.every((attempt) => attempt.mode === "openai-chat-completions"));
+});
+
+test("gemini adapter builds official native endpoints and uses x-goog-api-key", () => {
+  const attempts = buildProbeAttempts(new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"), {
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    apiKey: "google-key",
+    model: "models/gemini-2.5-flash",
+    compatibilityMode: "google-gemini-generate-content",
+  });
+
+  assert.deepEqual(
+    attempts.map((attempt) => attempt.url.toString()),
+    [
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    ],
+  );
+  assert.ok(attempts.every((attempt) => attempt.useBearerAuth === false));
+  assert.ok(attempts.every((attempt) => attempt.headers?.["x-goog-api-key"] === "google-key"));
+  assert.ok(attempts.every((attempt) => JSON.parse(attempt.body).generationConfig.maxOutputTokens === 16));
 });
 
 test("exact endpoint base URLs are normalized back to protocol roots before building attempts", () => {
@@ -172,4 +216,26 @@ test("anthropic adapter matches message-start event stream", () => {
   };
 
   assert.equal(probeAdapterRegistry["anthropic-messages"].matches(result), true);
+});
+
+test("gemini adapter matches native generate-content json responses", () => {
+  const attempt = firstAttempt(probeAdapterRegistry["google-gemini-generate-content"].buildAttempts(new URL("https://generativelanguage.googleapis.com"), {
+    baseUrl: "https://generativelanguage.googleapis.com",
+    apiKey: "google-key",
+    model: "gemini-2.5-flash",
+    compatibilityMode: "google-gemini-generate-content",
+  }));
+
+  const result: ProbeAttemptResult = {
+    attempt,
+    response: new Response('{"candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]},"finishReason":"STOP"}]}', {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }),
+    latencyMs: 180,
+    body: '{"candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]},"finishReason":"STOP"}]}',
+    contentType: "application/json",
+  };
+
+  assert.equal(probeAdapterRegistry["google-gemini-generate-content"].matches(result), true);
 });

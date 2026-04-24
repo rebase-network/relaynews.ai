@@ -58,6 +58,7 @@ export const PROBE_COMPATIBILITY_OPTIONS: Array<{ value: ProbeCompatibilityMode;
   { value: "openai-responses", label: "OpenAI Responses" },
   { value: "openai-chat-completions", label: "OpenAI Chat Completions" },
   { value: "anthropic-messages", label: "Anthropic Messages" },
+  { value: "google-gemini-generate-content", label: "Google Gemini Generate Content" },
 ];
 
 export const PROBE_FIELD_META = {
@@ -91,6 +92,7 @@ export const PROBE_COMPATIBILITY_LABELS: Record<ProbeResolvedCompatibilityMode, 
   "openai-responses": "OpenAI Responses",
   "openai-chat-completions": "OpenAI Chat Completions",
   "anthropic-messages": "Anthropic Messages",
+  "google-gemini-generate-content": "Google Gemini Generate Content",
 };
 
 export const GITHUB_REPOSITORY_URL = "https://github.com/rebase.network";

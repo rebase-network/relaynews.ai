@@ -17,6 +17,7 @@ export const PROBE_COMPATIBILITY_OPTIONS: Array<{ value: ProbeCompatibilityMode;
   { value: "openai-responses", label: "OpenAI Responses" },
   { value: "openai-chat-completions", label: "OpenAI Chat Completions" },
   { value: "anthropic-messages", label: "Anthropic Messages" },
+  { value: "google-gemini-generate-content", label: "Google Gemini Generate Content" },
 ];
 
 export type ApiErrorPayload = {

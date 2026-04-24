@@ -4,7 +4,7 @@ import {
   type PublicProbeRequest,
 } from "@relaynews/shared";
 
-export type ProbeModelFamily = "openai" | "anthropic" | "chat-first" | "generic";
+export type ProbeModelFamily = "openai" | "anthropic" | "chat-first" | "gemini-native" | "generic";
 
 export type ProbeAttempt = {
   mode: ProbeResolvedCompatibilityMode;
@@ -12,6 +12,7 @@ export type ProbeAttempt = {
   url: URL;
   body: string;
   headers?: Record<string, string>;
+  useBearerAuth?: boolean;
 };
 
 export type ProbeAttemptResult = {
@@ -32,17 +33,20 @@ export type ProbeAdapter = {
 const OPENAI_RESPONSES = "openai-responses" as const;
 const OPENAI_CHAT = "openai-chat-completions" as const;
 const ANTHROPIC_MESSAGES = "anthropic-messages" as const;
+const GOOGLE_GEMINI_GENERATE_CONTENT = "google-gemini-generate-content" as const;
 
 export const probeCompatibilityModeLabels: Record<ProbeResolvedCompatibilityMode, string> = {
   [OPENAI_RESPONSES]: "OpenAI Responses",
   [OPENAI_CHAT]: "OpenAI Chat Completions",
   [ANTHROPIC_MESSAGES]: "Anthropic Messages",
+  [GOOGLE_GEMINI_GENERATE_CONTENT]: "Google Gemini Generate Content",
 };
 
 const probeModePathSuffixes: Record<ProbeResolvedCompatibilityMode, string> = {
   [OPENAI_RESPONSES]: "/responses",
   [OPENAI_CHAT]: "/chat/completions",
   [ANTHROPIC_MESSAGES]: "/messages",
+  [GOOGLE_GEMINI_GENERATE_CONTENT]: ":generatecontent",
 };
 
 function normalizePath(pathname: string) {
@@ -76,12 +80,18 @@ function getRootPathVariants(pathname: string) {
 
 export function inferProbeModeFromPath(pathname: string): ProbeResolvedCompatibilityMode | null {
   const normalizedPath = normalizePath(pathname);
+  const loweredPath = normalizedPath.toLowerCase();
+
+  if (loweredPath.endsWith(":generatecontent") || loweredPath.endsWith(":streamgeneratecontent")) {
+    return GOOGLE_GEMINI_GENERATE_CONTENT;
+  }
+
   const entries = Object.entries(probeModePathSuffixes).sort((left, right) => right[1].length - left[1].length) as Array<
     [ProbeResolvedCompatibilityMode, string]
   >;
 
   for (const [mode, suffix] of entries) {
-    if (normalizedPath === suffix || normalizedPath.endsWith(suffix)) {
+    if (loweredPath === suffix || loweredPath.endsWith(suffix)) {
       return mode;
     }
   }
@@ -92,6 +102,10 @@ export function inferProbeModeFromPath(pathname: string): ProbeResolvedCompatibi
 export function inferProbeFamilyFromPath(pathname: string): ProbeModelFamily | null {
   const normalizedPath = normalizePath(pathname).toLowerCase();
   const explicitMode = inferProbeModeFromPath(normalizedPath);
+
+  if (explicitMode === GOOGLE_GEMINI_GENERATE_CONTENT) {
+    return "gemini-native";
+  }
 
   if (explicitMode === ANTHROPIC_MESSAGES) {
     return "anthropic";
@@ -114,6 +128,23 @@ export function inferProbeFamilyFromPath(pathname: string): ProbeModelFamily | n
 
   if (normalizedPath.includes("/openai")) {
     return "openai";
+  }
+
+  return null;
+}
+
+function isGeminiNativeHost(hostname: string) {
+  return hostname.toLowerCase() === "generativelanguage.googleapis.com";
+}
+
+export function inferProbeFamilyFromTarget(targetUrl: URL): ProbeModelFamily | null {
+  const familyFromPath = inferProbeFamilyFromPath(targetUrl.pathname);
+  if (familyFromPath) {
+    return familyFromPath;
+  }
+
+  if (isGeminiNativeHost(targetUrl.hostname)) {
+    return "gemini-native";
   }
 
   return null;
@@ -217,6 +248,24 @@ function buildAnthropicMessagesBody(model: string) {
   });
 }
 
+function buildGoogleGeminiGenerateContentBody() {
+  return JSON.stringify({
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: "ping",
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      maxOutputTokens: 16,
+    },
+  });
+}
+
 function matchOpenAiResponses(result: ProbeAttemptResult) {
   if (!result.response.ok) {
     return false;
@@ -280,6 +329,33 @@ function matchAnthropicMessages(result: ProbeAttemptResult) {
   return false;
 }
 
+function matchGoogleGeminiGenerateContent(result: ProbeAttemptResult) {
+  if (!result.response.ok) {
+    return false;
+  }
+
+  const record = asJsonRecord(result.body);
+  if (Array.isArray(record?.candidates)) {
+    return true;
+  }
+
+  if (hasEventStreamContentType(result.contentType)) {
+    return result.body.includes('"candidates"') || result.body.includes('"promptFeedback"');
+  }
+
+  if (hasJsonContentType(result.contentType)) {
+    return result.body.includes('"candidates"') || result.body.includes('"promptFeedback"');
+  }
+
+  return false;
+}
+
+function dedupeAttempts(attempts: ProbeAttempt[]) {
+  return attempts.filter((attempt, index, all) =>
+    all.findIndex((candidate) => candidate.url.toString() === attempt.url.toString()) === index,
+  );
+}
+
 function buildModeAttempts(
   mode: ProbeResolvedCompatibilityMode,
   targetUrl: URL,
@@ -302,9 +378,64 @@ function buildModeAttempts(
     return attempt;
   });
 
-  return attempts.filter((attempt, index, all) =>
-    all.findIndex((candidate) => candidate.url.toString() === attempt.url.toString()) === index,
-  );
+  return dedupeAttempts(attempts);
+}
+
+function normalizeGeminiModel(model: string) {
+  return model.replace(/^models\//i, "");
+}
+
+function getGeminiRootVariants(pathname: string) {
+  let basePath = normalizePath(pathname);
+
+  basePath = basePath.replace(/\/models\/[^/]+:(?:streamGenerateContent|generateContent)$/i, "");
+  basePath = basePath.replace(/\/models$/i, "");
+
+  if (!basePath) {
+    return ["/v1beta"];
+  }
+
+  if (/\/v1beta$/i.test(basePath) || /\/v1$/i.test(basePath)) {
+    return [basePath];
+  }
+
+  return [joinPath(basePath, "/v1beta"), basePath];
+}
+
+function buildGoogleGeminiAttempts(targetUrl: URL, request: PublicProbeRequest) {
+  const model = encodeURIComponent(normalizeGeminiModel(request.model));
+  const body = buildGoogleGeminiGenerateContentBody();
+  const attempts = getGeminiRootVariants(targetUrl.pathname).flatMap((basePath) => {
+    const streamUrl = withPath(targetUrl, joinPath(basePath, `/models/${model}:streamGenerateContent`));
+    streamUrl.searchParams.set("alt", "sse");
+
+    const generateUrl = withPath(targetUrl, joinPath(basePath, `/models/${model}:generateContent`));
+
+    return [
+      {
+        mode: GOOGLE_GEMINI_GENERATE_CONTENT,
+        method: "POST" as const,
+        url: streamUrl,
+        body,
+        headers: {
+          "x-goog-api-key": request.apiKey,
+        },
+        useBearerAuth: false,
+      },
+      {
+        mode: GOOGLE_GEMINI_GENERATE_CONTENT,
+        method: "POST" as const,
+        url: generateUrl,
+        body,
+        headers: {
+          "x-goog-api-key": request.apiKey,
+        },
+        useBearerAuth: false,
+      },
+    ];
+  });
+
+  return dedupeAttempts(attempts);
 }
 
 export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeAdapter> = {
@@ -335,8 +466,14 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
           "anthropic-version": "2023-06-01",
           "x-api-key": request.apiKey,
         },
-      ),
+    ),
     matches: matchAnthropicMessages,
+  },
+  [GOOGLE_GEMINI_GENERATE_CONTENT]: {
+    key: GOOGLE_GEMINI_GENERATE_CONTENT,
+    label: probeCompatibilityModeLabels[GOOGLE_GEMINI_GENERATE_CONTENT],
+    buildAttempts: buildGoogleGeminiAttempts,
+    matches: matchGoogleGeminiGenerateContent,
   },
 };
 
@@ -395,6 +532,8 @@ function modesForFamily(family: ProbeModelFamily): ProbeResolvedCompatibilityMod
       return [ANTHROPIC_MESSAGES, OPENAI_CHAT, OPENAI_RESPONSES];
     case "chat-first":
       return [OPENAI_CHAT, OPENAI_RESPONSES, ANTHROPIC_MESSAGES];
+    case "gemini-native":
+      return [GOOGLE_GEMINI_GENERATE_CONTENT];
     case "openai":
       return [OPENAI_RESPONSES, OPENAI_CHAT, ANTHROPIC_MESSAGES];
     default:
@@ -404,7 +543,7 @@ function modesForFamily(family: ProbeModelFamily): ProbeResolvedCompatibilityMod
 
 export function getAutoProbeModes(model: string, targetUrl?: URL): ProbeResolvedCompatibilityMode[] {
   const explicitMode = targetUrl ? inferProbeModeFromPath(targetUrl.pathname) : null;
-  const familyHint = targetUrl ? inferProbeFamilyFromPath(targetUrl.pathname) : null;
+  const familyHint = targetUrl ? inferProbeFamilyFromTarget(targetUrl) : null;
   const family = familyHint ?? inferProbeModelFamily(model);
   const orderedModes = modesForFamily(family);
 

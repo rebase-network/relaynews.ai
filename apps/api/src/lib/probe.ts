@@ -219,16 +219,23 @@ export function buildProbeFailureMessage(result: ProbeAttemptResult) {
 
 async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promise<ProbeAttemptResult> {
   const startedAt = Date.now();
+  const headers: Record<string, string> = {
+    accept: "text/event-stream,application/json,text/plain;q=0.9,*/*;q=0.8",
+    "content-type": "application/json",
+    "user-agent": "relaynews-public-probe/0.1",
+  };
+
+  if (attempt.useBearerAuth !== false) {
+    headers.authorization = `Bearer ${apiKey}`;
+  }
+
   const requestInit: RequestInit = {
     method: attempt.method,
     body: attempt.body,
     redirect: "manual",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
-      authorization: `Bearer ${apiKey}`,
-      accept: "text/event-stream,application/json,text/plain;q=0.9,*/*;q=0.8",
-      "content-type": "application/json",
-      "user-agent": "relaynews-public-probe/0.1",
+      ...headers,
       ...(attempt.headers ?? {}),
     },
   };

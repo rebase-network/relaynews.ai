@@ -235,6 +235,7 @@ export function formatCompatibilityMode(mode: ProbeCompatibilityMode) {
     "openai-responses": "OpenAI Responses",
     "openai-chat-completions": "OpenAI Chat Completions",
     "anthropic-messages": "Anthropic Messages",
+    "google-gemini-generate-content": "Google Gemini Generate Content",
   };
 
   return labels[mode];
