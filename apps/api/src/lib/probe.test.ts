@@ -37,6 +37,8 @@ function makeResult(
       headers: { "content-type": contentType },
     }),
     latencyMs: 120,
+    ttfbMs: 120,
+    firstTokenMs: 180,
     body,
     contentType,
   };

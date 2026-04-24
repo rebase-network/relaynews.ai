@@ -137,14 +137,26 @@ async function validateTarget(url: URL) {
   }
 }
 
-async function readLimitedText(stream: ReadableStream<Uint8Array> | null, limit: number) {
+async function readLimitedText(
+  stream: ReadableStream<Uint8Array> | null,
+  limit: number,
+  detectFirstToken: ((body: string, contentType: string) => boolean) | null,
+  contentType: string,
+  startedAt: number,
+) {
   if (!stream) {
-    return "";
+    return {
+      body: "",
+      firstTokenMs: null,
+    };
   }
 
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  let firstTokenMs: number | null = null;
+  const decoder = new TextDecoder();
+  let accumulatedText = "";
 
   while (true) {
     const { done, value } = await reader.read();
@@ -158,9 +170,25 @@ async function readLimitedText(stream: ReadableStream<Uint8Array> | null, limit:
     }
 
     chunks.push(value);
+
+    if (detectFirstToken && firstTokenMs === null) {
+      accumulatedText += decoder.decode(value, { stream: true });
+      if (detectFirstToken(accumulatedText, contentType)) {
+        firstTokenMs = Date.now() - startedAt;
+      }
+    }
   }
 
-  return new TextDecoder().decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))));
+  accumulatedText += decoder.decode();
+
+  if (detectFirstToken && firstTokenMs === null && detectFirstToken(accumulatedText, contentType)) {
+    firstTokenMs = Date.now() - startedAt;
+  }
+
+  return {
+    body: accumulatedText || new TextDecoder().decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)))),
+    firstTokenMs,
+  };
 }
 
 function successHealthStatus(statusCode: number) {
@@ -207,6 +235,8 @@ function buildMatchedModes(results: ProbeAttemptResult[]): PublicProbeMatchedMod
     url: result.attempt.url.toString(),
     httpStatus: result.response.status,
     latencyMs: result.latencyMs,
+    ttfbMs: result.ttfbMs,
+    firstTokenMs: result.firstTokenMs,
   }));
 }
 
@@ -322,14 +352,24 @@ async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promi
   };
 
   const response = await fetch(attempt.url, requestInit);
-  const latencyMs = Date.now() - startedAt;
-  const body = await readLimitedText(response.body, MAX_RESPONSE_BYTES);
   const contentType = response.headers.get("content-type") ?? "";
+  const ttfbMs = Date.now() - startedAt;
+  const adapter = probeAdapterRegistry[attempt.mode];
+  const { body, firstTokenMs } = await readLimitedText(
+    response.body,
+    MAX_RESPONSE_BYTES,
+    adapter.hasFirstTokenText,
+    contentType,
+    startedAt,
+  );
+  const latencyMs = ttfbMs;
 
   return {
     attempt,
     response,
     latencyMs,
+    ttfbMs,
+    firstTokenMs,
     body,
     contentType,
   };
@@ -388,6 +428,8 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
           connectivity: {
             ok: true,
             latencyMs: primaryMatch.latencyMs,
+            ttfbMs: primaryMatch.ttfbMs,
+            firstTokenMs: primaryMatch.firstTokenMs,
           },
           protocol: {
             ok: true,
@@ -420,6 +462,8 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         connectivity: {
           ok: true,
           latencyMs: primaryMatch.latencyMs,
+          ttfbMs: primaryMatch.ttfbMs,
+          firstTokenMs: primaryMatch.firstTokenMs,
         },
         protocol: {
           ok: true,
@@ -449,6 +493,8 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
       connectivity: {
         ok: true,
         latencyMs: bestFailure.latencyMs,
+        ttfbMs: bestFailure.ttfbMs,
+        firstTokenMs: bestFailure.firstTokenMs,
       },
       protocol: {
         ok: false,
@@ -473,6 +519,8 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
       connectivity: {
         ok: false,
         latencyMs: null,
+        ttfbMs: null,
+        firstTokenMs: null,
       },
       protocol: {
         ok: false,

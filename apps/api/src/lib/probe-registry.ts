@@ -19,6 +19,8 @@ export type ProbeAttemptResult = {
   attempt: ProbeAttempt;
   response: Response;
   latencyMs: number;
+  ttfbMs: number;
+  firstTokenMs: number | null;
   body: string;
   contentType: string;
 };
@@ -28,6 +30,7 @@ export type ProbeAdapter = {
   label: string;
   buildAttempts: (targetUrl: URL, request: PublicProbeRequest) => ProbeAttempt[];
   matches: (result: ProbeAttemptResult) => boolean;
+  hasFirstTokenText: (body: string, contentType: string) => boolean;
 };
 
 const OPENAI_RESPONSES = "openai-responses" as const;
@@ -202,6 +205,11 @@ function hasEventStreamContentType(contentType: string) {
   return contentType.toLowerCase().includes("text/event-stream");
 }
 
+function hasNonEmptyJsonStringField(body: string, field: string) {
+  const pattern = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)+)"`);
+  return pattern.test(body);
+}
+
 function buildOpenAiResponsesBody(model: string) {
   return JSON.stringify({
     model,
@@ -231,14 +239,14 @@ function buildOpenAiChatBody(model: string) {
       },
     ],
     stream: true,
-    max_tokens: 1,
+    max_tokens: 16,
   });
 }
 
 function buildAnthropicMessagesBody(model: string) {
   return JSON.stringify({
     model,
-    max_tokens: 1,
+    max_tokens: 16,
     stream: true,
     messages: [
       {
@@ -293,6 +301,14 @@ function matchOpenAiResponses(result: ProbeAttemptResult) {
   return false;
 }
 
+function hasOpenAiResponsesFirstToken(body: string, contentType: string) {
+  if (hasEventStreamContentType(contentType)) {
+    return body.includes('"type":"response.output_text.delta"') && hasNonEmptyJsonStringField(body, "delta");
+  }
+
+  return body.includes('"object":"response"') && hasNonEmptyJsonStringField(body, "text");
+}
+
 function matchOpenAiChatCompletions(result: ProbeAttemptResult) {
   if (!result.response.ok) {
     return false;
@@ -312,6 +328,14 @@ function matchOpenAiChatCompletions(result: ProbeAttemptResult) {
   }
 
   return false;
+}
+
+function hasOpenAiChatCompletionsFirstToken(body: string, contentType: string) {
+  if (hasEventStreamContentType(contentType)) {
+    return body.includes('"object":"chat.completion.chunk"') && hasNonEmptyJsonStringField(body, "content");
+  }
+
+  return body.includes('"choices"') && hasNonEmptyJsonStringField(body, "content");
 }
 
 function matchAnthropicMessages(result: ProbeAttemptResult) {
@@ -335,6 +359,14 @@ function matchAnthropicMessages(result: ProbeAttemptResult) {
   return false;
 }
 
+function hasAnthropicMessagesFirstToken(body: string, contentType: string) {
+  if (hasEventStreamContentType(contentType)) {
+    return body.includes('"type":"content_block_delta"') && hasNonEmptyJsonStringField(body, "text");
+  }
+
+  return body.includes('"type":"message"') && hasNonEmptyJsonStringField(body, "text");
+}
+
 function matchGoogleGeminiGenerateContent(result: ProbeAttemptResult) {
   if (!result.response.ok) {
     return false;
@@ -354,6 +386,10 @@ function matchGoogleGeminiGenerateContent(result: ProbeAttemptResult) {
   }
 
   return false;
+}
+
+function hasGoogleGeminiGenerateContentFirstToken(body: string) {
+  return body.includes('"candidates"') && hasNonEmptyJsonStringField(body, "text");
 }
 
 function dedupeAttempts(attempts: ProbeAttempt[]) {
@@ -451,6 +487,7 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
     buildAttempts: (targetUrl, request) =>
       buildModeAttempts(OPENAI_RESPONSES, targetUrl, "/responses", buildOpenAiResponsesBody(request.model)),
     matches: matchOpenAiResponses,
+    hasFirstTokenText: hasOpenAiResponsesFirstToken,
   },
   [OPENAI_CHAT]: {
     key: OPENAI_CHAT,
@@ -458,6 +495,7 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
     buildAttempts: (targetUrl, request) =>
       buildModeAttempts(OPENAI_CHAT, targetUrl, "/chat/completions", buildOpenAiChatBody(request.model)),
     matches: matchOpenAiChatCompletions,
+    hasFirstTokenText: hasOpenAiChatCompletionsFirstToken,
   },
   [ANTHROPIC_MESSAGES]: {
     key: ANTHROPIC_MESSAGES,
@@ -474,12 +512,14 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
         },
     ),
     matches: matchAnthropicMessages,
+    hasFirstTokenText: hasAnthropicMessagesFirstToken,
   },
   [GOOGLE_GEMINI_GENERATE_CONTENT]: {
     key: GOOGLE_GEMINI_GENERATE_CONTENT,
     label: probeCompatibilityModeLabels[GOOGLE_GEMINI_GENERATE_CONTENT],
     buildAttempts: buildGoogleGeminiAttempts,
     matches: matchGoogleGeminiGenerateContent,
+    hasFirstTokenText: hasGoogleGeminiGenerateContentFirstToken,
   },
 };
 

@@ -133,6 +133,8 @@ test("probe compatibility defaults and response diagnostics parse", () => {
     connectivity: {
       ok: true,
       latencyMs: 320,
+      ttfbMs: 320,
+      firstTokenMs: 540,
     },
     protocol: {
       ok: true,
@@ -152,6 +154,8 @@ test("probe compatibility defaults and response diagnostics parse", () => {
   assert.equal(response.compatibilityMode, "openai-responses");
   assert.equal(response.attemptedModes[0], "openai-responses");
   assert.equal(response.matchedModes.length, 0);
+  assert.equal(response.connectivity.ttfbMs, 320);
+  assert.equal(response.connectivity.firstTokenMs, 540);
   assert.equal(probeCompatibilityModeSchema.safeParse("auto").success, true);
   assert.equal(probeCompatibilityModeSchema.safeParse("google-gemini-generate-content").success, true);
   assert.equal(probeResolvedCompatibilityModeSchema.safeParse("auto").success, false);

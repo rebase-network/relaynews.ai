@@ -182,7 +182,8 @@ The test page is expected to include:
 - an advanced section with an optional `Compatibility Mode` selector
 - an explicit deep-scan action for advanced users who want to enumerate all bounded
   compatible modes instead of stopping at the first match
-- a diagnostic result panel that shows host, connectivity, protocol status, and latency
+- a diagnostic result panel that shows host, connectivity, protocol status, TTFB, and
+  first-token timing when available
 - explanatory output such as detected compatibility mode, selected endpoint, and next
   steps when automatic detection fails
 

@@ -329,6 +329,7 @@ Suggested columns:
 - `http_status` integer null
 - `latency_ms` integer null
 - `ttfb_ms` integer null
+- `first_token_ms` integer null
 - `dns_ms` integer null
 - `tls_ms` integer null
 - `request_tokens` integer null

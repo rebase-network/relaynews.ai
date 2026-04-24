@@ -33,6 +33,8 @@ export function ProbeResultPanel({
   resultTone: ReturnType<typeof Shared.getProbeResultTone> | null;
   onCopyUsedUrl: () => void;
 }) {
+  const ttfbMs = result?.connectivity.ttfbMs ?? result?.connectivity.latencyMs ?? null;
+
   return (
     <Panel
       title="测试结果"
@@ -46,7 +48,7 @@ export function ProbeResultPanel({
             <p className="mt-2 text-sm leading-6 text-current/85">{resultTone?.description}</p>
           </div>
           <MetricGrid
-            columnsClassName="sm:grid-cols-2 xl:grid-cols-4"
+            columnsClassName="sm:grid-cols-2 xl:grid-cols-5"
             items={[
               {
                 label: "连通性",
@@ -65,9 +67,19 @@ export function ProbeResultPanel({
                 valueSpacingClassName: "mt-2",
               },
               {
-                label: "延迟",
-                value: result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "-",
+                label: "TTFB",
+                value: ttfbMs !== null ? `${ttfbMs} ms` : "-",
                 testId: "probe-latency-value",
+                cardClassName: "probe-metric-card",
+                valueClassName: "text-[1.08rem] leading-[1]",
+                valueSpacingClassName: "mt-2",
+              },
+              {
+                label: "首个有效输出",
+                value: result.connectivity.firstTokenMs !== null && typeof result.connectivity.firstTokenMs !== "undefined"
+                  ? `${result.connectivity.firstTokenMs} ms`
+                  : "-",
+                testId: "probe-first-token-value",
                 cardClassName: "probe-metric-card",
                 valueClassName: "text-[1.08rem] leading-[1]",
                 valueSpacingClassName: "mt-2",
@@ -167,7 +179,13 @@ export function ProbeResultPanel({
                           #{index + 1} {matchedMode.label}
                         </p>
                         <p className="text-xs uppercase tracking-[0.16em]">
-                          HTTP {matchedMode.httpStatus} · {matchedMode.latencyMs} ms
+                          {[
+                            `HTTP ${matchedMode.httpStatus}`,
+                            `TTFB ${matchedMode.ttfbMs ?? matchedMode.latencyMs} ms`,
+                            matchedMode.firstTokenMs !== null && typeof matchedMode.firstTokenMs !== "undefined"
+                              ? `首个输出 ${matchedMode.firstTokenMs} ms`
+                              : null,
+                          ].filter(Boolean).join(" · ")}
                         </p>
                       </div>
                       <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{matchedMode.url}</p>

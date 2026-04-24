@@ -143,6 +143,7 @@ export interface ProbeResultsRawTable {
   http_status: number | null;
   latency_ms: number | null;
   ttfb_ms: number | null;
+  first_token_ms: number | null;
   dns_ms: number | null;
   tls_ms: number | null;
   request_tokens: number | null;

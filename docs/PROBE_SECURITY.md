@@ -174,7 +174,9 @@ Suggested response shape:
   "model": "openai-gpt-4.1",
   "connectivity": {
     "ok": true,
-    "latencyMs": 420
+    "latencyMs": 420,
+    "ttfbMs": 420,
+    "firstTokenMs": 560
   },
   "protocol": {
     "ok": true,
@@ -191,7 +193,9 @@ Suggested response shape:
       "label": "OpenAI Chat Completions",
       "url": "https://relay.example.ai/v1/chat/completions",
       "httpStatus": 200,
-      "latencyMs": 420
+      "latencyMs": 420,
+      "ttfbMs": 420,
+      "firstTokenMs": 560
     }
   ],
   "attemptedModes": ["openai-responses", "openai-chat-completions"],
@@ -222,7 +226,7 @@ Rules:
 - keep `compatibilityMode`, `detectionMode`, and `usedUrl` explainable so users can
   understand why a probe passed or failed
 - `matchedModes` may include only bounded successful protocol summaries such as mode,
-  label, URL, HTTP status, and latency; it must not expose authorization headers or
+  label, URL, HTTP status, TTFB, and first-token timing; it must not expose authorization headers or
   raw upstream payloads
 - `attemptTrace` may include only bounded protocol-attempt summaries such as mode,
   label, URL, HTTP status, and match result; it must not expose authorization headers

@@ -163,6 +163,8 @@ function asResult(body: string, contentType: string): ProbeAttemptResult {
       headers: { "content-type": contentType },
     }),
     latencyMs: 120,
+    ttfbMs: 120,
+    firstTokenMs: 160,
     body,
     contentType,
   };
@@ -175,6 +177,13 @@ test("responses adapter matches OpenAI responses event stream", () => {
   );
 
   assert.equal(probeAdapterRegistry["openai-responses"].matches(result), true);
+  assert.equal(
+    probeAdapterRegistry["openai-responses"].hasFirstTokenText(
+      'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"pong"}',
+      "text/event-stream",
+    ),
+    true,
+  );
 });
 
 test("responses adapter uses bounded max output tokens compatible with OpenAI-style responses", () => {
@@ -187,6 +196,30 @@ test("responses adapter uses bounded max output tokens compatible with OpenAI-st
   }));
 
   assert.equal(JSON.parse(attempt.body).max_output_tokens, 16);
+});
+
+test("chat completions adapter uses enough output budget to emit visible text", () => {
+  const attempt = firstAttempt(probeAdapterRegistry["openai-chat-completions"].buildAttempts(new URL("https://relay.example.ai/openai"), {
+    baseUrl: "https://relay.example.ai/openai",
+    apiKey: "sk-live",
+    model: "gpt-5.1",
+    compatibilityMode: "openai-chat-completions",
+    scanMode: "standard",
+  }));
+
+  assert.equal(JSON.parse(attempt.body).max_tokens, 16);
+});
+
+test("anthropic adapter uses enough output budget to emit visible text", () => {
+  const attempt = firstAttempt(probeAdapterRegistry["anthropic-messages"].buildAttempts(new URL("https://relay.example.ai/anthropic"), {
+    baseUrl: "https://relay.example.ai/anthropic",
+    apiKey: "sk-live",
+    model: "claude-sonnet-4-5",
+    compatibilityMode: "anthropic-messages",
+    scanMode: "standard",
+  }));
+
+  assert.equal(JSON.parse(attempt.body).max_tokens, 16);
 });
 
 test("chat completions adapter matches chat completion chunks", () => {
@@ -205,11 +238,14 @@ test("chat completions adapter matches chat completion chunks", () => {
       headers: { "content-type": "text/event-stream" },
     }),
     latencyMs: 140,
+    ttfbMs: 140,
+    firstTokenMs: 210,
     body: 'data: {"object":"chat.completion.chunk","choices":[{"delta":{"content":"pong"}}]}',
     contentType: "text/event-stream",
   };
 
   assert.equal(probeAdapterRegistry["openai-chat-completions"].matches(result), true);
+  assert.equal(probeAdapterRegistry["openai-chat-completions"].hasFirstTokenText(result.body, result.contentType), true);
 });
 
 test("anthropic adapter matches message-start event stream", () => {
@@ -228,11 +264,20 @@ test("anthropic adapter matches message-start event stream", () => {
       headers: { "content-type": "text/event-stream" },
     }),
     latencyMs: 160,
+    ttfbMs: 160,
+    firstTokenMs: null,
     body: 'event: message_start\ndata: {"type":"message_start"}',
     contentType: "text/event-stream",
   };
 
   assert.equal(probeAdapterRegistry["anthropic-messages"].matches(result), true);
+  assert.equal(
+    probeAdapterRegistry["anthropic-messages"].hasFirstTokenText(
+      'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"pong"}}',
+      "text/event-stream",
+    ),
+    true,
+  );
 });
 
 test("gemini adapter matches native generate-content json responses", () => {
@@ -251,9 +296,12 @@ test("gemini adapter matches native generate-content json responses", () => {
       headers: { "content-type": "application/json" },
     }),
     latencyMs: 180,
+    ttfbMs: 180,
+    firstTokenMs: 240,
     body: '{"candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]},"finishReason":"STOP"}]}',
     contentType: "application/json",
   };
 
   assert.equal(probeAdapterRegistry["google-gemini-generate-content"].matches(result), true);
+  assert.equal(probeAdapterRegistry["google-gemini-generate-content"].hasFirstTokenText(result.body, result.contentType), true);
 });

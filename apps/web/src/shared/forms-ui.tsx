@@ -68,10 +68,11 @@ export function InlineProbeSummary({
   }
 
   if (!result || !resultTone) {
-    return <p className="quick-probe-inline-summary">测试完成后，这里会显示状态、延迟、HTTP 状态码与接口兼容类型。</p>;
+    return <p className="quick-probe-inline-summary">测试完成后，这里会显示状态、TTFB、HTTP 状态码与接口兼容类型。</p>;
   }
 
-  const latencyText = result.connectivity.latencyMs ? `${result.connectivity.latencyMs} ms` : "延迟无数据";
+  const ttfbMs = result.connectivity.ttfbMs ?? result.connectivity.latencyMs;
+  const latencyText = ttfbMs ? `TTFB ${ttfbMs} ms` : "TTFB 无数据";
   const httpText = `HTTP ${formatProbeHttpStatus(result.protocol.httpStatus)}`;
   const compatibilityText = formatProbeCompatibilityMode(result.compatibilityMode);
 

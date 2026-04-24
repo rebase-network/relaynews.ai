@@ -35,6 +35,8 @@ export const publicProbeMatchedModeSchema = z.object({
   url: z.url({ protocol: /^https$/ }),
   httpStatus: z.number().int().min(100).max(599),
   latencyMs: z.number().int().nonnegative(),
+  ttfbMs: z.number().int().nonnegative().nullable().optional(),
+  firstTokenMs: z.number().int().nonnegative().nullable().optional(),
 });
 
 export const publicProbeRequestSchema = z.object({
@@ -52,6 +54,8 @@ export const publicProbeResponseSchema = z.object({
   connectivity: z.object({
     ok: z.boolean(),
     latencyMs: z.number().int().nonnegative().nullable(),
+    ttfbMs: z.number().int().nonnegative().nullable().optional(),
+    firstTokenMs: z.number().int().nonnegative().nullable().optional(),
   }),
   protocol: z.object({
     ok: z.boolean(),
