@@ -196,6 +196,7 @@ function buildAttemptTrace(results: ProbeAttemptResult[], matchedAttempts: Probe
     url: result.attempt.url.toString(),
     httpStatus: result.response.status,
     matched: matchedAttemptKeys.has(buildMatchedModeKey(result)),
+    message: matchedAttemptKeys.has(buildMatchedModeKey(result)) ? null : buildProbeFailureMessage(result),
   }));
 }
 

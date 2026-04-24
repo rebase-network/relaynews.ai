@@ -199,6 +199,9 @@ export function ProbeResultPanel({
                         </p>
                       </div>
                       <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{attempt.url}</p>
+                      {attempt.message ? (
+                        <p className="mt-2 text-xs leading-5 opacity-80">{attempt.message}</p>
+                      ) : null}
                     </div>
                   ))}
                 </div>

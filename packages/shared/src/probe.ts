@@ -26,6 +26,7 @@ export const publicProbeAttemptTraceSchema = z.object({
   url: z.url({ protocol: /^https$/ }),
   httpStatus: z.number().int().min(100).max(599).nullable(),
   matched: z.boolean(),
+  message: z.string().min(1).nullable().optional(),
 });
 
 export const publicProbeMatchedModeSchema = z.object({

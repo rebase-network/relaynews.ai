@@ -220,6 +220,10 @@ test("public probe deep scan returns every matched mode in auto detection order"
       "google-gemini-generate-content",
     ]);
     assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 3);
+    assert.equal(
+      result.attemptTrace.find((entry) => entry.mode === "openai-responses" && entry.httpStatus === 404)?.message,
+      "Upstream returned 404 while testing OpenAI Responses",
+    );
     assert.equal(seenUrls.some((url) => url.endsWith("/messages")), true);
     assert.equal(seenUrls.some((url) => url.includes(":generateContent") || url.includes(":streamGenerateContent")), true);
   } finally {
