@@ -135,6 +135,7 @@ test("public probe stops at the first matched mode during standard auto detectio
       apiKey: "sk-live",
       model: "gpt-5.4",
       compatibilityMode: "auto",
+      scanMode: "standard",
     });
 
     assert.equal(result.ok, true);

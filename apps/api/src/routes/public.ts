@@ -519,6 +519,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       apiKey: body.testApiKey,
       model: derivedTestModel,
       compatibilityMode: body.compatibilityMode,
+      scanMode: "standard",
     });
 
     await app.db

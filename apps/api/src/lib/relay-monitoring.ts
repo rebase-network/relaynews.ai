@@ -548,6 +548,7 @@ export async function runRelayCredentialMonitoring(
     apiKey: credential.apiKey,
     model: credential.testModel,
     compatibilityMode: credential.compatibilityMode,
+    scanMode: "standard",
   });
   const models = await loadActiveModels(db);
   const resolvedModel = resolveTrackedModel(models, credential.testModel);

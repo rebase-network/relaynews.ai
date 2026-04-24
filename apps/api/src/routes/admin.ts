@@ -1001,6 +1001,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         apiKey: body.apiKey,
         model: body.testModel,
         compatibilityMode: body.compatibilityMode,
+        scanMode: "standard",
       });
 
     if (owner.ownerType !== "relay") {
@@ -1042,6 +1043,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         apiKey: credential.apiKey,
         model: credential.testModel,
         compatibilityMode: credential.compatibilityMode,
+        scanMode: "standard",
       });
 
     if (owner.ownerType !== "relay") {
@@ -1079,6 +1081,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         apiKey: body.apiKey,
         model: body.testModel,
         compatibilityMode: body.compatibilityMode,
+        scanMode: "standard",
       });
 
     if (owner.ownerType !== "relay") {

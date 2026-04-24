@@ -320,7 +320,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
       }
 
       if (matchedResults.length > 0 && !scanAllModes) {
-        const primaryMatch = matchedResults[0];
+        const primaryMatch = matchedResults[0]!;
         const attemptTrace = buildAttemptTrace(executedResults, matchedResults);
         return publicProbeResponseSchema.parse({
           ok: true,
@@ -353,7 +353,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
     }
 
     if (matchedResults.length > 0) {
-      const primaryMatch = matchedResults[0];
+      const primaryMatch = matchedResults[0]!;
       return publicProbeResponseSchema.parse({
         ok: true,
         targetHost: targetUrl.hostname,

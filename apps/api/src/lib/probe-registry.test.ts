@@ -95,6 +95,7 @@ test("manual compatibility mode only builds attempts for the requested adapter",
     apiKey: "sk-live",
     model: "gpt-5.1",
     compatibilityMode: "openai-chat-completions",
+    scanMode: "standard",
   });
 
   assert.ok(attempts.length > 0);
@@ -107,6 +108,7 @@ test("gemini adapter builds official native endpoints and uses x-goog-api-key", 
     apiKey: "google-key",
     model: "models/gemini-2.5-flash",
     compatibilityMode: "google-gemini-generate-content",
+    scanMode: "standard",
   });
 
   assert.deepEqual(
@@ -127,6 +129,7 @@ test("exact endpoint base URLs are normalized back to protocol roots before buil
     apiKey: "sk-live",
     model: "gpt-5.1",
     compatibilityMode: "openai-responses",
+    scanMode: "standard",
   });
 
   assert.deepEqual(
@@ -150,6 +153,7 @@ function asResult(body: string, contentType: string): ProbeAttemptResult {
     apiKey: "sk-live",
     model: "gpt-5.1",
     compatibilityMode: "openai-responses",
+    scanMode: "standard",
   }));
 
   return {
@@ -179,6 +183,7 @@ test("responses adapter uses bounded max output tokens compatible with OpenAI-st
     apiKey: "sk-live",
     model: "gpt-5.1",
     compatibilityMode: "openai-responses",
+    scanMode: "standard",
   }));
 
   assert.equal(JSON.parse(attempt.body).max_output_tokens, 16);
@@ -190,6 +195,7 @@ test("chat completions adapter matches chat completion chunks", () => {
     apiKey: "sk-live",
     model: "gpt-5.1",
     compatibilityMode: "openai-chat-completions",
+    scanMode: "standard",
   }));
 
   const result: ProbeAttemptResult = {
@@ -212,6 +218,7 @@ test("anthropic adapter matches message-start event stream", () => {
     apiKey: "sk-live",
     model: "claude-sonnet-4-5",
     compatibilityMode: "anthropic-messages",
+    scanMode: "standard",
   }));
 
   const result: ProbeAttemptResult = {
@@ -234,6 +241,7 @@ test("gemini adapter matches native generate-content json responses", () => {
     apiKey: "google-key",
     model: "gemini-2.5-flash",
     compatibilityMode: "google-gemini-generate-content",
+    scanMode: "standard",
   }));
 
   const result: ProbeAttemptResult = {
