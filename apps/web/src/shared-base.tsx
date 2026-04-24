@@ -751,8 +751,8 @@ export function getProbeResultTone(result: PublicProbeResponse) {
     return {
       label: "深度扫描完成",
       description: result.matchedModes.length > 1
-        ? `已完成候选协议深度扫描，并确认 ${result.matchedModes.length} 种可用兼容模式。`
-        : "已完成候选协议深度扫描，并确认当前至少存在一种可用兼容模式。",
+        ? `已确认 ${result.matchedModes.length} 种可用兼容模式。`
+        : "已确认当前至少存在一种可用兼容模式。",
       className: "border-[#027a48]/20 bg-[#edfdf3] text-[#066649]",
     };
   }

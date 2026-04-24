@@ -74,8 +74,8 @@ export function ProbeFormPanel({
         </div>
         <p className="text-xs leading-6 text-black/58">
           {deepScanEnabled
-            ? "深度兼容扫描只会在当前固定候选协议里继续测试，适合确认一个站点是否同时兼容多种模式。"
-            : "深度兼容扫描仅在自动识别模式下可用；如果你手动锁定了某个协议，请先切回自动识别。"}
+            ? "会继续测试当前固定候选协议，并列出全部命中的兼容模式。"
+            : "仅在自动识别模式下可用；手动锁定协议后不会继续扫描其他模式。"}
         </p>
       </form>
     </section>

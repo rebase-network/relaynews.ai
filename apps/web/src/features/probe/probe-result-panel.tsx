@@ -155,7 +155,7 @@ export function ProbeResultPanel({
                 </p>
                 <p className="mt-2 text-sm leading-6 text-black/68">
                   {result.scanMode === "deep"
-                    ? `本次共确认 ${result.matchedModes.length} 种可用兼容模式，按探测顺序展示。`
+                    ? `共确认 ${result.matchedModes.length} 种可用兼容模式，按探测顺序展示。`
                     : "以下是本次已确认命中的兼容模式。"}
                 </p>
                 <div className="mt-4 space-y-3">
