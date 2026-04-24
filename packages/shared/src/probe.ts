@@ -15,6 +15,7 @@ export const probeCompatibilityModeSchema = z.enum([
 ]);
 
 export const probeDetectionModeSchema = z.enum(["auto", "manual"]);
+export const publicProbeScanModeSchema = z.enum(["standard", "deep"]);
 
 export const probeResolvedCompatibilityModes = probeResolvedCompatibilityModeSchema.options;
 export const probeCompatibilityModes = probeCompatibilityModeSchema.options;
@@ -27,11 +28,20 @@ export const publicProbeAttemptTraceSchema = z.object({
   matched: z.boolean(),
 });
 
+export const publicProbeMatchedModeSchema = z.object({
+  mode: probeResolvedCompatibilityModeSchema,
+  label: z.string().min(1),
+  url: z.url({ protocol: /^https$/ }),
+  httpStatus: z.number().int().min(100).max(599),
+  latencyMs: z.number().int().nonnegative(),
+});
+
 export const publicProbeRequestSchema = z.object({
   baseUrl: z.url({ protocol: /^https$/ }),
   apiKey: z.string().min(1),
   model: z.string().min(1),
   compatibilityMode: probeCompatibilityModeSchema.default("auto"),
+  scanMode: publicProbeScanModeSchema.default("standard"),
 });
 
 export const publicProbeResponseSchema = z.object({
@@ -47,9 +57,11 @@ export const publicProbeResponseSchema = z.object({
     healthStatus: healthStatusSchema,
     httpStatus: z.number().int().min(100).max(599).nullable().optional(),
   }),
+  scanMode: publicProbeScanModeSchema.default("standard"),
   compatibilityMode: probeResolvedCompatibilityModeSchema.nullable().optional(),
   detectionMode: probeDetectionModeSchema.optional(),
   usedUrl: z.url({ protocol: /^https$/ }).nullable().optional(),
+  matchedModes: z.array(publicProbeMatchedModeSchema).default([]),
   attemptedModes: z.array(probeResolvedCompatibilityModeSchema).default([]),
   attemptTrace: z.array(publicProbeAttemptTraceSchema).default([]),
   message: z.string().min(1).nullable().optional(),
@@ -57,8 +69,10 @@ export const publicProbeResponseSchema = z.object({
 });
 
 export type PublicProbeAttemptTrace = z.infer<typeof publicProbeAttemptTraceSchema>;
+export type PublicProbeMatchedMode = z.infer<typeof publicProbeMatchedModeSchema>;
 export type ProbeResolvedCompatibilityMode = z.infer<typeof probeResolvedCompatibilityModeSchema>;
 export type ProbeCompatibilityMode = z.infer<typeof probeCompatibilityModeSchema>;
 export type ProbeDetectionMode = z.infer<typeof probeDetectionModeSchema>;
+export type PublicProbeScanMode = z.infer<typeof publicProbeScanModeSchema>;
 export type PublicProbeRequest = z.infer<typeof publicProbeRequestSchema>;
 export type PublicProbeResponse = z.infer<typeof publicProbeResponseSchema>;

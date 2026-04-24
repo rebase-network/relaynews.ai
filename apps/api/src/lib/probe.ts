@@ -4,6 +4,7 @@ import {
   publicProbeRequestSchema,
   publicProbeResponseSchema,
   type ProbeDetectionMode,
+  type PublicProbeMatchedMode,
   type PublicProbeRequest,
   type PublicProbeResponse,
 } from "@relaynews/shared";
@@ -11,9 +12,9 @@ import ipaddr from "ipaddr.js";
 
 import { config } from "../config";
 import {
-  buildProbeAttempts,
   probeAdapterRegistry,
   probeCompatibilityModeLabels,
+  resolveProbeModes,
   type ProbeAttempt,
   type ProbeAttemptResult,
 } from "./probe-registry";
@@ -127,14 +128,34 @@ function uniqueAttemptedModes(attempts: ProbeAttempt[]) {
   return [...new Set(attempts.map((attempt) => attempt.mode))];
 }
 
-function buildAttemptTrace(results: ProbeAttemptResult[], matchedAttempt: ProbeAttemptResult | null = null) {
+function buildMatchedModeKey(result: Pick<ProbeAttemptResult, "attempt">) {
+  return `${result.attempt.mode}|${result.attempt.url.toString()}`;
+}
+
+function buildAttemptTrace(results: ProbeAttemptResult[], matchedAttempts: ProbeAttemptResult[] = []) {
+  const matchedAttemptKeys = new Set(matchedAttempts.map((result) => buildMatchedModeKey(result)));
+
   return results.map((result) => ({
     mode: result.attempt.mode,
     label: probeCompatibilityModeLabels[result.attempt.mode],
     url: result.attempt.url.toString(),
     httpStatus: result.response.status,
-    matched: matchedAttempt?.attempt.url.toString() === result.attempt.url.toString(),
+    matched: matchedAttemptKeys.has(buildMatchedModeKey(result)),
   }));
+}
+
+function buildMatchedModes(results: ProbeAttemptResult[]): PublicProbeMatchedMode[] {
+  return results.map((result) => ({
+    mode: result.attempt.mode,
+    label: probeCompatibilityModeLabels[result.attempt.mode],
+    url: result.attempt.url.toString(),
+    httpStatus: result.response.status,
+    latencyMs: result.latencyMs,
+  }));
+}
+
+function shouldScanAllModes(input: PublicProbeRequest) {
+  return input.scanMode === "deep" && input.compatibilityMode === "auto";
 }
 
 export function getProbeFailurePriority(result: ProbeAttemptResult) {
@@ -259,36 +280,63 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
   const measuredAt = new Date().toISOString();
   const targetUrl = new URL(parsed.baseUrl);
   const detectionMode = detectionModeFromRequest(parsed);
-  const attempts = buildProbeAttempts(targetUrl, parsed);
+  const modes = resolveProbeModes(parsed.compatibilityMode, parsed.model, targetUrl);
+  const scanAllModes = shouldScanAllModes(parsed);
   const executedResults: ProbeAttemptResult[] = [];
+  const matchedResults: ProbeAttemptResult[] = [];
 
   try {
     await validateTarget(targetUrl);
     let bestFailure: ProbeAttemptResult | null = null;
 
-    for (const attempt of attempts) {
-      const result = await executeProbeAttempt(attempt, parsed.apiKey);
-      executedResults.push(result);
-      const adapter = probeAdapterRegistry[result.attempt.mode];
+    for (const mode of modes) {
+      const adapter = probeAdapterRegistry[mode];
+      const attempts = adapter.buildAttempts(targetUrl, parsed);
+      let stopSequence = false;
+      let modeBestFailure: ProbeAttemptResult | null = null;
 
-      if (adapter.matches(result)) {
-        const attemptTrace = buildAttemptTrace(executedResults, result);
+      for (const attempt of attempts) {
+        const result = await executeProbeAttempt(attempt, parsed.apiKey);
+        executedResults.push(result);
+
+        if (adapter.matches(result)) {
+          matchedResults.push(result);
+          break;
+        }
+
+        modeBestFailure = pickPreferredProbeFailure(modeBestFailure, result);
+
+        if (!shouldContinueProbeSequence(result)) {
+          stopSequence = true;
+          break;
+        }
+      }
+
+      if (modeBestFailure) {
+        bestFailure = pickPreferredProbeFailure(bestFailure, modeBestFailure);
+      }
+
+      if (matchedResults.length > 0 && !scanAllModes) {
+        const primaryMatch = matchedResults[0];
+        const attemptTrace = buildAttemptTrace(executedResults, matchedResults);
         return publicProbeResponseSchema.parse({
           ok: true,
           targetHost: targetUrl.hostname,
           model: parsed.model,
           connectivity: {
             ok: true,
-            latencyMs: result.latencyMs,
+            latencyMs: primaryMatch.latencyMs,
           },
           protocol: {
             ok: true,
-            healthStatus: successHealthStatus(result.response.status),
-            httpStatus: result.response.status,
+            healthStatus: successHealthStatus(primaryMatch.response.status),
+            httpStatus: primaryMatch.response.status,
           },
-          compatibilityMode: result.attempt.mode,
+          scanMode: parsed.scanMode,
+          compatibilityMode: primaryMatch.attempt.mode,
           detectionMode,
-          usedUrl: result.attempt.url.toString(),
+          usedUrl: primaryMatch.attempt.url.toString(),
+          matchedModes: buildMatchedModes(matchedResults),
           attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
           attemptTrace,
           message: null,
@@ -296,11 +344,36 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         });
       }
 
-      bestFailure = pickPreferredProbeFailure(bestFailure, result);
-
-      if (!shouldContinueProbeSequence(result)) {
+      if (stopSequence && !scanAllModes) {
         break;
       }
+    }
+
+    if (matchedResults.length > 0) {
+      const primaryMatch = matchedResults[0];
+      return publicProbeResponseSchema.parse({
+        ok: true,
+        targetHost: targetUrl.hostname,
+        model: parsed.model,
+        connectivity: {
+          ok: true,
+          latencyMs: primaryMatch.latencyMs,
+        },
+        protocol: {
+          ok: true,
+          healthStatus: successHealthStatus(primaryMatch.response.status),
+          httpStatus: primaryMatch.response.status,
+        },
+        scanMode: parsed.scanMode,
+        compatibilityMode: primaryMatch.attempt.mode,
+        detectionMode,
+        usedUrl: primaryMatch.attempt.url.toString(),
+        matchedModes: buildMatchedModes(matchedResults),
+        attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
+        attemptTrace: buildAttemptTrace(executedResults, matchedResults),
+        message: null,
+        measuredAt,
+      });
     }
 
     if (!bestFailure) {
@@ -320,9 +393,11 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         healthStatus: successHealthStatus(bestFailure.response.status),
         httpStatus: bestFailure.response.status,
       },
+      scanMode: parsed.scanMode,
       compatibilityMode: bestFailure.attempt.mode,
       detectionMode,
       usedUrl: bestFailure.attempt.url.toString(),
+      matchedModes: [],
       attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
       attemptTrace: buildAttemptTrace(executedResults),
       message: buildProbeFailureMessage(bestFailure),
@@ -341,9 +416,11 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         ok: false,
         healthStatus: "unknown",
       },
+      scanMode: parsed.scanMode,
       compatibilityMode: null,
       detectionMode,
       usedUrl: null,
+      matchedModes: [],
       attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
       attemptTrace: buildAttemptTrace(executedResults),
       message: sanitizeMessage(error),

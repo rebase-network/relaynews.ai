@@ -9,13 +9,17 @@ export function ProbeFormPanel({
   state,
   setState,
   submitting,
+  onDeepScan,
   onSubmit,
 }: {
   state: Shared.ProbeFormState;
   setState: React.Dispatch<React.SetStateAction<Shared.ProbeFormState>>;
   submitting: boolean;
+  onDeepScan: () => Promise<void> | void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const deepScanEnabled = state.compatibilityMode === "auto";
+
   return (
     <section className="panel probe-form-panel">
       <p className="kicker">自助测试</p>
@@ -53,7 +57,26 @@ export function ProbeFormPanel({
             </p>
           </div>
         </details>
-        <button className="button-dark" disabled={submitting} type="submit">{submitting ? "测试中..." : "开始测试"}</button>
+        <div className="mt-1 flex flex-wrap gap-3">
+          <button className="button-dark" disabled={submitting} type="submit">
+            {submitting ? "测试中..." : "开始测试"}
+          </button>
+          <button
+            className="button-cream"
+            disabled={submitting || !deepScanEnabled}
+            onClick={() => {
+              void onDeepScan();
+            }}
+            type="button"
+          >
+            {submitting ? "扫描中..." : "深度兼容扫描"}
+          </button>
+        </div>
+        <p className="text-xs leading-6 text-black/58">
+          {deepScanEnabled
+            ? "深度兼容扫描只会在当前固定候选协议里继续测试，适合确认一个站点是否同时兼容多种模式。"
+            : "深度兼容扫描仅在自动识别模式下可用；如果你手动锁定了某个协议，请先切回自动识别。"}
+        </p>
       </form>
     </section>
   );

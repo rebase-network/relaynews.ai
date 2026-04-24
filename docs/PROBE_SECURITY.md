@@ -48,7 +48,8 @@ Suggested request shape:
   "baseUrl": "https://relay.example.ai/v1",
   "apiKey": "sk-...",
   "model": "openai-gpt-4.1",
-  "compatibilityMode": "auto"
+  "compatibilityMode": "auto",
+  "scanMode": "standard"
 }
 ```
 
@@ -86,6 +87,8 @@ In `auto` mode:
 - select a small ordered list of server-defined protocol adapters
 - issue only the minimum bounded requests needed to identify a working compatibility mode
 - stop once a valid adapter match is confirmed
+- if the user explicitly requests a bounded deep scan, continue through the remaining
+  candidate adapters and report all matched compatibility modes
 
 In explicit compatibility mode:
 - run only the selected adapter
@@ -178,9 +181,19 @@ Suggested response shape:
     "healthStatus": "healthy",
     "httpStatus": 200
   },
+  "scanMode": "standard",
   "compatibilityMode": "openai-chat-completions",
   "detectionMode": "auto",
   "usedUrl": "https://relay.example.ai/v1/chat/completions",
+  "matchedModes": [
+    {
+      "mode": "openai-chat-completions",
+      "label": "OpenAI Chat Completions",
+      "url": "https://relay.example.ai/v1/chat/completions",
+      "httpStatus": 200,
+      "latencyMs": 420
+    }
+  ],
   "attemptedModes": ["openai-responses", "openai-chat-completions"],
   "attemptTrace": [
     {
@@ -208,6 +221,9 @@ Rules:
 - keep upstream error bodies truncated and sanitized
 - keep `compatibilityMode`, `detectionMode`, and `usedUrl` explainable so users can
   understand why a probe passed or failed
+- `matchedModes` may include only bounded successful protocol summaries such as mode,
+  label, URL, HTTP status, and latency; it must not expose authorization headers or
+  raw upstream payloads
 - `attemptTrace` may include only bounded protocol-attempt summaries such as mode,
   label, URL, HTTP status, and match result; it must not expose authorization headers
   or raw upstream payloads

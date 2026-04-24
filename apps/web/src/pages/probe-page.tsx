@@ -16,6 +16,7 @@ export function ProbePage() {
     copyState,
     error,
     failureGuidance,
+    handleDeepScan,
     handleCopyUsedUrl,
     handleSubmit,
     result,
@@ -34,7 +35,13 @@ export function ProbePage() {
   return (
     <div className="space-y-5">
       <section className="grid gap-4 xl:grid-cols-[29rem_minmax(0,1fr)] xl:items-start">
-        <ProbeFormPanel state={state} setState={setState} submitting={submitting} onSubmit={handleSubmit} />
+        <ProbeFormPanel
+          state={state}
+          setState={setState}
+          submitting={submitting}
+          onDeepScan={handleDeepScan}
+          onSubmit={handleSubmit}
+        />
         <ProbeResultPanel
           attemptTrace={attemptTrace}
           copyState={copyState}

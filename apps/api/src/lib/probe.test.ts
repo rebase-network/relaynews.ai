@@ -7,6 +7,7 @@ import type { ProbeAttemptResult } from "./probe-registry";
 import {
   buildProbeFailureMessage,
   pickPreferredProbeFailure,
+  runPublicProbe,
   shouldContinueProbeSequence,
 } from "./probe";
 
@@ -98,4 +99,108 @@ test("preferred failure selection favors more actionable statuses", () => {
 
   assert.equal(pickPreferredProbeFailure(pathMismatch, payloadMismatch), payloadMismatch);
   assert.equal(pickPreferredProbeFailure(payloadMismatch, authFailure), authFailure);
+});
+
+test("public probe stops at the first matched mode during standard auto detection", async () => {
+  const originalFetch = globalThis.fetch;
+  const seenUrls: string[] = [];
+
+  globalThis.fetch = async (input) => {
+    const requestUrl = new URL(typeof input === "string" ? input : input.toString());
+    seenUrls.push(requestUrl.toString());
+
+    if (requestUrl.pathname.endsWith("/responses")) {
+      return new Response('{"error":"not found"}', {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (requestUrl.pathname.endsWith("/chat/completions")) {
+      return new Response('{"object":"chat.completion","choices":[{"message":{"role":"assistant","content":"pong"}}]}', {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return new Response('{"type":"message"}', {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  try {
+    const result = await runPublicProbe({
+      baseUrl: "https://example.com/openai",
+      apiKey: "sk-live",
+      model: "gpt-5.4",
+      compatibilityMode: "auto",
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.scanMode, "standard");
+    assert.equal(result.compatibilityMode, "openai-chat-completions");
+    assert.deepEqual(result.matchedModes.map((entry) => entry.mode), ["openai-chat-completions"]);
+    assert.equal(seenUrls.some((url) => url.endsWith("/messages")), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("public probe deep scan returns every matched mode in auto detection order", async () => {
+  const originalFetch = globalThis.fetch;
+  const seenUrls: string[] = [];
+
+  globalThis.fetch = async (input) => {
+    const requestUrl = new URL(typeof input === "string" ? input : input.toString());
+    seenUrls.push(requestUrl.toString());
+
+    if (requestUrl.pathname.endsWith("/responses")) {
+      return new Response('{"error":"not found"}', {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (requestUrl.pathname.endsWith("/chat/completions")) {
+      return new Response('{"object":"chat.completion","choices":[{"message":{"role":"assistant","content":"pong"}}]}', {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (requestUrl.pathname.endsWith("/messages")) {
+      return new Response('{"type":"message","role":"assistant","content":[]}', {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return new Response('{"error":"unexpected"}', {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  try {
+    const result = await runPublicProbe({
+      baseUrl: "https://example.com/openai",
+      apiKey: "sk-live",
+      model: "gpt-5.4",
+      compatibilityMode: "auto",
+      scanMode: "deep",
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.scanMode, "deep");
+    assert.equal(result.compatibilityMode, "openai-chat-completions");
+    assert.deepEqual(result.matchedModes.map((entry) => entry.mode), [
+      "openai-chat-completions",
+      "anthropic-messages",
+    ]);
+    assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 2);
+    assert.equal(seenUrls.some((url) => url.endsWith("/messages")), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

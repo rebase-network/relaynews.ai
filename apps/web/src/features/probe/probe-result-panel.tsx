@@ -9,6 +9,7 @@ const {
   formatProbeDetectionMode,
   formatProbeHttpStatus,
   formatProbeMeasuredAt,
+  formatProbeScanMode,
   getConnectivityCardTone,
   getProtocolCardTone,
   getTraceCardTone,
@@ -116,6 +117,12 @@ export function ProbeResultPanel({
               </div>
               <dl className="mt-4 grid gap-x-4 gap-y-3 sm:grid-cols-2">
                 <div>
+                  <dt className="kicker !text-black/52">扫描方式</dt>
+                  <dd className="mt-1 text-sm leading-6 break-words text-black/78">
+                    {formatProbeScanMode(result.scanMode)}
+                  </dd>
+                </div>
+                <div>
                   <dt className="kicker !text-black/52">兼容模式</dt>
                   <dd className="mt-1 text-sm leading-6 break-words text-black/78" data-testid="probe-mode-value">
                     {formatProbeCompatibilityMode(result.compatibilityMode)}
@@ -141,6 +148,33 @@ export function ProbeResultPanel({
                 </div>
               </dl>
             </div>
+            {result.matchedModes.length > 0 ? (
+              <div className="surface-card p-4">
+                <p className="kicker">
+                  {result.scanMode === "deep" ? "兼容扫描结果" : "已确认兼容模式"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-black/68">
+                  {result.scanMode === "deep"
+                    ? `本次共确认 ${result.matchedModes.length} 种可用兼容模式，按探测顺序展示。`
+                    : "以下是本次已确认命中的兼容模式。"}
+                </p>
+                <div className="mt-4 space-y-3">
+                  {result.matchedModes.map((matchedMode, index) => (
+                    <div className="trace-card border border-emerald-700/12 bg-emerald-50/70 px-3 py-3 text-[#0b5c3b]" key={`${matchedMode.mode}-${matchedMode.url}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs uppercase tracking-[0.16em]">
+                          #{index + 1} {matchedMode.label}
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.16em]">
+                          HTTP {matchedMode.httpStatus} · {matchedMode.latencyMs} ms
+                        </p>
+                      </div>
+                      <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{matchedMode.url}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {result.message && !result.ok ? (
               <div className="border border-[#b54708]/20 bg-[#fff7e8] p-4 text-sm leading-6 text-[#8a450c]">
                 {result.message}

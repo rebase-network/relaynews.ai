@@ -147,8 +147,11 @@ test("probe compatibility defaults and response diagnostics parse", () => {
   });
 
   assert.equal(request.compatibilityMode, "auto");
+  assert.equal(request.scanMode, "standard");
+  assert.equal(response.scanMode, "standard");
   assert.equal(response.compatibilityMode, "openai-responses");
   assert.equal(response.attemptedModes[0], "openai-responses");
+  assert.equal(response.matchedModes.length, 0);
   assert.equal(probeCompatibilityModeSchema.safeParse("auto").success, true);
   assert.equal(probeCompatibilityModeSchema.safeParse("google-gemini-generate-content").success, true);
   assert.equal(probeResolvedCompatibilityModeSchema.safeParse("auto").success, false);

@@ -8,6 +8,7 @@ import {
   type ProbeCompatibilityMode,
   type ProbeDetectionMode,
   type ProbeResolvedCompatibilityMode,
+  type PublicProbeScanMode,
   type PublicProbeResponse,
   type RelayHistoryResponse,
   type RelayIncidentsResponse,
@@ -39,6 +40,7 @@ export type {
   ProbeCompatibilityMode,
   ProbeDetectionMode,
   ProbeResolvedCompatibilityMode,
+  PublicProbeScanMode,
   PublicProbeResponse,
   RelayHistoryResponse,
   RelayIncidentsResponse,
@@ -229,6 +231,14 @@ export function usePageMetadata(metadata: PageMetadata) {
 
 export function formatProbeCompatibilityMode(mode: ProbeResolvedCompatibilityMode | null | undefined) {
   return mode ? PROBE_COMPATIBILITY_LABELS[mode] : "未识别";
+}
+
+export function formatProbeScanMode(mode: PublicProbeScanMode | undefined) {
+  if (mode === "deep") {
+    return "深度兼容扫描";
+  }
+
+  return "标准测试";
 }
 
 export function formatProbeDetectionMode(mode: ProbeDetectionMode | undefined) {
@@ -737,6 +747,16 @@ export function getProbeResultTone(result: PublicProbeResponse) {
     };
   }
 
+  if (result.scanMode === "deep") {
+    return {
+      label: "深度扫描完成",
+      description: result.matchedModes.length > 1
+        ? `已完成候选协议深度扫描，并确认 ${result.matchedModes.length} 种可用兼容模式。`
+        : "已完成候选协议深度扫描，并确认当前至少存在一种可用兼容模式。",
+      className: "border-[#027a48]/20 bg-[#edfdf3] text-[#066649]",
+    };
+  }
+
   return {
     label: "测试通过",
     description: "连通性、协议校验与兼容模式识别都已针对所选模型成功完成。",
@@ -1055,8 +1075,7 @@ export function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_
   const [error, setError] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitProbe(scanMode: PublicProbeScanMode) {
     setSubmitting(true);
     setError(null);
     setResult(null);
@@ -1064,7 +1083,10 @@ export function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_
     try {
       const response = await fetchJson<PublicProbeResponse>("/public/probe/check", {
         method: "POST",
-        body: JSON.stringify(state),
+        body: JSON.stringify({
+          ...state,
+          scanMode,
+        }),
       });
       setResult(response);
     } catch (reason) {
@@ -1072,6 +1094,15 @@ export function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitProbe("standard");
+  }
+
+  async function handleDeepScan() {
+    await submitProbe("deep");
   }
 
   async function handleCopyUsedUrl() {
@@ -1117,6 +1148,7 @@ export function useProbeController(initialState: ProbeFormState = DEFAULT_PROBE_
     copyState,
     error,
     failureGuidance,
+    handleDeepScan,
     handleCopyUsedUrl,
     handleSubmit,
     result,

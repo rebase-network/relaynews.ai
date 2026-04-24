@@ -180,6 +180,8 @@ Hydration or secondary loads:
 The test page is expected to include:
 - a primary form with `Base URL`, `API Key`, and `模型`
 - an advanced section with an optional `Compatibility Mode` selector
+- an explicit deep-scan action for advanced users who want to enumerate all bounded
+  compatible modes instead of stopping at the first match
 - a diagnostic result panel that shows host, connectivity, protocol status, and latency
 - explanatory output such as detected compatibility mode, selected endpoint, and next
   steps when automatic detection fails
@@ -190,6 +192,8 @@ The test page is expected to include:
 - the advanced compatibility selector should use a fixed enum, not arbitrary free text
 - if a compatibility override is selected, the server should test only that mode
 - if the flow runs in auto mode, the response should make the detected mode explainable
+- if the user explicitly triggers a deep scan in auto mode, the response may include
+  all matched bounded compatibility modes, not just the first match
 
 ## Data Contract Notes
 
