@@ -176,6 +176,13 @@ test("public probe deep scan returns every matched mode in auto detection order"
       });
     }
 
+    if (requestUrl.pathname.includes(":generateContent") || requestUrl.pathname.includes(":streamGenerateContent")) {
+      return new Response('{"candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]}}]}', {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+
     return new Response('{"error":"unexpected"}', {
       status: 500,
       headers: { "content-type": "application/json" },
@@ -197,9 +204,11 @@ test("public probe deep scan returns every matched mode in auto detection order"
     assert.deepEqual(result.matchedModes.map((entry) => entry.mode), [
       "openai-chat-completions",
       "anthropic-messages",
+      "google-gemini-generate-content",
     ]);
-    assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 2);
+    assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 3);
     assert.equal(seenUrls.some((url) => url.endsWith("/messages")), true);
+    assert.equal(seenUrls.some((url) => url.includes(":generateContent") || url.includes(":streamGenerateContent")), true);
   } finally {
     globalThis.fetch = originalFetch;
   }

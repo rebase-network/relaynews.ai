@@ -34,6 +34,12 @@ const OPENAI_RESPONSES = "openai-responses" as const;
 const OPENAI_CHAT = "openai-chat-completions" as const;
 const ANTHROPIC_MESSAGES = "anthropic-messages" as const;
 const GOOGLE_GEMINI_GENERATE_CONTENT = "google-gemini-generate-content" as const;
+const ALL_PROBE_MODES = [
+  OPENAI_RESPONSES,
+  OPENAI_CHAT,
+  ANTHROPIC_MESSAGES,
+  GOOGLE_GEMINI_GENERATE_CONTENT,
+] as const satisfies ProbeResolvedCompatibilityMode[];
 
 export const probeCompatibilityModeLabels: Record<ProbeResolvedCompatibilityMode, string> = {
   [OPENAI_RESPONSES]: "OpenAI Responses",
@@ -552,6 +558,11 @@ export function getAutoProbeModes(model: string, targetUrl?: URL): ProbeResolved
   }
 
   return [explicitMode, ...orderedModes.filter((mode) => mode !== explicitMode)];
+}
+
+export function getDeepScanProbeModes(model: string, targetUrl?: URL): ProbeResolvedCompatibilityMode[] {
+  const orderedModes = getAutoProbeModes(model, targetUrl);
+  return [...orderedModes, ...ALL_PROBE_MODES.filter((mode) => !orderedModes.includes(mode))];
 }
 
 export function resolveProbeModes(mode: ProbeCompatibilityMode, model: string, targetUrl?: URL): ProbeResolvedCompatibilityMode[] {

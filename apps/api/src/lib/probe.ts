@@ -12,6 +12,7 @@ import ipaddr from "ipaddr.js";
 
 import { config } from "../config";
 import {
+  getDeepScanProbeModes,
   probeAdapterRegistry,
   probeCompatibilityModeLabels,
   resolveProbeModes,
@@ -280,7 +281,9 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
   const measuredAt = new Date().toISOString();
   const targetUrl = new URL(parsed.baseUrl);
   const detectionMode = detectionModeFromRequest(parsed);
-  const modes = resolveProbeModes(parsed.compatibilityMode, parsed.model, targetUrl);
+  const modes = shouldScanAllModes(parsed)
+    ? getDeepScanProbeModes(parsed.model, targetUrl)
+    : resolveProbeModes(parsed.compatibilityMode, parsed.model, targetUrl);
   const scanAllModes = shouldScanAllModes(parsed);
   const executedResults: ProbeAttemptResult[] = [];
   const matchedResults: ProbeAttemptResult[] = [];

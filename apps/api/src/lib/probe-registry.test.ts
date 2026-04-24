@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getDeepScanProbeModes,
   buildProbeAttempts,
   getAutoProbeModes,
   inferProbeFamilyFromPath,
@@ -60,6 +61,15 @@ test("google gemini native targets resolve to the native generate-content adapte
   assert.deepEqual(
     getAutoProbeModes("gemini-2.5-flash", new URL("https://generativelanguage.googleapis.com")),
     ["google-gemini-generate-content"],
+  );
+  assert.deepEqual(
+    getDeepScanProbeModes("gemini-2.5-flash", new URL("https://easyrouter.io/v1")),
+    [
+      "openai-chat-completions",
+      "openai-responses",
+      "anthropic-messages",
+      "google-gemini-generate-content",
+    ],
   );
 });
 
