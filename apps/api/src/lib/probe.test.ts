@@ -63,6 +63,15 @@ test("probe sequence keeps trying adapters after a 2xx payload mismatch with eve
   assert.equal(shouldContinueProbeSequence(result), true);
 });
 
+test("probe sequence keeps trying adapters after a 2xx payload mismatch with html output", () => {
+  const result = makeResult(200, {
+    body: "<!doctype html><html><body>relay landing page</body></html>",
+    contentType: "text/html; charset=utf-8",
+  });
+
+  assert.equal(shouldContinueProbeSequence(result), true);
+});
+
 test("probe sequence stops after non-retriable auth failures", () => {
   const result = makeResult(401, {
     body: '{"error":"invalid_api_key"}',

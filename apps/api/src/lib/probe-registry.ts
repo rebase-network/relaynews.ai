@@ -180,7 +180,7 @@ function buildOpenAiResponsesBody(model: string) {
       },
     ],
     stream: true,
-    max_output_tokens: 1,
+    max_output_tokens: 16,
   });
 }
 

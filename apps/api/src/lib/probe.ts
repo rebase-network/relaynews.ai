@@ -200,16 +200,7 @@ export function shouldContinueProbeSequence(result: ProbeAttemptResult) {
     return false;
   }
 
-  if (result.contentType.toLowerCase().includes("application/json")) {
-    return true;
-  }
-
-  if (result.contentType.toLowerCase().includes("text/event-stream")) {
-    return true;
-  }
-
-  const body = result.body.trim();
-  return body.startsWith("{") || body.startsWith("[") || body.startsWith("data:");
+  return true;
 }
 
 export function buildProbeFailureMessage(result: ProbeAttemptResult) {

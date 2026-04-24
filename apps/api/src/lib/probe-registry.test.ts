@@ -119,6 +119,17 @@ test("responses adapter matches OpenAI responses event stream", () => {
   assert.equal(probeAdapterRegistry["openai-responses"].matches(result), true);
 });
 
+test("responses adapter uses bounded max output tokens compatible with OpenAI-style responses", () => {
+  const attempt = firstAttempt(probeAdapterRegistry["openai-responses"].buildAttempts(new URL("https://relay.example.ai/openai"), {
+    baseUrl: "https://relay.example.ai/openai",
+    apiKey: "sk-live",
+    model: "gpt-5.1",
+    compatibilityMode: "openai-responses",
+  }));
+
+  assert.equal(JSON.parse(attempt.body).max_output_tokens, 16);
+});
+
 test("chat completions adapter matches chat completion chunks", () => {
   const attempt = firstAttempt(probeAdapterRegistry["openai-chat-completions"].buildAttempts(new URL("https://relay.example.ai/openai"), {
     baseUrl: "https://relay.example.ai/openai",
