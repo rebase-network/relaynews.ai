@@ -25,12 +25,20 @@ export type ProbeAttemptResult = {
   contentType: string;
 };
 
+export type ProbeReportedModelMetadata = {
+  model: string | null;
+  version: string | null;
+};
+
 export type ProbeAdapter = {
   key: ProbeResolvedCompatibilityMode;
   label: string;
   buildAttempts: (targetUrl: URL, request: PublicProbeRequest) => ProbeAttempt[];
+  buildCredibilityAttempt: (attempt: ProbeAttempt, request: PublicProbeRequest) => ProbeAttempt;
   matches: (result: ProbeAttemptResult) => boolean;
   hasFirstTokenText: (body: string, contentType: string) => boolean;
+  extractTextOutput: (body: string, contentType: string) => string | null;
+  extractReportedModel: (body: string, contentType: string) => ProbeReportedModelMetadata;
 };
 
 const OPENAI_RESPONSES = "openai-responses" as const;
@@ -38,6 +46,7 @@ const OPENAI_CHAT = "openai-chat-completions" as const;
 const ANTHROPIC_MESSAGES = "anthropic-messages" as const;
 const GOOGLE_GEMINI_GENERATE_CONTENT = "google-gemini-generate-content" as const;
 const PRIMARY_PROBE_PROMPT = "Reply with exactly one word: pong";
+const CREDIBILITY_PROBE_PROMPT = 'Return compact JSON only: {"provider":null,"model_name":null,"model_version":null}. Use null if unsure. Do not guess. Do not add fields.';
 const ALL_PROBE_MODES = [
   OPENAI_RESPONSES,
   OPENAI_CHAT,
@@ -211,7 +220,38 @@ function hasNonEmptyJsonStringField(body: string, field: string) {
   return pattern.test(body);
 }
 
-function buildOpenAiResponsesBody(model: string) {
+function extractJsonStringField(body: string, field: string) {
+  const pattern = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)+)"`);
+  const match = body.match(pattern);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(`"${match[1]}"`) as string;
+  } catch {
+    return match[1];
+  }
+}
+
+function extractAllJsonStringFields(body: string, field: string) {
+  const pattern = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)+)"`, "g");
+  return [...body.matchAll(pattern)].map((match) => match[1] ?? "").filter(Boolean);
+}
+
+function extractLastJsonStringField(body: string, field: string) {
+  const matches = extractAllJsonStringFields(body, field);
+  return matches[matches.length - 1] ?? null;
+}
+
+function normalizeMatchedUrl(attempt: ProbeAttempt) {
+  return new URL(attempt.url.toString());
+}
+
+function buildOpenAiResponsesBody(model: string, prompt = PRIMARY_PROBE_PROMPT, options: {
+  stream?: boolean;
+  maxOutputTokens?: number;
+} = {}) {
   return JSON.stringify({
     model,
     input: [
@@ -220,42 +260,48 @@ function buildOpenAiResponsesBody(model: string) {
         content: [
           {
             type: "input_text",
-            text: PRIMARY_PROBE_PROMPT,
+            text: prompt,
           },
         ],
       },
     ],
-    stream: true,
-    max_output_tokens: 16,
+    stream: options.stream ?? true,
+    max_output_tokens: options.maxOutputTokens ?? 64,
   });
 }
 
-function buildOpenAiChatBody(model: string) {
+function buildOpenAiChatBody(model: string, prompt = PRIMARY_PROBE_PROMPT, options: {
+  stream?: boolean;
+  maxTokens?: number;
+} = {}) {
   return JSON.stringify({
     model,
     messages: [
       {
         role: "user",
-        content: PRIMARY_PROBE_PROMPT,
+        content: prompt,
       },
     ],
-    stream: true,
-    max_tokens: 16,
+    stream: options.stream ?? true,
+    max_tokens: options.maxTokens ?? 64,
   });
 }
 
-function buildAnthropicMessagesBody(model: string) {
+function buildAnthropicMessagesBody(model: string, prompt = PRIMARY_PROBE_PROMPT, options: {
+  stream?: boolean;
+  maxTokens?: number;
+} = {}) {
   return JSON.stringify({
     model,
-    max_tokens: 16,
-    stream: true,
+    max_tokens: options.maxTokens ?? 64,
+    stream: options.stream ?? true,
     messages: [
       {
         role: "user",
         content: [
           {
             type: "text",
-            text: PRIMARY_PROBE_PROMPT,
+            text: prompt,
           },
         ],
       },
@@ -263,20 +309,22 @@ function buildAnthropicMessagesBody(model: string) {
   });
 }
 
-function buildGoogleGeminiGenerateContentBody() {
+function buildGoogleGeminiGenerateContentBody(prompt = PRIMARY_PROBE_PROMPT, options: {
+  maxOutputTokens?: number;
+} = {}) {
   return JSON.stringify({
     contents: [
       {
         role: "user",
         parts: [
           {
-            text: PRIMARY_PROBE_PROMPT,
+            text: prompt,
           },
         ],
       },
     ],
     generationConfig: {
-      maxOutputTokens: 16,
+      maxOutputTokens: options.maxOutputTokens ?? 64,
     },
   });
 }
@@ -310,6 +358,17 @@ function hasOpenAiResponsesFirstToken(body: string, contentType: string) {
   return body.includes('"object":"response"') && hasNonEmptyJsonStringField(body, "text");
 }
 
+function extractOpenAiResponsesText(body: string) {
+  return extractLastJsonStringField(body, "text");
+}
+
+function extractOpenAiResponsesReportedModel(body: string): ProbeReportedModelMetadata {
+  return {
+    model: extractJsonStringField(body, "model"),
+    version: null,
+  };
+}
+
 function matchOpenAiChatCompletions(result: ProbeAttemptResult) {
   if (!result.response.ok) {
     return false;
@@ -337,6 +396,17 @@ function hasOpenAiChatCompletionsFirstToken(body: string, contentType: string) {
   }
 
   return body.includes('"choices"') && hasNonEmptyJsonStringField(body, "content");
+}
+
+function extractOpenAiChatCompletionsText(body: string) {
+  return extractLastJsonStringField(body, "content");
+}
+
+function extractOpenAiChatCompletionsReportedModel(body: string): ProbeReportedModelMetadata {
+  return {
+    model: extractJsonStringField(body, "model"),
+    version: null,
+  };
 }
 
 function matchAnthropicMessages(result: ProbeAttemptResult) {
@@ -368,6 +438,17 @@ function hasAnthropicMessagesFirstToken(body: string, contentType: string) {
   return body.includes('"type":"message"') && hasNonEmptyJsonStringField(body, "text");
 }
 
+function extractAnthropicMessagesText(body: string) {
+  return extractLastJsonStringField(body, "text");
+}
+
+function extractAnthropicMessagesReportedModel(body: string): ProbeReportedModelMetadata {
+  return {
+    model: extractJsonStringField(body, "model"),
+    version: null,
+  };
+}
+
 function matchGoogleGeminiGenerateContent(result: ProbeAttemptResult) {
   if (!result.response.ok) {
     return false;
@@ -391,6 +472,18 @@ function matchGoogleGeminiGenerateContent(result: ProbeAttemptResult) {
 
 function hasGoogleGeminiGenerateContentFirstToken(body: string) {
   return body.includes('"candidates"') && hasNonEmptyJsonStringField(body, "text");
+}
+
+function extractGoogleGeminiGenerateContentText(body: string) {
+  return extractLastJsonStringField(body, "text");
+}
+
+function extractGoogleGeminiReportedModel(body: string): ProbeReportedModelMetadata {
+  const modelVersion = extractJsonStringField(body, "modelVersion");
+  return {
+    model: extractJsonStringField(body, "model") ?? modelVersion,
+    version: modelVersion,
+  };
 }
 
 function dedupeAttempts(attempts: ProbeAttempt[]) {
@@ -487,16 +580,36 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
     label: probeCompatibilityModeLabels[OPENAI_RESPONSES],
     buildAttempts: (targetUrl, request) =>
       buildModeAttempts(OPENAI_RESPONSES, targetUrl, "/responses", buildOpenAiResponsesBody(request.model)),
+    buildCredibilityAttempt: (attempt, request) => ({
+      ...attempt,
+      url: normalizeMatchedUrl(attempt),
+      body: buildOpenAiResponsesBody(request.model, CREDIBILITY_PROBE_PROMPT, {
+        stream: false,
+        maxOutputTokens: 192,
+      }),
+    }),
     matches: matchOpenAiResponses,
     hasFirstTokenText: hasOpenAiResponsesFirstToken,
+    extractTextOutput: extractOpenAiResponsesText,
+    extractReportedModel: (body) => extractOpenAiResponsesReportedModel(body),
   },
   [OPENAI_CHAT]: {
     key: OPENAI_CHAT,
     label: probeCompatibilityModeLabels[OPENAI_CHAT],
     buildAttempts: (targetUrl, request) =>
       buildModeAttempts(OPENAI_CHAT, targetUrl, "/chat/completions", buildOpenAiChatBody(request.model)),
+    buildCredibilityAttempt: (attempt, request) => ({
+      ...attempt,
+      url: normalizeMatchedUrl(attempt),
+      body: buildOpenAiChatBody(request.model, CREDIBILITY_PROBE_PROMPT, {
+        stream: false,
+        maxTokens: 192,
+      }),
+    }),
     matches: matchOpenAiChatCompletions,
     hasFirstTokenText: hasOpenAiChatCompletionsFirstToken,
+    extractTextOutput: extractOpenAiChatCompletionsText,
+    extractReportedModel: (body) => extractOpenAiChatCompletionsReportedModel(body),
   },
   [ANTHROPIC_MESSAGES]: {
     key: ANTHROPIC_MESSAGES,
@@ -512,15 +625,40 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
           "x-api-key": request.apiKey,
         },
     ),
+    buildCredibilityAttempt: (attempt, request) => ({
+      ...attempt,
+      url: normalizeMatchedUrl(attempt),
+      body: buildAnthropicMessagesBody(request.model, CREDIBILITY_PROBE_PROMPT, {
+        stream: false,
+        maxTokens: 192,
+      }),
+    }),
     matches: matchAnthropicMessages,
     hasFirstTokenText: hasAnthropicMessagesFirstToken,
+    extractTextOutput: extractAnthropicMessagesText,
+    extractReportedModel: (body) => extractAnthropicMessagesReportedModel(body),
   },
   [GOOGLE_GEMINI_GENERATE_CONTENT]: {
     key: GOOGLE_GEMINI_GENERATE_CONTENT,
     label: probeCompatibilityModeLabels[GOOGLE_GEMINI_GENERATE_CONTENT],
     buildAttempts: buildGoogleGeminiAttempts,
+    buildCredibilityAttempt: (attempt) => {
+      const url = normalizeMatchedUrl(attempt);
+      url.pathname = url.pathname.replace(/:streamGenerateContent$/i, ":generateContent");
+      url.searchParams.delete("alt");
+
+      return {
+        ...attempt,
+        url,
+        body: buildGoogleGeminiGenerateContentBody(CREDIBILITY_PROBE_PROMPT, {
+          maxOutputTokens: 192,
+        }),
+      };
+    },
     matches: matchGoogleGeminiGenerateContent,
     hasFirstTokenText: hasGoogleGeminiGenerateContentFirstToken,
+    extractTextOutput: extractGoogleGeminiGenerateContentText,
+    extractReportedModel: (body) => extractGoogleGeminiReportedModel(body),
   },
 };
 

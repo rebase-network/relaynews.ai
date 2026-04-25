@@ -57,6 +57,7 @@ export const scoreSummarySchema = z.object({
   consistency: z.number().min(0).max(100),
   value: z.number().min(0).max(100),
   stability: z.number().min(0).max(100),
+  credibility: z.number().min(0).max(100),
   total: z.number().min(0).max(100),
 });
 

@@ -165,11 +165,12 @@ test("probe compatibility defaults and response diagnostics parse", () => {
 test("methodology payload parses", () => {
   const parsed = methodologyResponseSchema.parse({
     weights: {
-      availability: 35,
+      availability: 30,
       latency: 20,
-      consistency: 20,
+      consistency: 15,
       value: 15,
       stability: 10,
+      credibility: 10,
     },
     healthStatuses: ["healthy", "degraded", "down", "paused", "unknown"],
     badges: [
@@ -186,7 +187,7 @@ test("methodology payload parses", () => {
     measuredAt: "2026-04-15T10:00:00.000Z",
   });
 
-  assert.equal(parsed.weights.availability, 35);
+  assert.equal(parsed.weights.availability, 30);
 });
 
 test("public submission and admin relay inputs parse", () => {

@@ -10,6 +10,7 @@ import { config } from "./config";
 import { createDb } from "./db";
 import type { Database } from "./db/types";
 import { requireAdminAuthorization } from "./lib/admin-auth";
+import { runRelayCredibilityCycle } from "./lib/relay-credibility";
 import { runRelayMonitoringCycle } from "./lib/relay-monitoring";
 import { refreshPublicData } from "./lib/refresh-public-data";
 import { registerAdminRoutes } from "./routes/admin";
@@ -142,15 +143,16 @@ export async function buildApp() {
   }
 
   if (config.ENABLE_SCHEDULER) {
-    let schedulerBusy = false;
+    let monitoringBusy = false;
+    let credibilityBusy = false;
 
-    cron.schedule("*/5 * * * *", async () => {
-      if (schedulerBusy) {
+    cron.schedule(config.PRIMARY_PROBE_CRON, async () => {
+      if (monitoringBusy) {
         app.log.warn("Skipped monitoring tick because the previous scheduler run is still active");
         return;
       }
 
-      schedulerBusy = true;
+      monitoringBusy = true;
       try {
         const result = await runRelayMonitoringCycle(db);
         app.log.info({
@@ -167,8 +169,34 @@ export async function buildApp() {
           app.log.error(refreshError, "Failed to refresh public data snapshots after monitoring error");
         }
       } finally {
-        schedulerBusy = false;
+        monitoringBusy = false;
       }
+    }, {
+      timezone: config.SCHEDULER_TIMEZONE,
+    });
+
+    cron.schedule(config.CREDIBILITY_PROBE_CRON, async () => {
+      if (credibilityBusy || monitoringBusy) {
+        app.log.warn("Skipped credibility tick because another scheduler task is still active");
+        return;
+      }
+
+      credibilityBusy = true;
+      try {
+        const result = await runRelayCredibilityCycle(db);
+        app.log.info({
+          total: result.total,
+          succeeded: result.succeeded,
+          skipped: result.skipped,
+          failed: result.failed,
+        }, "Completed relay credibility cycle");
+      } catch (error) {
+        app.log.error(error, "Failed to execute relay credibility cycle");
+      } finally {
+        credibilityBusy = false;
+      }
+    }, {
+      timezone: config.SCHEDULER_TIMEZONE,
     });
   }
 

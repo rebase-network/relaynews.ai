@@ -1,11 +1,12 @@
 import type { Badge, MethodologyResponse } from "@relaynews/shared";
 
 export const METHODOLOGY_WEIGHTS = {
-  availability: 35,
+  availability: 30,
   latency: 20,
-  consistency: 20,
+  consistency: 15,
   value: 15,
   stability: 10,
+  credibility: 10,
 } as const;
 
 export const BADGE_ORDER: Badge[] = [

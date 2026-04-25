@@ -156,6 +156,26 @@ export interface ProbeResultsRawTable {
   created_at: Timestamp;
 }
 
+export interface RelayCredibilityChecksTable {
+  id: Generated<string>;
+  relay_id: string;
+  model_id: string | null;
+  probe_region: string;
+  compatibility_mode: string;
+  requested_model: string;
+  used_url: string | null;
+  response_reported_model: string | null;
+  response_reported_version: string | null;
+  self_reported_provider: string | null;
+  self_reported_model: string | null;
+  self_reported_version: string | null;
+  identity_confidence: string;
+  identity_probe_ok: boolean;
+  message: string | null;
+  measured_at: string;
+  created_at: Timestamp;
+}
+
 export interface IncidentEventsTable {
   id: Generated<string>;
   relay_id: string;
@@ -270,6 +290,7 @@ export interface Database {
   probe_credentials: ProbeCredentialsTable;
   sponsors: SponsorsTable;
   probe_results_raw: ProbeResultsRawTable;
+  relay_credibility_checks: RelayCredibilityChecksTable;
   incident_events: IncidentEventsTable;
   relay_status_5m: RelayStatus5mTable;
   relay_latency_5m: RelayLatency5mTable;

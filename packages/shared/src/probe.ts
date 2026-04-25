@@ -16,6 +16,7 @@ export const probeCompatibilityModeSchema = z.enum([
 
 export const probeDetectionModeSchema = z.enum(["auto", "manual"]);
 export const publicProbeScanModeSchema = z.enum(["standard", "deep"]);
+export const probeCredibilityLevelSchema = z.enum(["high", "medium", "low", "unknown"]);
 
 export const probeResolvedCompatibilityModes = probeResolvedCompatibilityModeSchema.options;
 export const probeCompatibilityModes = probeCompatibilityModeSchema.options;
@@ -37,6 +38,17 @@ export const publicProbeMatchedModeSchema = z.object({
   latencyMs: z.number().int().nonnegative(),
   ttfbMs: z.number().int().nonnegative().nullable().optional(),
   firstTokenMs: z.number().int().nonnegative().nullable().optional(),
+  credibility: z.object({
+    requestedModel: z.string().min(1),
+    responseReportedModel: z.string().min(1).nullable(),
+    responseReportedVersion: z.string().min(1).nullable(),
+    selfReportedProvider: z.string().min(1).nullable(),
+    selfReportedModel: z.string().min(1).nullable(),
+    selfReportedVersion: z.string().min(1).nullable(),
+    identityProbeOk: z.boolean(),
+    identityConfidence: probeCredibilityLevelSchema,
+    message: z.string().min(1).nullable(),
+  }).nullable().optional(),
 });
 
 export const publicProbeRequestSchema = z.object({
@@ -79,5 +91,6 @@ export type ProbeResolvedCompatibilityMode = z.infer<typeof probeResolvedCompati
 export type ProbeCompatibilityMode = z.infer<typeof probeCompatibilityModeSchema>;
 export type ProbeDetectionMode = z.infer<typeof probeDetectionModeSchema>;
 export type PublicProbeScanMode = z.infer<typeof publicProbeScanModeSchema>;
+export type ProbeCredibilityLevel = z.infer<typeof probeCredibilityLevelSchema>;
 export type PublicProbeRequest = z.infer<typeof publicProbeRequestSchema>;
 export type PublicProbeResponse = z.infer<typeof publicProbeResponseSchema>;

@@ -34,6 +34,9 @@ const configSchema = z.object({
     .string()
     .optional()
     .transform((value) => value === "true"),
+  PRIMARY_PROBE_CRON: z.string().default("*/15 * * * *"),
+  CREDIBILITY_PROBE_CRON: z.string().default("17 4 * * *"),
+  SCHEDULER_TIMEZONE: z.string().default("Asia/Shanghai"),
   PUBLIC_PROBE_ALLOW_PRIVATE_HOSTS: z
     .string()
     .optional()

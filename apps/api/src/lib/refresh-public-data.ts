@@ -9,7 +9,7 @@ import {
 import { sql, type Kysely } from "kysely";
 
 import { orderLeaderboardModels } from "./leaderboard-order";
-import { BADGE_ORDER, getMethodologyPayload } from "./methodology";
+import { BADGE_ORDER, METHODOLOGY_WEIGHTS, getMethodologyPayload } from "./methodology";
 import { subtractDays } from "./time";
 import type { Database } from "../db/types";
 
@@ -22,6 +22,7 @@ type LatestModelScore = {
   consistencyScore: number;
   valueScore: number;
   stabilityScore: number;
+  credibilityScore: number;
   sampleCount: number;
   statusLabel: string;
 };
@@ -34,9 +35,40 @@ type LatestRelayAggregate = {
   consistencyScore: number;
   valueScore: number;
   stabilityScore: number;
+  credibilityScore: number;
   sampleCount: number;
   statusLabel: string;
 };
+
+function asCredibilityScore(level: string | null | undefined) {
+  switch (level) {
+    case "high":
+      return 100;
+    case "medium":
+      return 75;
+    case "low":
+      return 40;
+    default:
+      return 60;
+  }
+}
+
+function withCredibilityScore<T extends LatestRelayAggregate | LatestModelScore>(source: Omit<T, "credibilityScore" | "totalScore"> & { totalScore: number }, credibilityScore: number): T {
+  const totalScore = Number((
+    source.availabilityScore * (METHODOLOGY_WEIGHTS.availability / 100) +
+    source.latencyScore * (METHODOLOGY_WEIGHTS.latency / 100) +
+    source.consistencyScore * (METHODOLOGY_WEIGHTS.consistency / 100) +
+    source.valueScore * (METHODOLOGY_WEIGHTS.value / 100) +
+    source.stabilityScore * (METHODOLOGY_WEIGHTS.stability / 100) +
+    credibilityScore * (METHODOLOGY_WEIGHTS.credibility / 100)
+  ).toFixed(4));
+
+  return {
+    ...source,
+    credibilityScore,
+    totalScore,
+  } as T;
+}
 
 const HOME_LEADERBOARD_LIMIT = 4;
 
@@ -94,6 +126,7 @@ function asScoreSummary(source: LatestRelayAggregate | LatestModelScore): ScoreS
     consistency: source.consistencyScore,
     value: source.valueScore,
     stability: source.stabilityScore,
+    credibility: source.credibilityScore,
     total: source.totalScore,
   };
 }
@@ -260,6 +293,33 @@ export async function refreshPublicData(db: Kysely<Database>) {
     .groupBy("relay_id")
     .execute();
 
+  const latestRelayCredibilityRows = await sql<{
+    relayId: string;
+    identityConfidence: string;
+  }>`
+    select distinct on (relay_id)
+      relay_id as "relayId",
+      identity_confidence as "identityConfidence"
+    from relay_credibility_checks
+    where probe_region = 'global'
+    order by relay_id, measured_at desc
+  `.execute(db);
+
+  const latestModelCredibilityRows = await sql<{
+    relayId: string;
+    modelId: string;
+    identityConfidence: string;
+  }>`
+    select distinct on (relay_id, model_id)
+      relay_id as "relayId",
+      model_id as "modelId",
+      identity_confidence as "identityConfidence"
+    from relay_credibility_checks
+    where probe_region = 'global'
+      and model_id is not null
+    order by relay_id, model_id, measured_at desc
+  `.execute(db);
+
   const incidentRows = await db
     .selectFrom("incident_events as ie")
     .innerJoin("relays as r", "r.id", "ie.relay_id")
@@ -292,6 +352,12 @@ export async function refreshPublicData(db: Kysely<Database>) {
   const incidentsCountLookup = new Map(
     incidents7dCounts.map((row) => [row.relayId, Number(row.count)]),
   );
+  const relayCredibilityLookup = new Map(
+    latestRelayCredibilityRows.rows.map((row) => [row.relayId, asCredibilityScore(row.identityConfidence)]),
+  );
+  const modelCredibilityLookup = new Map(
+    latestModelCredibilityRows.rows.map((row) => [`${row.relayId}:${row.modelId}`, asCredibilityScore(row.identityConfidence)]),
+  );
 
   await db.deleteFrom("leaderboard_snapshots").execute();
 
@@ -304,13 +370,18 @@ export async function refreshPublicData(db: Kysely<Database>) {
           return null;
         }
 
+        const enhancedScoreRow = withCredibilityScore(
+          scoreRow,
+          modelCredibilityLookup.get(`${scoreRow.relayId}:${model.id}`) ?? relayCredibilityLookup.get(scoreRow.relayId) ?? 60,
+        );
+
         const statusRow = relayStatusLookup.get(`${scoreRow.relayId}:${model.id}`);
         const latencyRow = relayLatencyLookup.get(`${scoreRow.relayId}:${model.id}`);
         const priceRow = priceLookup.get(`${scoreRow.relayId}:${model.id}`);
         const availability24h = statusRow?.availability24h ?? 0;
         const sampleCount24h = statusRow?.sampleCount24h ?? scoreRow.sampleCount;
         const badges = computeBadges({
-          totalScore: scoreRow.totalScore,
+          totalScore: enhancedScoreRow.totalScore,
           latencyP50Ms: latencyRow?.latencyP50Ms ?? null,
           sampleCount24h,
           availability24h,
@@ -318,7 +389,7 @@ export async function refreshPublicData(db: Kysely<Database>) {
 
         return {
           relay,
-          scoreRow,
+          scoreRow: enhancedScoreRow,
           availability24h,
           sampleCount24h,
           latencyRow,
@@ -360,6 +431,12 @@ export async function refreshPublicData(db: Kysely<Database>) {
 
   for (const relay of activeRelays) {
     const relayScore = latestRelayScores.get(relay.id);
+    const enhancedRelayScore = relayScore
+      ? withCredibilityScore(
+        relayScore,
+        relayCredibilityLookup.get(relay.id) ?? 60,
+      )
+      : null;
     const statusRow = relayStatusLookup.get(`${relay.id}:relay`);
     const latencyRow = relayLatencyLookup.get(`${relay.id}:relay`);
     const supportedModelsCount = supportedCountLookup.get(relay.id) ?? 0;
@@ -373,12 +450,13 @@ export async function refreshPublicData(db: Kysely<Database>) {
       .map((row) => row.outputPricePer1M)
       .filter((value): value is number => value !== null)
       .sort((left, right) => left - right)[0] ?? null;
-    const scoreSummary = relayScore ? asScoreSummary(relayScore) : {
+    const scoreSummary = enhancedRelayScore ? asScoreSummary(enhancedRelayScore) : {
       availability: 0,
       latency: 0,
       consistency: 0,
       value: 0,
       stability: 0,
+      credibility: 0,
       total: 0,
     };
     const badges = computeBadges({
@@ -392,7 +470,7 @@ export async function refreshPublicData(db: Kysely<Database>) {
       .insertInto("relay_overview_snapshots")
       .values({
         relay_id: relay.id,
-        status_label: relayScore?.statusLabel ?? "unknown",
+        status_label: enhancedRelayScore?.statusLabel ?? "unknown",
         availability_24h: statusRow?.availability24h ?? 0,
         latency_p50_ms: latencyRow?.latencyP50Ms ?? null,
         latency_p95_ms: latencyRow?.latencyP95Ms ?? null,
@@ -406,7 +484,7 @@ export async function refreshPublicData(db: Kysely<Database>) {
       })
       .onConflict((conflict) =>
         conflict.column("relay_id").doUpdateSet({
-          status_label: relayScore?.statusLabel ?? "unknown",
+          status_label: enhancedRelayScore?.statusLabel ?? "unknown",
           availability_24h: statusRow?.availability24h ?? 0,
           latency_p50_ms: latencyRow?.latencyP50Ms ?? null,
           latency_p95_ms: latencyRow?.latencyP95Ms ?? null,

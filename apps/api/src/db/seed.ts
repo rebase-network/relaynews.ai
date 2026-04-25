@@ -104,6 +104,7 @@ async function seedCoreCatalog(db: Kysely<Database>, now: Date) {
       relay_score_hourly,
       relay_latency_5m,
       relay_status_5m,
+      relay_credibility_checks,
       incident_events,
       probe_results_raw,
       sponsors,

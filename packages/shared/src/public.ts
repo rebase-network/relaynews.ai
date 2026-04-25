@@ -191,6 +191,7 @@ export const methodologyResponseSchema = z.object({
     consistency: z.number().min(0).max(100),
     value: z.number().min(0).max(100),
     stability: z.number().min(0).max(100),
+    credibility: z.number().min(0).max(100),
   }),
   healthStatuses: z.array(healthStatusSchema),
   badges: z.array(badgeSchema),

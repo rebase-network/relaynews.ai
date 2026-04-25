@@ -120,7 +120,7 @@ test("gemini adapter builds official native endpoints and uses x-goog-api-key", 
   );
   assert.ok(attempts.every((attempt) => attempt.useBearerAuth === false));
   assert.ok(attempts.every((attempt) => attempt.headers?.["x-goog-api-key"] === "google-key"));
-  assert.ok(attempts.every((attempt) => JSON.parse(attempt.body).generationConfig.maxOutputTokens === 16));
+  assert.ok(attempts.every((attempt) => JSON.parse(attempt.body).generationConfig.maxOutputTokens === 64));
 });
 
 test("exact endpoint base URLs are normalized back to protocol roots before building attempts", () => {
@@ -186,7 +186,7 @@ test("responses adapter matches OpenAI responses event stream", () => {
   );
 });
 
-test("responses adapter uses bounded max output tokens compatible with OpenAI-style responses", () => {
+test("responses adapter uses bounded output budget for visible-text primary probes", () => {
   const attempt = firstAttempt(probeAdapterRegistry["openai-responses"].buildAttempts(new URL("https://relay.example.ai/openai"), {
     baseUrl: "https://relay.example.ai/openai",
     apiKey: "sk-live",
@@ -195,7 +195,7 @@ test("responses adapter uses bounded max output tokens compatible with OpenAI-st
     scanMode: "standard",
   }));
 
-  assert.equal(JSON.parse(attempt.body).max_output_tokens, 16);
+  assert.equal(JSON.parse(attempt.body).max_output_tokens, 64);
   assert.equal(
     JSON.parse(attempt.body).input[0].content[0].text,
     "Reply with exactly one word: pong",
@@ -211,7 +211,7 @@ test("chat completions adapter uses enough output budget to emit visible text", 
     scanMode: "standard",
   }));
 
-  assert.equal(JSON.parse(attempt.body).max_tokens, 16);
+  assert.equal(JSON.parse(attempt.body).max_tokens, 64);
   assert.equal(JSON.parse(attempt.body).messages[0].content, "Reply with exactly one word: pong");
 });
 
@@ -224,7 +224,7 @@ test("anthropic adapter uses enough output budget to emit visible text", () => {
     scanMode: "standard",
   }));
 
-  assert.equal(JSON.parse(attempt.body).max_tokens, 16);
+  assert.equal(JSON.parse(attempt.body).max_tokens, 64);
   assert.equal(
     JSON.parse(attempt.body).messages[0].content[0].text,
     "Reply with exactly one word: pong",
@@ -244,6 +244,7 @@ test("gemini adapter uses the same primary probe instruction", () => {
     JSON.parse(attempt.body).contents[0].parts[0].text,
     "Reply with exactly one word: pong",
   );
+  assert.equal(JSON.parse(attempt.body).generationConfig.maxOutputTokens, 64);
 });
 
 test("chat completions adapter matches chat completion chunks", () => {
