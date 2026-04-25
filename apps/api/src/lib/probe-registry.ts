@@ -46,7 +46,7 @@ const OPENAI_CHAT = "openai-chat-completions" as const;
 const ANTHROPIC_MESSAGES = "anthropic-messages" as const;
 const GOOGLE_GEMINI_GENERATE_CONTENT = "google-gemini-generate-content" as const;
 const PRIMARY_PROBE_PROMPT = "Reply with exactly one word: pong";
-const CREDIBILITY_PROBE_PROMPT = 'Return compact JSON only: {"provider":null,"model_name":null,"model_version":null}. Use null if unsure. Do not guess. Do not add fields.';
+const CREDIBILITY_PROBE_PROMPT = 'Return compact JSON only: {"provider":null,"model_name":null,"model_version":null}. If your runtime or provider metadata exposes these values, report them exactly. If a value is unavailable, use null. Do not guess. Do not add fields.';
 const ALL_PROBE_MODES = [
   OPENAI_RESPONSES,
   OPENAI_CHAT,
@@ -236,7 +236,18 @@ function extractJsonStringField(body: string, field: string) {
 
 function extractAllJsonStringFields(body: string, field: string) {
   const pattern = new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)+)"`, "g");
-  return [...body.matchAll(pattern)].map((match) => match[1] ?? "").filter(Boolean);
+  return [...body.matchAll(pattern)].map((match) => {
+    const raw = match[1] ?? "";
+    if (!raw) {
+      return "";
+    }
+
+    try {
+      return JSON.parse(`"${raw}"`) as string;
+    } catch {
+      return raw;
+    }
+  }).filter(Boolean);
 }
 
 function extractLastJsonStringField(body: string, field: string) {

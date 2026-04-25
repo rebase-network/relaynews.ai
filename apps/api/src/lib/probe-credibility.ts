@@ -20,17 +20,26 @@ function asStringOrNull(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function extractJsonCandidate(text: string) {
+  const trimmed = text.trim();
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const unfenced = fencedMatch?.[1]?.trim() ?? trimmed;
+  const jsonStart = unfenced.indexOf("{");
+  const jsonEnd = unfenced.lastIndexOf("}");
+
+  if (jsonStart >= 0 && jsonEnd > jsonStart) {
+    return unfenced.slice(jsonStart, jsonEnd + 1);
+  }
+
+  return unfenced;
+}
+
 export function parseSelfReportedIdentity(text: string | null): ProbeSelfReportedIdentity | null {
   if (!text?.trim()) {
     return null;
   }
 
-  const trimmed = text.trim();
-  const jsonStart = trimmed.indexOf("{");
-  const jsonEnd = trimmed.lastIndexOf("}");
-  const candidate = jsonStart >= 0 && jsonEnd > jsonStart
-    ? trimmed.slice(jsonStart, jsonEnd + 1)
-    : trimmed;
+  const candidate = extractJsonCandidate(text);
 
   try {
     const parsed = JSON.parse(candidate) as Record<string, unknown>;

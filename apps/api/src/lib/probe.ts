@@ -260,7 +260,7 @@ async function buildCredibilityForMatchedResult(
   try {
     const identityResult = await executeProbeAttempt(credibilityAttempt, request.apiKey);
     const identityText = adapter.extractTextOutput(identityResult.body, identityResult.contentType);
-    const selfReported = parseSelfReportedIdentity(identityText);
+    const selfReported = parseSelfReportedIdentity(identityText) ?? parseSelfReportedIdentity(identityResult.body);
 
     return {
       requestedModel: request.model,

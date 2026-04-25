@@ -14,6 +14,14 @@ test("parseSelfReportedIdentity parses compact JSON responses", () => {
   assert.equal(result?.modelVersion, "gemini-2.5-flash");
 });
 
+test("parseSelfReportedIdentity parses fenced JSON responses", () => {
+  const result = parseSelfReportedIdentity('```json\n{"provider":"OpenAI","model_name":"gpt-5.4","model_version":null}\n```');
+
+  assert.equal(result?.provider, "OpenAI");
+  assert.equal(result?.modelName, "gpt-5.4");
+  assert.equal(result?.modelVersion, null);
+});
+
 test("computeProbeCredibilityLevel returns high when request, response, and self-report align", () => {
   assert.equal(
     computeProbeCredibilityLevel({
