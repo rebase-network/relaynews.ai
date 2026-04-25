@@ -382,6 +382,7 @@ export function formatScoreMetricLabel(label: keyof RelayOverviewResponse["score
       consistency: "一致性",
       value: "性价比",
       stability: "稳定性",
+      credibility: "可信度",
     }[label] ?? label
   );
 }
@@ -893,6 +894,14 @@ export function getProbeFailureGuidance(result: PublicProbeResponse) {
       source: "上游服务错误",
       meaning: "该站点已接收请求，但在处理时发生了内部错误。",
       nextStep: "建议稍后重试，或将测得状态与端点路径反馈给站点运营者。",
+    };
+  }
+
+  if (message.includes("未观测到可见文本输出")) {
+    return {
+      source: "文本输出异常",
+      meaning: "该模式已经命中协议，但本次没有观测到可见文本输出，不能视为真正可用。",
+      nextStep: "请改用其他兼容模式，或提高输出预算后复测，确认站点是否能稳定返回文本内容。",
     };
   }
 

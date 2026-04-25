@@ -313,6 +313,7 @@ Response:
     "consistency": 96.0,
     "value": 88.3,
     "stability": 94.6,
+    "credibility": 75.0,
     "total": 94.1
   },
   "badges": ["low-latency"],
@@ -505,11 +506,12 @@ Response:
 ```json
 {
   "weights": {
-    "availability": 35,
+    "availability": 30,
     "latency": 20,
-    "consistency": 20,
+    "consistency": 15,
     "value": 15,
-    "stability": 10
+    "stability": 10,
+    "credibility": 10
   },
   "healthStatuses": ["healthy", "degraded", "down", "paused", "unknown"],
   "badges": [

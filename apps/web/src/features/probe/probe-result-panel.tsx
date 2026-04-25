@@ -226,6 +226,25 @@ export function ProbeResultPanel({
                         </p>
                       </div>
                       <p className="mt-2 break-all font-mono text-xs leading-5 opacity-80">{matchedMode.url}</p>
+                      {matchedMode.credibility ? (
+                        <div className="mt-3 space-y-1 text-xs leading-5 opacity-85">
+                          <p>接口声明模型：{matchedMode.credibility.responseReportedModel ?? "未提供"}</p>
+                          <p>模型自报：{matchedMode.credibility.selfReportedModel ?? "未提供"}</p>
+                          <p>模型版本：{matchedMode.credibility.selfReportedVersion ?? matchedMode.credibility.responseReportedVersion ?? "未提供"}</p>
+                          <p>可信度：{
+                            matchedMode.credibility.identityConfidence === "high"
+                              ? "高"
+                              : matchedMode.credibility.identityConfidence === "medium"
+                                ? "中"
+                                : matchedMode.credibility.identityConfidence === "low"
+                                  ? "低"
+                                  : "未知"
+                          }</p>
+                          {matchedMode.credibility.message ? (
+                            <p>{matchedMode.credibility.message}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>

@@ -200,7 +200,7 @@ export function ScorePopover({ scoreSummary }: { scoreSummary: Shared.RelayOverv
   const [position, setPosition] = useState<{ left: number; top: number; width: number } | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
-  const entries = (["availability", "latency", "consistency", "value", "stability"] as const).map((label) => [label, scoreSummary[label]] as const);
+  const entries = (["availability", "latency", "consistency", "value", "stability", "credibility"] as const).map((label) => [label, scoreSummary[label]] as const);
 
   useEffect(() => {
     if (!open) {

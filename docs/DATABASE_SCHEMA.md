@@ -382,6 +382,32 @@ Indexes:
 - index on (`relay_id`, `detected_at` desc)
 - index on (`compatibility_mode`, `detected_at` desc)
 
+### relay_credibility_checks
+Daily credibility evidence for relay-owned probes.
+
+Suggested columns:
+- `id` uuid primary key
+- `relay_id` uuid not null references `relays(id)`
+- `model_id` uuid null references `models(id)`
+- `probe_region` text not null default 'global'
+- `compatibility_mode` text not null
+- `requested_model` text not null
+- `used_url` text null
+- `response_reported_model` text null
+- `response_reported_version` text null
+- `self_reported_provider` text null
+- `self_reported_model` text null
+- `self_reported_version` text null
+- `identity_confidence` text not null  # high, medium, low, unknown
+- `identity_probe_ok` boolean not null default false
+- `message` text null
+- `measured_at` timestamptz not null
+- `created_at` timestamptz not null default now()
+
+Indexes:
+- index on (`relay_id`, `measured_at` desc)
+- index on (`model_id`, `measured_at` desc)
+
 ### probe_error_samples
 Stores detailed evidence only for abnormal or sampled cases.
 
@@ -588,11 +614,14 @@ Notes:
 ## Retention And Jobs
 
 Current runtime behavior:
-- the API process runs one `node-cron` task every 5 minutes
+- the API process runs one primary `node-cron` probe task every 15 minutes
+- the API process runs one separate credibility task once per day
 - each tick loads relay-owned credentials where both `probe_credentials.status = 'active'`
   and `relays.status = 'active'`
 - each successful relay run writes raw probe rows, updates relay-model support rows,
   refreshes the touched 5-minute / hourly aggregates, and then rebuilds public snapshots
+- the separate credibility task only targets relays whose latest primary probe still
+  indicates they are available enough to test
 - admin write flows such as relay edits, submission review, sponsor changes, model
   changes, price changes, and `/admin/refresh-public` also rebuild public snapshots immediately
 

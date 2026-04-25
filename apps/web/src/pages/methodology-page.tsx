@@ -65,6 +65,7 @@ const WEIGHT_ORDER: Array<keyof Shared.MethodologyResponse["weights"]> = [
   "consistency",
   "value",
   "stability",
+  "credibility",
 ];
 
 function MethodologyCard({
@@ -165,7 +166,7 @@ export function MethodologyPage() {
           <MethodologyCard
             title="评分构成"
             strong
-            intro="五项公开信号共同决定总分，所有维度都来自自动化测试证据。"
+            intro="六项公开信号共同决定总分，所有维度都来自自动化测试证据。"
           >
             <div className="methodology-weight-list">
               {WEIGHT_ORDER.map((label) => (

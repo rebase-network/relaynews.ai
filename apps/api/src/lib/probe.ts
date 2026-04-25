@@ -4,6 +4,7 @@ import {
   publicProbeRequestSchema,
   publicProbeResponseSchema,
   type ProbeDetectionMode,
+  type ProbeResolvedCompatibilityMode,
   type PublicProbeMatchedMode,
   type PublicProbeRequest,
   type PublicProbeResponse,
@@ -11,6 +12,10 @@ import {
 import ipaddr from "ipaddr.js";
 
 import { config } from "../config";
+import {
+  computeProbeCredibilityLevel,
+  parseSelfReportedIdentity,
+} from "./probe-credibility";
 import {
   getDeepScanProbeModes,
   probeAdapterRegistry,
@@ -215,6 +220,10 @@ function buildMatchedModeKey(result: Pick<ProbeAttemptResult, "attempt">) {
   return `${result.attempt.mode}|${result.attempt.url.toString()}`;
 }
 
+function hasVisibleTextOutput(result: ProbeAttemptResult) {
+  return result.firstTokenMs !== null;
+}
+
 function buildAttemptTrace(results: ProbeAttemptResult[], matchedAttempts: ProbeAttemptResult[] = []) {
   const matchedAttemptKeys = new Set(matchedAttempts.map((result) => buildMatchedModeKey(result)));
 
@@ -237,6 +246,108 @@ function buildMatchedModes(results: ProbeAttemptResult[]): PublicProbeMatchedMod
     latencyMs: result.latencyMs,
     ttfbMs: result.ttfbMs,
     firstTokenMs: result.firstTokenMs,
+  }));
+}
+
+async function buildCredibilityForMatchedResult(
+  result: ProbeAttemptResult,
+  request: PublicProbeRequest,
+): Promise<NonNullable<PublicProbeMatchedMode["credibility"]>> {
+  const adapter = probeAdapterRegistry[result.attempt.mode];
+  const responseReported = adapter.extractReportedModel(result.body, result.contentType);
+  const credibilityAttempt = adapter.buildCredibilityAttempt(result.attempt, request);
+
+  try {
+    const identityResult = await executeProbeAttempt(credibilityAttempt, request.apiKey);
+    const identityText = adapter.extractTextOutput(identityResult.body, identityResult.contentType);
+    const selfReported = parseSelfReportedIdentity(identityText);
+
+    return {
+      requestedModel: request.model,
+      responseReportedModel: responseReported.model,
+      responseReportedVersion: responseReported.version,
+      selfReportedProvider: selfReported?.provider ?? null,
+      selfReportedModel: selfReported?.modelName ?? null,
+      selfReportedVersion: selfReported?.modelVersion ?? null,
+      identityProbeOk: identityResult.response.ok && selfReported !== null,
+      identityConfidence: computeProbeCredibilityLevel({
+        requestedModel: request.model,
+        responseReportedModel: responseReported.model,
+        selfReportedModel: selfReported?.modelName ?? null,
+      }),
+      message: identityResult.response.ok
+        ? selfReported
+          ? null
+          : "可信度探测未返回可解析的身份 JSON"
+        : buildProbeFailureMessage(identityResult),
+    };
+  } catch (error) {
+    return {
+      requestedModel: request.model,
+      responseReportedModel: responseReported.model,
+      responseReportedVersion: responseReported.version,
+      selfReportedProvider: null,
+      selfReportedModel: null,
+      selfReportedVersion: null,
+      identityProbeOk: false,
+      identityConfidence: "unknown",
+      message: sanitizeMessage(error),
+    };
+  }
+}
+
+export async function runMatchedModeCredibilityProbe(input: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  mode: ProbeResolvedCompatibilityMode;
+  usedUrl: string;
+}) {
+  const request = publicProbeRequestSchema.parse({
+    baseUrl: input.baseUrl,
+    apiKey: input.apiKey,
+    model: input.model,
+    compatibilityMode: input.mode,
+    scanMode: "standard",
+  });
+  const targetUrl = new URL(request.baseUrl);
+  await validateTarget(targetUrl);
+
+  const adapter = probeAdapterRegistry[input.mode];
+  const attempts = adapter.buildAttempts(new URL(input.usedUrl), request);
+  const primaryAttempt = attempts.find((attempt) => attempt.url.toString() === input.usedUrl) ?? attempts[0];
+
+  if (!primaryAttempt) {
+    throw new Error("可信度探测未生成可执行请求");
+  }
+
+  const primaryResult = await executeProbeAttempt(primaryAttempt, request.apiKey);
+  const credibility = await buildCredibilityForMatchedResult(primaryResult, request);
+
+  return {
+    result: primaryResult,
+    credibility,
+  };
+}
+
+async function buildMatchedModesWithCredibility(
+  results: ProbeAttemptResult[],
+  request: PublicProbeRequest,
+  includeCredibility: boolean,
+): Promise<PublicProbeMatchedMode[]> {
+  const baseModes = buildMatchedModes(results);
+
+  if (!includeCredibility) {
+    return baseModes;
+  }
+
+  const credibilityEntries = await Promise.all(
+    results.map((result) => buildCredibilityForMatchedResult(result, request)),
+  );
+
+  return baseModes.map((mode, index) => ({
+    ...mode,
+    credibility: credibilityEntries[index] ?? null,
   }));
 }
 
@@ -313,6 +424,10 @@ export function shouldContinueProbeSequence(result: ProbeAttemptResult) {
 export function buildProbeFailureMessage(result: ProbeAttemptResult) {
   const label = probeCompatibilityModeLabels[result.attempt.mode];
 
+  if (probeAdapterRegistry[result.attempt.mode].matches(result) && !hasVisibleTextOutput(result)) {
+    return `测试 ${label} 时，协议已命中，但未观测到可见文本输出`;
+  }
+
   if (result.response.ok) {
     return `上游返回 HTTP ${result.response.status}，但响应内容不符合 ${label}`;
   }
@@ -326,6 +441,14 @@ export function buildProbeFailureMessage(result: ProbeAttemptResult) {
   }
 
   return `测试 ${label} 时，上游返回了 HTTP ${result.response.status}`;
+}
+
+function failureHealthStatus(result: ProbeAttemptResult) {
+  if (probeAdapterRegistry[result.attempt.mode].matches(result) && !hasVisibleTextOutput(result)) {
+    return "down" as const;
+  }
+
+  return successHealthStatus(result.response.status);
 }
 
 async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promise<ProbeAttemptResult> {
@@ -401,7 +524,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         const result = await executeProbeAttempt(attempt, parsed.apiKey);
         executedResults.push(result);
 
-        if (adapter.matches(result)) {
+        if (adapter.matches(result) && hasVisibleTextOutput(result)) {
           matchedResults.push(result);
           break;
         }
@@ -440,7 +563,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
           compatibilityMode: primaryMatch.attempt.mode,
           detectionMode,
           usedUrl: primaryMatch.attempt.url.toString(),
-          matchedModes: buildMatchedModes(matchedResults),
+          matchedModes: await buildMatchedModesWithCredibility(matchedResults, parsed, false),
           attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
           attemptTrace,
           message: null,
@@ -474,7 +597,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
         compatibilityMode: primaryMatch.attempt.mode,
         detectionMode,
         usedUrl: primaryMatch.attempt.url.toString(),
-        matchedModes: buildMatchedModes(matchedResults),
+        matchedModes: await buildMatchedModesWithCredibility(matchedResults, parsed, parsed.scanMode === "deep"),
         attemptedModes: uniqueAttemptedModes(executedResults.map((entry) => entry.attempt)),
         attemptTrace: buildAttemptTrace(executedResults, matchedResults),
         message: null,
@@ -498,7 +621,7 @@ export async function runPublicProbe(input: PublicProbeRequest): Promise<PublicP
       },
       protocol: {
         ok: false,
-        healthStatus: successHealthStatus(bestFailure.response.status),
+        healthStatus: failureHealthStatus(bestFailure),
         httpStatus: bestFailure.response.status,
       },
       scanMode: parsed.scanMode,

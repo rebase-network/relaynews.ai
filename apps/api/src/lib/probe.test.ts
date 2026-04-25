@@ -166,8 +166,9 @@ test("public probe deep scan returns every matched mode in auto detection order"
   const originalFetch = globalThis.fetch;
   const seenUrls: string[] = [];
 
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init) => {
     const requestUrl = new URL(typeof input === "string" ? input : input.toString());
+    const requestBody = typeof init?.body === "string" ? init.body : "";
     seenUrls.push(requestUrl.toString());
 
     if (requestUrl.pathname.endsWith("/responses")) {
@@ -178,7 +179,14 @@ test("public probe deep scan returns every matched mode in auto detection order"
     }
 
     if (requestUrl.pathname.endsWith("/chat/completions")) {
-      return new Response('{"object":"chat.completion","choices":[{"message":{"role":"assistant","content":"pong"}}]}', {
+      if (requestBody.includes("model_name")) {
+        return new Response('{"model":"gpt-5.4","object":"chat.completion","choices":[{"message":{"role":"assistant","content":"{\\"provider\\":\\"OpenAI\\",\\"model_name\\":\\"gpt-5.4\\",\\"model_version\\":null}"}}]}', {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+
+      return new Response('{"model":"gpt-5.4","object":"chat.completion","choices":[{"message":{"role":"assistant","content":"pong"}}]}', {
         status: 200,
         headers: { "content-type": "application/json" },
       });
@@ -192,7 +200,14 @@ test("public probe deep scan returns every matched mode in auto detection order"
     }
 
     if (requestUrl.pathname.includes(":generateContent") || requestUrl.pathname.includes(":streamGenerateContent")) {
-      return new Response('{"candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]}}]}', {
+      if (requestBody.includes("model_name")) {
+        return new Response('{"modelVersion":"gemini-2.5-flash","candidates":[{"content":{"role":"model","parts":[{"text":"{\\"provider\\":\\"Google\\",\\"model_name\\":\\"gemini-2.5-flash\\",\\"model_version\\":\\"gemini-2.5-flash\\"}"}]}}]}', {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+
+      return new Response('{"modelVersion":"gemini-2.5-flash","candidates":[{"content":{"role":"model","parts":[{"text":"pong"}]}}]}', {
         status: 200,
         headers: { "content-type": "application/json" },
       });
@@ -218,13 +233,22 @@ test("public probe deep scan returns every matched mode in auto detection order"
     assert.equal(result.compatibilityMode, "openai-chat-completions");
     assert.deepEqual(result.matchedModes.map((entry) => entry.mode), [
       "openai-chat-completions",
-      "anthropic-messages",
       "google-gemini-generate-content",
     ]);
-    assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 3);
+    assert.ok(result.matchedModes[0]?.credibility);
+    assert.equal(result.matchedModes[0]?.credibility?.responseReportedModel, "gpt-5.4");
+    assert.notEqual(result.matchedModes[0]?.credibility?.identityConfidence, "unknown");
+    assert.ok(result.matchedModes[1]?.credibility);
+    assert.equal(result.matchedModes[1]?.credibility?.responseReportedModel, "gemini-2.5-flash");
+    assert.notEqual(result.matchedModes[1]?.credibility?.identityConfidence, "unknown");
+    assert.equal(result.attemptTrace.filter((entry) => entry.matched).length, 2);
     assert.equal(
       result.attemptTrace.find((entry) => entry.mode === "openai-responses" && entry.httpStatus === 404)?.message,
       "测试 OpenAI Responses 时，上游返回了 HTTP 404",
+    );
+    assert.equal(
+      result.attemptTrace.find((entry) => entry.mode === "anthropic-messages" && entry.httpStatus === 200)?.message,
+      "测试 Anthropic Messages 时，协议已命中，但未观测到可见文本输出",
     );
     assert.equal(seenUrls.some((url) => url.endsWith("/messages")), true);
     assert.equal(seenUrls.some((url) => url.includes(":generateContent") || url.includes(":streamGenerateContent")), true);
