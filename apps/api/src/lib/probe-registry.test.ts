@@ -196,6 +196,10 @@ test("responses adapter uses bounded max output tokens compatible with OpenAI-st
   }));
 
   assert.equal(JSON.parse(attempt.body).max_output_tokens, 16);
+  assert.equal(
+    JSON.parse(attempt.body).input[0].content[0].text,
+    "Reply with exactly one word: pong",
+  );
 });
 
 test("chat completions adapter uses enough output budget to emit visible text", () => {
@@ -208,6 +212,7 @@ test("chat completions adapter uses enough output budget to emit visible text", 
   }));
 
   assert.equal(JSON.parse(attempt.body).max_tokens, 16);
+  assert.equal(JSON.parse(attempt.body).messages[0].content, "Reply with exactly one word: pong");
 });
 
 test("anthropic adapter uses enough output budget to emit visible text", () => {
@@ -220,6 +225,25 @@ test("anthropic adapter uses enough output budget to emit visible text", () => {
   }));
 
   assert.equal(JSON.parse(attempt.body).max_tokens, 16);
+  assert.equal(
+    JSON.parse(attempt.body).messages[0].content[0].text,
+    "Reply with exactly one word: pong",
+  );
+});
+
+test("gemini adapter uses the same primary probe instruction", () => {
+  const attempt = firstAttempt(probeAdapterRegistry["google-gemini-generate-content"].buildAttempts(new URL("https://generativelanguage.googleapis.com"), {
+    baseUrl: "https://generativelanguage.googleapis.com",
+    apiKey: "google-key",
+    model: "gemini-2.5-flash",
+    compatibilityMode: "google-gemini-generate-content",
+    scanMode: "standard",
+  }));
+
+  assert.equal(
+    JSON.parse(attempt.body).contents[0].parts[0].text,
+    "Reply with exactly one word: pong",
+  );
 });
 
 test("chat completions adapter matches chat completion chunks", () => {

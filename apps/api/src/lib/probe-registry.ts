@@ -37,6 +37,7 @@ const OPENAI_RESPONSES = "openai-responses" as const;
 const OPENAI_CHAT = "openai-chat-completions" as const;
 const ANTHROPIC_MESSAGES = "anthropic-messages" as const;
 const GOOGLE_GEMINI_GENERATE_CONTENT = "google-gemini-generate-content" as const;
+const PRIMARY_PROBE_PROMPT = "Reply with exactly one word: pong";
 const ALL_PROBE_MODES = [
   OPENAI_RESPONSES,
   OPENAI_CHAT,
@@ -219,7 +220,7 @@ function buildOpenAiResponsesBody(model: string) {
         content: [
           {
             type: "input_text",
-            text: "ping",
+            text: PRIMARY_PROBE_PROMPT,
           },
         ],
       },
@@ -235,7 +236,7 @@ function buildOpenAiChatBody(model: string) {
     messages: [
       {
         role: "user",
-        content: "ping",
+        content: PRIMARY_PROBE_PROMPT,
       },
     ],
     stream: true,
@@ -254,7 +255,7 @@ function buildAnthropicMessagesBody(model: string) {
         content: [
           {
             type: "text",
-            text: "ping",
+            text: PRIMARY_PROBE_PROMPT,
           },
         ],
       },
@@ -269,7 +270,7 @@ function buildGoogleGeminiGenerateContentBody() {
         role: "user",
         parts: [
           {
-            text: "ping",
+            text: PRIMARY_PROBE_PROMPT,
           },
         ],
       },
