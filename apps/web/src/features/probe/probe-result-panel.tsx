@@ -33,7 +33,25 @@ export function ProbeResultPanel({
   resultTone: ReturnType<typeof Shared.getProbeResultTone> | null;
   onCopyUsedUrl: () => void;
 }) {
-  const ttfbMs = result?.connectivity.ttfbMs ?? result?.connectivity.latencyMs ?? null;
+  const deepScanSummary = result?.scanMode === "deep" && result.matchedModes.length > 0
+    ? {
+        ttfbMs: result.matchedModes.reduce<number | null>((best, matchedMode) => {
+          const value = matchedMode.ttfbMs ?? matchedMode.latencyMs;
+          return best === null ? value : Math.min(best, value);
+        }, null),
+        firstTokenMs: result.matchedModes.reduce<number | null>((best, matchedMode) => {
+          if (matchedMode.firstTokenMs === null || typeof matchedMode.firstTokenMs === "undefined") {
+            return best;
+          }
+
+          return best === null ? matchedMode.firstTokenMs : Math.min(best, matchedMode.firstTokenMs);
+        }, null),
+      }
+    : null;
+  const ttfbMs = deepScanSummary?.ttfbMs ?? result?.connectivity.ttfbMs ?? result?.connectivity.latencyMs ?? null;
+  const firstTokenMs = deepScanSummary?.firstTokenMs ?? result?.connectivity.firstTokenMs ?? null;
+  const ttfbLabel = deepScanSummary ? "最佳 TTFB" : "TTFB";
+  const firstTokenLabel = deepScanSummary ? "最佳首个有效输出" : "首个有效输出";
 
   return (
     <Panel
@@ -67,7 +85,7 @@ export function ProbeResultPanel({
                 valueSpacingClassName: "mt-2",
               },
               {
-                label: "TTFB",
+                label: ttfbLabel,
                 value: ttfbMs !== null ? `${ttfbMs} ms` : "-",
                 testId: "probe-latency-value",
                 cardClassName: "probe-metric-card",
@@ -75,9 +93,9 @@ export function ProbeResultPanel({
                 valueSpacingClassName: "mt-2",
               },
               {
-                label: "首个有效输出",
-                value: result.connectivity.firstTokenMs !== null && typeof result.connectivity.firstTokenMs !== "undefined"
-                  ? `${result.connectivity.firstTokenMs} ms`
+                label: firstTokenLabel,
+                value: firstTokenMs !== null && typeof firstTokenMs !== "undefined"
+                  ? `${firstTokenMs} ms`
                   : "-",
                 testId: "probe-first-token-value",
                 cardClassName: "probe-metric-card",
@@ -94,7 +112,11 @@ export function ProbeResultPanel({
               },
             ]}
           />
-          {result.connectivity.firstTokenMs === null || typeof result.connectivity.firstTokenMs === "undefined" ? (
+          {deepScanSummary ? (
+            <p className="mt-3 text-xs leading-6 text-black/58">
+              深度扫描模式下，顶部 TTFB 和首个有效输出显示的是已命中兼容模式中的最快值；各模式详情见下方列表。
+            </p>
+          ) : firstTokenMs === null || typeof firstTokenMs === "undefined" ? (
             <p className="mt-3 text-xs leading-6 text-black/58">
               “首个有效输出”为 - 表示本次虽然收到了响应，但没有观测到可见文本输出；常见于空响应、只返回状态事件，或模型未实际产出文本。
             </p>
@@ -143,7 +165,17 @@ export function ProbeResultPanel({
                 <div>
                   <dt className="kicker !text-black/52">兼容模式</dt>
                   <dd className="mt-1 text-sm leading-6 break-words text-black/78" data-testid="probe-mode-value">
-                    {formatProbeCompatibilityMode(result.compatibilityMode)}
+                    {result.scanMode === "deep" && result.matchedModes.length > 0 ? (
+                      <div className="space-y-1">
+                        {result.matchedModes.map((matchedMode) => (
+                          <div key={`${matchedMode.mode}-${matchedMode.url}`}>
+                            {matchedMode.label}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      formatProbeCompatibilityMode(result.compatibilityMode)
+                    )}
                   </dd>
                 </div>
                 <div>
