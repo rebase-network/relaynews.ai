@@ -48,10 +48,6 @@ export function RelayModelHealthSection({
   return (
     <section className="grid gap-4">
       <Panel
-        title="模型健康"
-        kicker="近 7 天"
-        headerClassName="mb-3"
-        titleClassName="text-[1.9rem] md:text-[2.1rem]"
       >
         {error ? <p className="text-sm text-[#b42318]">{error}</p> : null}
         {!error && loading ? <p className="text-sm text-black/60">正在加载模型健康信息...</p> : null}
@@ -60,10 +56,6 @@ export function RelayModelHealthSection({
         ) : null}
         {!error && !loading && rows.length > 0 ? (
           <>
-            <div className="mb-3 text-sm leading-6 text-black/64">
-              以下状态、可用性与延迟均按模型展示，窗口固定为近 7 天。
-            </div>
-
             <div className="space-y-2.5 lg:hidden">
               {rows.map((row) => (
                 <div key={row.modelKey} className="surface-card p-3.5">
