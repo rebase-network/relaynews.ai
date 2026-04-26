@@ -52,10 +52,16 @@ async function expectRelayDetailModules(page: Page) {
   const modelTable = page.locator(".data-table").last();
 
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
+  await expect(page.getByText("Balanced relay focused on low latency and stable uptime.")).toBeVisible();
+  await expect(page.getByText("联系方式")).toBeVisible();
+  await expect(page.getByText("Telegram：@aurora_ops")).toBeVisible();
   await expect(page.getByText("以下状态、可用性与延迟均按模型展示", { exact: false })).toBeVisible();
   await expect(page.getByText("模型数")).toBeVisible();
-  await expect(page.getByText("起始输入 / 1M")).toBeVisible();
-  await expect(page.getByText("起始输出 / 1M")).toBeVisible();
+  await expect(page.getByText("24h 可用性")).toBeVisible();
+  await expect(page.getByText("P50 延迟").first()).toBeVisible();
+  await expect(page.getByText("最近快照")).toBeVisible();
+  await expect(page.getByText("起始输入 / 1M")).toHaveCount(0);
+  await expect(page.getByText("起始输出 / 1M")).toHaveCount(0);
   await expect(modelTable.getByText(/^openai-gpt-4\.1$/)).toBeVisible();
   await expect(modelTable.getByText(/^anthropic-claude-sonnet-4\.6$/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "价格历史" })).toHaveCount(0);
@@ -120,7 +126,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
     .toHaveCount(0);
 
   if (isDeployedRun) {
-    await page.getByRole("link", { name: "榜单" }).click();
+    await page.getByRole("link", { name: "站点目录" }).click();
     await expect(page).toHaveURL(/\/leaderboard$/);
     await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
     await expectLeaderboardRules(page);
@@ -364,12 +370,12 @@ test("public mobile navigation routes to the primary pages", async ({ page }) =>
   let mobileNav = page.locator("#mobile-primary-nav");
 
   await expect(mobileNav.getByRole("link", { name: "首页" })).toBeVisible();
-  await expect(mobileNav.getByRole("link", { name: "目录" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "站点目录" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "评测方式" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "提交站点" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "站点测试" })).toBeVisible();
 
-  await mobileNav.getByRole("link", { name: "目录" }).click();
+  await mobileNav.getByRole("link", { name: "站点目录" }).click();
   await expect(page).toHaveURL(/\/leaderboard$/);
   await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
 

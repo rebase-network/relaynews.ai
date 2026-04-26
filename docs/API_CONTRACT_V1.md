@@ -296,7 +296,9 @@ Response:
     "slug": "sample-relay",
     "name": "Sample Relay",
     "baseUrl": "https://relay.sample-provider.ai/v1",
-    "websiteUrl": "https://sample-provider.ai"
+    "websiteUrl": "https://sample-provider.ai",
+    "contactInfo": "Telegram: @sample_ops",
+    "description": "Balanced relay focused on stable uptime."
   },
   "healthStatus": "healthy",
   "availability24h": 0.998,
@@ -336,7 +338,7 @@ Notes:
 - `startingInputPricePer1M` and `startingOutputPricePer1M` may be `null` when price
   data is unknown
 - the current public relay detail page uses this endpoint primarily for relay identity
-  and non-model aggregate metadata
+  plus operator-supplied relay description and contact information
 - model-specific health, availability, and latency should be read from
   `GET /public/relay/:slug/model-health`
 

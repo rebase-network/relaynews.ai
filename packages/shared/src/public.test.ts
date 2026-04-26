@@ -15,6 +15,7 @@ import {
   publicProbeResponseSchema,
   publicSubmissionRequestSchema,
   relayHistoryQuerySchema,
+  relayOverviewResponseSchema,
   relayModelHealthQuerySchema,
   relayModelHealthResponseSchema,
 } from "./index";
@@ -142,6 +143,41 @@ test("relay model health example parses", () => {
 
   assert.equal(parsed.rows[0]?.modelKey, "gpt-5.4");
   assert.equal(parsed.rows[0]?.statusTrend7d.length, 7);
+});
+
+test("relay overview example parses relay description and contact info", () => {
+  const parsed = relayOverviewResponseSchema.parse({
+    relay: {
+      slug: "sample-relay",
+      name: "Sample Relay",
+      baseUrl: "https://relay.sample-provider.ai/v1",
+      websiteUrl: "https://sample-provider.ai",
+      contactInfo: "Telegram: @sample_ops",
+      description: "Balanced relay focused on stable uptime.",
+    },
+    healthStatus: "healthy",
+    availability24h: 0.998,
+    latencyP50Ms: 820,
+    latencyP95Ms: 1540,
+    incidents7d: 1,
+    supportedModelsCount: 12,
+    startingInputPricePer1M: 0.8,
+    startingOutputPricePer1M: 3.2,
+    scoreSummary: {
+      availability: 98.4,
+      latency: 92.1,
+      consistency: 96.0,
+      value: 88.3,
+      stability: 94.6,
+      credibility: 75.0,
+      total: 94.1,
+    },
+    badges: ["low-latency"],
+    measuredAt: "2026-04-15T10:00:00.000Z",
+  });
+
+  assert.equal(parsed.relay.contactInfo, "Telegram: @sample_ops");
+  assert.equal(parsed.relay.description, "Balanced relay focused on stable uptime.");
 });
 
 test("probe request requires https", () => {

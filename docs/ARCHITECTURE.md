@@ -34,9 +34,9 @@ The product should:
 - The public probe should stay model-first by default and use compatibility auto-detection
   with an optional advanced override
 - The current public relay detail page focuses on overview identity, supported-model
-  count and starting price, plus a compact model health board with current status,
-  7-day availability, 7-day status mini trend, representative latency, and current
-  price for each supported model; relay-level latency/status charts and standalone
+  count, relay description/contact context, and a compact model health board with
+  current status, 7-day availability, 7-day status mini trend, representative
+  latency, and current price for each supported model; relay-level latency/status charts and standalone
   incident or full price-history panels are not rendered in the shipped UI
 - The admin SPA uses `/relays` as its effective landing page; `GET /admin/overview`
   currently remains as an auth/bootstrap endpoint rather than a primary visible page

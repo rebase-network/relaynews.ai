@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navItems = [
     ["/", "首页"],
-    ["/leaderboard", "目录"],
+    ["/leaderboard", "站点目录"],
     ["/methodology", "评测方式"],
     ["/submit", "提交站点"],
     ["/probe", "站点测试"],

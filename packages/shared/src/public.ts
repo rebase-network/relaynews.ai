@@ -91,6 +91,8 @@ export const relayOverviewResponseSchema = z.object({
     name: z.string().min(1),
     baseUrl: z.string().url(),
     websiteUrl: z.string().url().nullable(),
+    contactInfo: z.string().nullable(),
+    description: z.string().nullable(),
   }),
   healthStatus: healthStatusSchema,
   availability24h: z.number().min(0).max(1),

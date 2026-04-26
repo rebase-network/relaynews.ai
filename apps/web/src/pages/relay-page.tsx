@@ -6,7 +6,8 @@ const {
   ErrorPanel,
   RelayPageSkeleton,
   fetchJson,
-  formatPricePerMillion,
+  formatAvailability,
+  formatLatency,
   useLoadable,
   usePageMetadata,
   useParams,
@@ -39,8 +40,8 @@ export function RelayPage() {
 
   const snapshotMetrics = [
     { label: "模型数", value: overview.data.supportedModelsCount },
-    { label: "起始输入 / 1M", value: formatPricePerMillion(overview.data.startingInputPricePer1M) },
-    { label: "起始输出 / 1M", value: formatPricePerMillion(overview.data.startingOutputPricePer1M) },
+    { label: "24h 可用性", value: formatAvailability(overview.data.availability24h) },
+    { label: "P50 延迟", value: formatLatency(overview.data.latencyP50Ms) },
     { label: "最近快照", value: Shared.formatProbeMeasuredAt(overview.data.measuredAt) },
   ];
 

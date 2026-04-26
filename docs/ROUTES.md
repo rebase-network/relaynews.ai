@@ -155,7 +155,8 @@ The leaderboard page is expected to include:
 
 The relay detail page is expected to include:
 - relay identity and endpoint summary
-- supported model count and starting price summary
+- relay introduction and contact info when available
+- supported model count plus recent health snapshot summary
 - model-by-model health rows with:
   - current status
   - 7-day availability
@@ -171,8 +172,8 @@ The relay detail page is expected to include:
 
 First-paint critical:
 - overview identity and endpoint summary
-- supported model count
-- starting price summary
+- relay introduction and contact info
+- supported model count plus recent health snapshot summary
 
 Hydration or secondary loads:
 - model health list
