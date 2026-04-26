@@ -255,10 +255,10 @@ export function RelayPageSkeleton() {
   return (
     <div aria-busy="true" className="space-y-6">
       <section className="panel bg-[linear-gradient(135deg,rgba(255,240,194,1),rgba(255,184,62,0.75))]">
-        <div className="relative z-20 grid gap-4 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
+        <div className="relative z-20 space-y-4">
           <div className="space-y-4">
             <div className="space-y-3">
-              <SkeletonBlock className="skeleton-pill w-[10rem]" />
+              <SkeletonBlock className="skeleton-kicker max-w-[6rem]" />
               <div className="space-y-3">
                 <SkeletonBlock className="skeleton-heading-lg max-w-[18rem]" />
                 <SkeletonBlock className="skeleton-line max-w-[20rem]" />
@@ -277,47 +277,7 @@ export function RelayPageSkeleton() {
               ))}
             </div>
           </div>
-          <div className="surface-card p-4">
-            <SkeletonBlock className="skeleton-kicker max-w-[5rem]" />
-            <SkeletonBlock className="skeleton-heading-md mt-3 max-w-[5.5rem]" />
-            <div className="mt-4 space-y-2">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <SkeletonBlock key={index} className="skeleton-line max-w-[8rem]" />
-              ))}
-            </div>
-          </div>
         </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <section className="panel">
-          <div className="mb-4 space-y-2">
-            <SkeletonBlock className="skeleton-kicker max-w-[8rem]" />
-            <SkeletonBlock className="skeleton-heading-md max-w-[12rem]" />
-          </div>
-          <SkeletonBlock className="h-28 w-full" />
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-[4.2rem] w-full" />
-            ))}
-          </div>
-        </section>
-        <section className="panel">
-          <div className="mb-4 space-y-2">
-            <SkeletonBlock className="skeleton-kicker max-w-[6rem]" />
-            <SkeletonBlock className="skeleton-heading-md max-w-[10rem]" />
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {Array.from({ length: 15 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-10 w-full" />
-            ))}
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, index) => (
-              <SkeletonBlock key={index} className="h-[4.2rem] w-full" />
-            ))}
-          </div>
-        </section>
       </section>
 
       <section className="grid gap-4">
@@ -336,19 +296,20 @@ export function RelayPageSkeleton() {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <SkeletonBlock className="h-[4.3rem] w-full" />
                   <SkeletonBlock className="h-[4.3rem] w-full" />
+                  <SkeletonBlock className="h-[4.3rem] w-full" />
+                  <SkeletonBlock className="h-[4.3rem] w-full" />
                 </div>
+                <SkeletonBlock className="mt-3 h-6 w-full" />
               </div>
             ))}
           </div>
-          <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
-            {Array.from({ length: 2 }).map((_, tableIndex) => (
-              <div key={tableIndex} className="space-y-2">
-                <SkeletonBlock className="h-9 w-full" />
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <SkeletonBlock key={index} className="h-14 w-full" />
-                ))}
-              </div>
-            ))}
+          <div className="hidden lg:block">
+            <SkeletonBlock className="h-10 w-full" />
+            <div className="mt-2 space-y-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <SkeletonBlock key={index} className="h-14 w-full" />
+              ))}
+            </div>
           </div>
         </section>
       </section>

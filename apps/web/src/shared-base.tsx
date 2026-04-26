@@ -12,6 +12,7 @@ import {
   type PublicProbeResponse,
   type RelayHistoryResponse,
   type RelayIncidentsResponse,
+  type RelayModelHealthResponse,
   type RelayModelsResponse,
   type RelayOverviewResponse,
   type RelayPricingHistoryResponse,
@@ -44,6 +45,7 @@ export type {
   PublicProbeResponse,
   RelayHistoryResponse,
   RelayIncidentsResponse,
+  RelayModelHealthResponse,
   RelayModelsResponse,
   RelayOverviewResponse,
   RelayPricingHistoryResponse,
@@ -293,6 +295,7 @@ export function formatSupportStatusLabel(status: string) {
   return (
     {
       active: "可用",
+      degraded: "降级",
       pending: "待确认",
       paused: "已暂停",
       retired: "已退役",
@@ -426,6 +429,8 @@ export type DailyHistorySlot = {
 export type RelayModelPricingRow = RelayModelsResponse["rows"][number] & {
   currentPrice: RelayPricingHistoryResponse["rows"][number] | null;
 };
+
+export type RelayModelHealthRow = RelayModelHealthResponse["rows"][number];
 
 export function getIsoDateKey(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);

@@ -1,15 +1,12 @@
 import * as Shared from "../shared";
 import { RelayHeroSection } from "../features/relay/relay-hero-section";
-import { RelayHistorySection } from "../features/relay/relay-history-section";
-import { RelayModelSupportSection } from "../features/relay/relay-model-support-section";
+import { RelayModelHealthSection } from "../features/relay/relay-model-health-section";
 
 const {
   ErrorPanel,
   RelayPageSkeleton,
-  buildDailyHistorySlots,
   fetchJson,
-  formatAvailability,
-  formatLatency,
+  formatPricePerMillion,
   useLoadable,
   usePageMetadata,
   useParams,
@@ -22,19 +19,9 @@ export function RelayPage() {
     () => fetchJson(`/public/relay/${slug}/overview`),
     [slug],
   );
-  const history = useLoadable<Shared.RelayHistoryResponse>(
-    `/public/relay/${slug}/history?window=30d`,
-    () => fetchJson(`/public/relay/${slug}/history?window=30d`),
-    [slug],
-  );
-  const models = useLoadable<Shared.RelayModelsResponse>(
-    `/public/relay/${slug}/models`,
-    () => fetchJson(`/public/relay/${slug}/models`),
-    [slug],
-  );
-  const pricing = useLoadable<Shared.RelayPricingHistoryResponse>(
-    `/public/relay/${slug}/pricing-history`,
-    () => fetchJson(`/public/relay/${slug}/pricing-history`),
+  const modelHealth = useLoadable<Shared.RelayModelHealthResponse>(
+    `/public/relay/${slug}/model-health?window=7d`,
+    () => fetchJson(`/public/relay/${slug}/model-health?window=7d`),
     [slug],
   );
   const relayName = overview.data?.relay.name ?? slug;
@@ -43,60 +30,27 @@ export function RelayPage() {
     title: `${relayName} Relay 详情｜relaynew.ai`,
     description:
       overview.data
-        ? `查看 ${overview.data.relay.name} 的 24h 可用性、延迟走势、模型支持与当前价格。`
-        : "查看站点的 24h 可用性、延迟走势、模型支持与当前价格。",
+        ? `查看 ${overview.data.relay.name} 支持模型的当前状态、7天可用性、代表延迟与当前价格。`
+        : "查看这个站点支持模型的当前状态、7天可用性、代表延迟与当前价格。",
   });
 
   if (overview.loading) return <RelayPageSkeleton />;
   if (overview.error || !overview.data) return <ErrorPanel message={overview.error ?? "Relay 详情加载失败。"} />;
 
   const snapshotMetrics = [
-    { label: "24h 可用性", value: formatAvailability(overview.data.availability24h) },
-    { label: "P50 延迟", value: formatLatency(overview.data.latencyP50Ms) },
-    { label: "P95 延迟", value: formatLatency(overview.data.latencyP95Ms) },
     { label: "模型数", value: overview.data.supportedModelsCount },
+    { label: "起始输入 / 1M", value: formatPricePerMillion(overview.data.startingInputPricePer1M) },
+    { label: "起始输出 / 1M", value: formatPricePerMillion(overview.data.startingOutputPricePer1M) },
+    { label: "最近快照", value: Shared.formatProbeMeasuredAt(overview.data.measuredAt) },
   ];
-
-  const latestPricingByModelKey = new Map<string, Shared.RelayPricingHistoryResponse["rows"][number]>();
-  if (pricing.data) {
-    for (const row of pricing.data.rows) {
-      if (!latestPricingByModelKey.has(row.modelKey)) {
-        latestPricingByModelKey.set(row.modelKey, row);
-      }
-    }
-  }
-
-  const modelPricingRows: Shared.RelayModelPricingRow[] = models.data?.rows.map((row) => ({
-    ...row,
-    currentPrice: latestPricingByModelKey.get(row.modelKey) ?? null,
-  })) ?? [];
-  const modelRowsPerColumn = Math.ceil(modelPricingRows.length / 2);
-  const modelTableColumns: Array<Array<Shared.RelayModelPricingRow | null>> = [
-    modelPricingRows.slice(0, modelRowsPerColumn),
-    modelPricingRows.slice(modelRowsPerColumn),
-  ]
-    .filter((rows) => rows.length > 0)
-    .map((rows) => [...rows, ...Array.from({ length: Math.max(0, modelRowsPerColumn - rows.length) }, () => null)]);
-  const historySlots = history.data ? buildDailyHistorySlots(history.data.points, history.data.measuredAt) : [];
-  const measuredHistorySlotCount = historySlots.filter((slot) => slot.point).length;
-  const latestMeasuredHistoryPoint = [...historySlots].reverse().find((slot) => slot.point?.latencyP95Ms !== null)?.point ?? null;
 
   return (
     <div className="space-y-4">
       <RelayHeroSection overview={overview.data} snapshotMetrics={snapshotMetrics} />
-      <RelayHistorySection
-        historyError={history.error}
-        historyLoading={history.loading}
-        historyReady={Boolean(history.data)}
-        historySlots={historySlots}
-        latestMeasuredLatency={latestMeasuredHistoryPoint?.latencyP95Ms ?? null}
-        measuredHistorySlotCount={measuredHistorySlotCount}
-      />
-      <RelayModelSupportSection
-        modelPricingRows={modelPricingRows}
-        modelTableColumns={modelTableColumns}
-        modelsLoading={models.loading}
-        modelsReady={Boolean(models.data)}
+      <RelayModelHealthSection
+        error={modelHealth.error}
+        loading={modelHealth.loading}
+        modelHealth={modelHealth.data}
       />
     </div>
   );
