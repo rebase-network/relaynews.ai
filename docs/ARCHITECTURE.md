@@ -27,6 +27,8 @@ The product should:
   the relay catalog/history
 - Only relays with catalog status `active` should participate in scheduled monitoring
   or appear on public directory, leaderboard, and relay detail pages
+- Relay-owned monitoring now operates on `relay × model` targets so model-level
+  latency, availability, and health signals remain the primary public evidence
 - The public probe should stay model-first by default and use compatibility auto-detection
   with an optional advanced override
 - The current public relay detail page focuses on overview identity, supported-model

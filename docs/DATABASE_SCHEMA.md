@@ -155,6 +155,17 @@ Suggested columns:
 - `supports_vision` boolean not null default false
 - `supports_reasoning` boolean not null default false
 - `status` text not null default 'active'  # support status
+- `monitoring_enabled` boolean not null default true
+- `monitoring_priority` integer not null default 100
+- `compatibility_mode_override` text null
+- `last_compatibility_mode` text null
+- `last_probe_ok` boolean null
+- `last_health_status` text null
+- `last_http_status` integer null
+- `last_message` text null
+- `last_detection_mode` text null
+- `last_used_url` text null
+- `consecutive_failure_count` integer not null default 0
 - `last_verified_at` timestamptz null
 - `created_at` timestamptz not null default now()
 - `updated_at` timestamptz not null default now()
@@ -163,6 +174,18 @@ Indexes:
 - unique index on (`relay_id`, `model_id`)
 - index on `model_id`
 - index on `status`
+- index on (`relay_id`, `monitoring_enabled`, `monitoring_priority`, `status`)
+
+Notes:
+- `relay_models` is both the support matrix and the model-level monitoring target set
+- `monitoring_enabled` controls whether that relay-model pair enters the scheduled
+  monitoring cycle
+- `monitoring_priority` is used to cap per-relay probe fan-out when model count is
+  high
+- `compatibility_mode_override` allows a single relay-model pair to bypass relay-level
+  defaults and force a protocol mode
+- `last_*` fields capture the latest direct model-level probe result and should be
+  treated as model-scoped evidence, not relay-wide truth
 
 ### relay_prices
 Price history per relay-model pair.
@@ -285,6 +308,10 @@ Notes:
 - relay-owned credentials are the long-term operational surface; after approval,
   operators may still rotate or replace them manually, but only `active` relays
   should use an active credential for scheduled monitoring
+- `test_model` remains as a bootstrap and fallback value for initial verification, but
+  scheduled monitoring should not assume it is the only long-term probe target
+- relay-owned credentials define authentication and relay-level compatibility defaults;
+  the actual scheduled monitoring target set comes from `relay_models`
 
 ### sponsors
 Paid placement records kept separate from ranking logic.
@@ -616,10 +643,16 @@ Notes:
 Current runtime behavior:
 - the API process runs one primary `node-cron` probe task every 15 minutes
 - the API process runs one separate credibility task once per day
-- each tick loads relay-owned credentials where both `probe_credentials.status = 'active'`
-  and `relays.status = 'active'`
-- each successful relay run writes raw probe rows, updates relay-model support rows,
-  refreshes the touched 5-minute / hourly aggregates, and then rebuilds public snapshots
+- each primary tick loads relay-owned credentials where both `probe_credentials.status = 'active'`
+  and `relays.status = 'active'`, then expands them into relay-model monitoring targets
+  using `relay_models`
+- each relay-model target resolves its request model and compatibility mode using
+  model-level overrides, last successful mode, and credential defaults
+- each successful or failed relay-model run writes raw probe rows, updates
+  `relay_models` latest result fields, refreshes the touched 5-minute / hourly
+  aggregates, and then rebuilds public snapshots
+- per-relay probe fan-out is budgeted by `relay_models.monitoring_priority`,
+  `monitoring_enabled`, and scheduler-side model caps / failure backoff rules
 - the separate credibility task only targets relays whose latest primary probe still
   indicates they are available enough to test
 - admin write flows such as relay edits, submission review, sponsor changes, model

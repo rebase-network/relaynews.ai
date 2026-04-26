@@ -30,6 +30,9 @@ Implemented and in daily use:
 - relay lifecycle flow where submission approval moves the reviewed record into
   history, creates or links a relay entry, syncs submitted model prices, transfers
   the active credential to the relay, and triggers the first relay-owned monitoring run
+- relay-owned monitoring scheduler expanded from single `test_model` probing to
+  budgeted `relay × model` targets so model-level snapshots and relay detail health
+  rows stay current across supported models
 - manual relay creation / edit flows with model-price rows and relay-owned test key
 - page and feature refactors that split oversized `web` / `admin` entry files into
   route pages, drawers, feature modules, and shared helpers
