@@ -29,7 +29,11 @@ declare module "fastify" {
 
 export async function buildApp() {
   const app = fastify({
-    logger: config.NODE_ENV === "development",
+    logger: config.NODE_ENV === "test"
+      ? false
+      : {
+          level: config.LOG_LEVEL,
+        },
   });
 
   const db = createDb();
@@ -159,7 +163,39 @@ export async function buildApp() {
           total: result.total,
           succeeded: result.succeeded,
           failed: result.failed,
+          skipped: result.skipped,
         }, "Completed relay monitoring cycle");
+        for (const target of result.skippedTargets) {
+          app.log.info({
+            relaySlug: target.relaySlug,
+            modelKey: target.modelKey,
+            reason: "backoff",
+            consecutiveFailureCount: target.consecutiveFailureCount,
+            lastVerifiedAt: target.lastVerifiedAt,
+          }, "Skipped relay model monitoring target");
+        }
+        for (const entry of result.results) {
+          app.log.info({
+            relaySlug: entry.relaySlug,
+            modelKey: entry.modelKey,
+            requestedModel: entry.requestedModel,
+            compatibilityMode: entry.probe.compatibilityMode,
+            usedUrl: entry.probe.usedUrl,
+            httpStatus: entry.probe.protocol.httpStatus ?? null,
+            healthStatus: entry.probe.protocol.healthStatus,
+            ok: entry.probe.ok,
+            message: entry.probe.message,
+            measuredAt: entry.probe.measuredAt,
+          }, "Relay model monitoring result");
+        }
+        for (const entry of result.errors) {
+          app.log.error({
+            credentialId: entry.credentialId,
+            relaySlug: entry.relaySlug,
+            modelKey: entry.modelKey,
+            message: entry.message,
+          }, "Relay model monitoring target failed");
+        }
       } catch (error) {
         app.log.error(error, "Failed to execute relay monitoring cycle");
         try {

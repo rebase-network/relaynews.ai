@@ -23,6 +23,7 @@ function normalizeOptionalEnvString(value: string | undefined) {
 
 const configSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   HOST: z.string().default("127.0.0.1"),
   PORT: z.coerce.number().int().positive().default(8787),
   DATABASE_URL: z.string().min(1).default("postgres://postgres:postgres@127.0.0.1:54329/relaynews"),
