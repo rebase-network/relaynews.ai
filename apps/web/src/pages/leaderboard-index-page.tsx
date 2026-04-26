@@ -82,8 +82,8 @@ export function LeaderboardIndexPage() {
     [],
   );
   usePageMetadata({
-    title: "站点榜单目录｜relaynew.ai",
-    description: "按主流模型分类查看已跟踪站点榜单目录，快速进入单榜单详情，对比健康状态、延迟与价格信息。",
+    title: "模型目录｜relaynew.ai",
+    description: "按模型分类浏览已跟踪的 Relay 站点，进入对应榜单查看状态、可用性、延迟与价格信号。",
     canonicalPath: LEADERBOARD_DIRECTORY_PATH,
   });
   const boards = data?.boards ?? [];
@@ -131,16 +131,15 @@ export function LeaderboardIndexPage() {
       <section className="panel leaderboard-directory-hero bg-[#fff0c2]">
         <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
           <div>
-            <p className="kicker !mb-2">榜单目录</p>
+            <p className="kicker !mb-2">模型目录</p>
             <h1 className="max-w-3xl text-[2.7rem] leading-[0.94] tracking-[-0.05em] md:text-[3.45rem]">
-              浏览全部模型榜单，直接进入你关心的分类。
+              按模型分类浏览已跟踪的 Relay 站点。
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-black/70">
-              每个模型分类都聚合了当前已跟踪站点的实时排名快照，适合先定位模型，再进入单榜单比较站点表现。
+              先选择你关心的模型，再进入对应榜单查看当前可用站点，以及状态、延迟和价格信号。
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 xl:justify-end">
-            <Link className="button-dark" to="/">返回首页</Link>
             <Link className="button-cream" to="/probe">开始测试</Link>
           </div>
         </div>
