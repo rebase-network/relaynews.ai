@@ -934,6 +934,12 @@ export async function runRelayMonitoringCycle(db: Kysely<Database>) {
     succeeded: results.length,
     failed: errors.length,
     skipped: skippedBackoff.length,
+    skippedTargets: skippedBackoff.map((target) => ({
+      relaySlug: target.relaySlug,
+      modelKey: target.modelKey,
+      consecutiveFailureCount: target.consecutiveFailureCount,
+      lastVerifiedAt: target.lastVerifiedAt,
+    })),
     measuredAt: new Date().toISOString(),
     results,
     errors,
