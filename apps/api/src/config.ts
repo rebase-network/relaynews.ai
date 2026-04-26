@@ -37,7 +37,7 @@ const configSchema = z.object({
   PRIMARY_PROBE_CRON: z.string().default("*/15 * * * *"),
   CREDIBILITY_PROBE_CRON: z.string().default("17 4 * * *"),
   SCHEDULER_TIMEZONE: z.string().default("Asia/Shanghai"),
-  MONITORING_MAX_MODELS_PER_RELAY: z.coerce.number().int().positive().default(3),
+  MONITORING_MAX_MODELS_PER_RELAY: z.coerce.number().int().positive().default(10),
   MONITORING_FAILURE_BACKOFF_THRESHOLD: z.coerce.number().int().positive().default(3),
   MONITORING_FAILURE_BACKOFF_MINUTES: z.coerce.number().int().positive().default(120),
   PUBLIC_PROBE_ALLOW_PRIVATE_HOSTS: z

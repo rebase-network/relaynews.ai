@@ -285,7 +285,7 @@ relay 级聚合可以继续保留给：
 
 ### 第一版默认策略
 
-- 每个 relay 每轮最多探测 `3` 个模型
+- 每个 relay 每轮最多探测 `10` 个模型
 - 排序规则：
   1. `monitoring_priority` 升序
   2. `relay_models.status = active` 优先
@@ -375,7 +375,7 @@ relay 级聚合可以继续保留给：
 
 - `relay_models` 新增监控字段
 - 定时任务改成 `relay × model`
-- 每 relay 每轮最多探测 3 个模型
+- 每 relay 每轮最多探测 10 个模型
 - 模型级聚合成为主来源
 - relay 级聚合先兼容保留
 
