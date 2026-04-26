@@ -16,7 +16,6 @@ type DbExecutor = Kysely<Database> | Transaction<Database>;
 type TrackedModel = {
   id: string;
   key: string;
-  name: string;
   family: string;
 };
 
@@ -67,7 +66,6 @@ export type RelayMonitoringTarget = {
   credentialCompatibilityMode: ProbeCompatibilityMode;
   modelId: string;
   modelKey: string;
-  modelName: string;
   remoteModelName: string | null;
   supportStatus: string;
   monitoringPriority: number;
@@ -95,7 +93,6 @@ function buildModelAliases(model: TrackedModel) {
   const keyParts = model.key.split("-");
 
   aliases.add(normalizeModelHandle(model.key));
-  aliases.add(normalizeModelHandle(model.name));
   aliases.add(normalizeModelHandle(model.family));
 
   if (keyParts.length > 1) {
@@ -152,7 +149,7 @@ export function resolveTrackedModel(models: TrackedModel[], input: string) {
 async function loadActiveModels(db: DbExecutor) {
   return db
     .selectFrom("models")
-    .select(["id", "key", "name", "family"])
+    .select(["id", "key", "family"])
     .where("is_active", "=", true)
     .execute();
 }
@@ -230,7 +227,7 @@ export function selectRelayMonitoringTargets(targets: RelayMonitoringTarget[], n
       left.monitoringPriority - right.monitoringPriority
       || getMonitoringStatusRank(left.supportStatus) - getMonitoringStatusRank(right.supportStatus)
       || (left.lastVerifiedAt ?? "").localeCompare(right.lastVerifiedAt ?? "")
-      || left.modelName.localeCompare(right.modelName),
+      || left.modelKey.localeCompare(right.modelKey),
     );
 
     selected.push(...eligible.slice(0, config.MONITORING_MAX_MODELS_PER_RELAY));
@@ -259,7 +256,6 @@ async function loadRelayMonitoringTargets(db: Kysely<Database>) {
       "r.base_url as baseUrl",
       "rm.model_id as modelId",
       "m.key as modelKey",
-      "m.name as modelName",
       "rm.remote_model_name as remoteModelName",
       "rm.status as supportStatus",
       "rm.monitoring_priority as monitoringPriority",

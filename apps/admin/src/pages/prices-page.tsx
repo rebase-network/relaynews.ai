@@ -157,7 +157,7 @@ export function PricesPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xl tracking-[-0.03em]">{row.relay.name}</p>
-                  <p className="mt-1 text-sm text-white/60">{row.modelName}</p>
+                  <p className="mt-1 text-sm text-white/60">{row.modelKey}</p>
                 </div>
                 <p className="text-sm text-white/60">{row.inputPricePer1M ?? "-"} / {row.outputPricePer1M ?? "-"}</p>
               </div>
@@ -200,7 +200,7 @@ export function PricesPage() {
         confirmPendingLabel="删除中..."
         message={
           priceDeleteTarget
-            ? `${priceDeleteTarget.relay.name} · ${priceDeleteTarget.modelName} 这条价格记录将被删除。只有在确认是误录或重复记录时才执行删除。`
+            ? `${priceDeleteTarget.relay.name} · ${priceDeleteTarget.modelKey} 这条价格记录将被删除。只有在确认是误录或重复记录时才执行删除。`
             : ""
         }
         onCancel={() => setPriceDeleteTarget(null)}
@@ -216,4 +216,3 @@ export function PricesPage() {
     </div>
   );
 }
-

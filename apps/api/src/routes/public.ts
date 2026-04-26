@@ -60,9 +60,9 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     const models = orderLeaderboardModels(
       await app.db
         .selectFrom("models")
-        .select(["id", "key", "name", "vendor"])
+        .select(["id", "key", "vendor"])
         .where("is_active", "=", true)
-        .orderBy("name", "asc")
+        .orderBy("key", "asc")
         .execute(),
     );
 
@@ -95,7 +95,6 @@ export async function registerPublicRoutes(app: FastifyInstance) {
 
           return {
             modelKey: model.key,
-            modelName: model.name,
             measuredAt: rows[0]?.measuredAt ?? new Date().toISOString(),
             rows: rows.map((row) => ({
               rank: row.rank,
@@ -126,7 +125,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     const query = leaderboardQuerySchema.parse(request.query ?? {});
     const model = await app.db
       .selectFrom("models")
-      .select(["id", "key", "name", "vendor"])
+      .select(["id", "key", "vendor"])
       .where("key", "=", params.modelKey)
       .executeTakeFirst();
 
@@ -161,7 +160,6 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     return leaderboardResponseSchema.parse({
       model: {
         key: model.key,
-        name: model.name,
         vendor: model.vendor,
       },
       region: query.region,
@@ -254,14 +252,13 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       .select([
         "m.id as modelId",
         "m.key as modelKey",
-        "m.name as modelName",
         "m.vendor",
         "rm.status as supportStatus",
         "rm.last_verified_at as lastVerifiedAt",
       ])
       .where("rm.relay_id", "=", relay.id)
       .where("rm.status", "<>", "unsupported")
-      .orderBy("m.name", "asc")
+      .orderBy("m.key", "asc")
       .execute();
 
     if (modelRows.length === 0) {
@@ -412,7 +409,6 @@ export async function registerPublicRoutes(app: FastifyInstance) {
 
         return {
           modelKey: row.modelKey,
-          modelName: row.modelName,
           vendor: row.vendor,
           supportStatus: row.supportStatus,
           currentStatus: computeHealthStatusFromAvailability(
@@ -526,7 +522,6 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       .innerJoin("models as m", "m.id", "rm.model_id")
       .select([
         "m.key as modelKey",
-        "m.name as modelName",
         "m.vendor",
         "rm.status as supportStatus",
         "rm.supports_stream as supportsStream",
@@ -537,7 +532,7 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       ])
       .where("rm.relay_id", "=", relay.id)
       .where("rm.status", "<>", "unsupported")
-      .orderBy("m.name", "asc")
+      .orderBy("m.key", "asc")
       .execute();
 
     return relayModelsResponseSchema.parse({

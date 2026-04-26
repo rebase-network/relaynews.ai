@@ -130,7 +130,6 @@ Response:
   "leaderboards": [
     {
       "modelKey": "openai-gpt-4.1",
-      "modelName": "GPT-4.1",
       "measuredAt": "2026-04-15T10:00:00Z",
       "rows": [
         {
@@ -184,6 +183,8 @@ Required fields:
 
 Notes:
 - homepage modules should already be shaped for rendering
+- public model labels should use `modelKey` directly; there is no separate
+  display-name field in this contract
 - `highlights` is the sponsor-highlight lane used by the homepage sponsor cards
 - `latestIncidents` can be an empty array in the first version
 - when non-empty, `latestIncidents[]` uses the `Incident Summary` shape
@@ -198,7 +199,6 @@ Response:
   "boards": [
     {
       "modelKey": "openai-gpt-4.1",
-      "modelName": "GPT-4.1",
       "measuredAt": "2026-04-15T10:00:00Z",
       "rows": [
         {
@@ -240,7 +240,6 @@ Response:
 {
   "model": {
     "key": "openai-gpt-4.1",
-    "name": "GPT-4.1",
     "vendor": "openai"
   },
   "region": "global",
@@ -360,7 +359,6 @@ Response:
   "rows": [
     {
       "modelKey": "gpt-5.4",
-      "modelName": "gpt-5.4",
       "vendor": "gpt",
       "supportStatus": "active",
       "currentStatus": "healthy",
@@ -392,7 +390,6 @@ Response:
 
 Required row fields:
 - `modelKey`
-- `modelName`
 - `vendor`
 - `supportStatus`
 - `currentStatus`
@@ -461,7 +458,6 @@ Response:
   "rows": [
     {
       "modelKey": "openai-gpt-4.1",
-      "modelName": "GPT-4.1",
       "vendor": "openai",
       "supportStatus": "active",
       "supportsStream": true,
@@ -477,7 +473,6 @@ Response:
 
 Required row fields:
 - `modelKey`
-- `modelName`
 - `vendor`
 - `supportStatus`
 - `supportsStream`

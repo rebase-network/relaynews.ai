@@ -31,7 +31,6 @@ test("home summary example parses", () => {
     leaderboards: [
       {
         modelKey: "openai-gpt-4.1",
-        modelName: "GPT-4.1",
         measuredAt: "2026-04-15T10:00:00.000Z",
         rows: [
           {
@@ -70,7 +69,6 @@ test("leaderboard directory example parses", () => {
     boards: [
       {
         modelKey: "openai-gpt-5.4",
-        modelName: "GPT 5.4",
         measuredAt: "2026-04-15T10:00:00.000Z",
         rows: [
           {
@@ -92,7 +90,7 @@ test("leaderboard directory example parses", () => {
     measuredAt: "2026-04-15T10:00:00.000Z",
   });
 
-  assert.equal(parsed.boards[0]?.modelName, "GPT 5.4");
+  assert.equal(parsed.boards[0]?.modelKey, "openai-gpt-5.4");
 });
 
 test("query defaults are applied", () => {
@@ -117,7 +115,6 @@ test("relay model health example parses", () => {
     rows: [
       {
         modelKey: "gpt-5.4",
-        modelName: "gpt-5.4",
         vendor: "gpt",
         supportStatus: "active",
         currentStatus: "healthy",

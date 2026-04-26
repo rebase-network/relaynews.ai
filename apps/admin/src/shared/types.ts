@@ -45,7 +45,7 @@ export type PriceFormState = {
   source: AdminPriceCreate["source"];
 };
 export type PriceFormErrors = Partial<Record<"relayId" | "modelId" | "inputPricePer1M" | "outputPricePer1M" | "effectiveFrom", string>>;
-export type ModelFormErrors = Partial<Record<"key" | "vendor" | "name" | "family", string>>;
+export type ModelFormErrors = Partial<Record<"key" | "vendor" | "family", string>>;
 export type ProbeCredentialFormState = {
   ownerType: ProbeCredentialOwnerType;
   ownerId: string;

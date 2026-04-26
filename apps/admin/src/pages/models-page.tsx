@@ -44,7 +44,6 @@ export function ModelsPage() {
     setForm({
       key: model.key,
       vendor: model.vendor,
-      name: model.name,
       family: model.family,
       inputPriceUnit: model.inputPriceUnit,
       outputPriceUnit: model.outputPriceUnit,

@@ -29,6 +29,8 @@ The product should:
   or appear on public directory, leaderboard, and relay detail pages
 - Relay-owned monitoring now operates on `relay × model` targets so model-level
   latency, availability, and health signals remain the primary public evidence
+- public and admin surfaces should use the canonical `modelKey` as the only model
+  label; separate humanized model display names are not operator-managed
 - The public probe should stay model-first by default and use compatibility auto-detection
   with an optional advanced override
 - The current public relay detail page focuses on overview identity, supported-model

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="relaynews-postgres-e2e"
-DATABASE_PORT="54330"
+DATABASE_PORT="${DATABASE_PORT:-54329}"
 DATABASE_URL="postgres://postgres:postgres@127.0.0.1:${DATABASE_PORT}/relaynews"
 
 run_with_retry() {

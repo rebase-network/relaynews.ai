@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE models
+DROP COLUMN IF EXISTS name;
+
+COMMIT;

@@ -4,7 +4,6 @@ import { InfoTip } from "./info-tip";
 
 export type WorkflowPriceRow = {
   modelKey: string;
-  modelName?: string | null;
   inputPricePer1M?: number | string | null;
   outputPricePer1M?: number | string | null;
 };
@@ -115,8 +114,7 @@ export function WorkflowPriceTable({
           <div key={`${row.modelKey}-${row.inputPricePer1M}-${row.outputPricePer1M}`} className="grid gap-2.5 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_repeat(2,minmax(0,0.7fr))] md:gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-[0.18em] text-white/38 md:hidden">模型</p>
-              <p className="text-sm font-medium text-white/82">{row.modelName ?? row.modelKey}</p>
-              {row.modelName && row.modelName !== row.modelKey ? <p className="mt-1 text-xs text-white/46">{row.modelKey}</p> : null}
+              <p className="text-sm font-medium text-white/82">{row.modelKey}</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.18em] text-white/38 md:hidden">Input价格</p>

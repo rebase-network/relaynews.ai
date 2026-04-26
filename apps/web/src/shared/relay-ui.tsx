@@ -340,7 +340,7 @@ export function RelayModelsTable({ rows }: { rows: Array<Shared.RelayModelPricin
               {row ? (
                 <>
                   <td className="border-b border-black/8 py-2.5 pl-2 pr-3 last:border-b-0">
-                    <p className="break-words text-[0.93rem] leading-5 tracking-[-0.03em] [overflow-wrap:anywhere]">{row.modelName}</p>
+                    <p className="break-words text-[0.93rem] leading-5 tracking-[-0.03em] [overflow-wrap:anywhere]">{row.modelKey}</p>
                     <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-black/40">{row.vendor}</p>
                   </td>
                   <td className="border-b border-black/8 py-2.5 pr-3 text-[0.6rem] uppercase tracking-[0.14em] text-black/44 whitespace-nowrap last:border-b-0">
@@ -374,10 +374,8 @@ export function RelayModelsTable({ rows }: { rows: Array<Shared.RelayModelPricin
 
 export function RelayPricingHistoryPanel({
   rows,
-  modelNames,
 }: {
   rows: Shared.RelayPricingHistoryResponse["rows"];
-  modelNames: Record<string, string>;
 }) {
   if (rows.length === 0) {
     return <p className="text-sm text-black/60">当前还没有公开价格历史。</p>;
@@ -408,7 +406,6 @@ export function RelayPricingHistoryPanel({
 
     return {
       modelKey: group.modelKey,
-      modelName: modelNames[group.modelKey] ?? modelsLabelFromPricingRows(sortedRows),
       latestRow,
       oldestRow,
       rows: sortedRows,
@@ -421,7 +418,7 @@ export function RelayPricingHistoryPanel({
         <div key={group.modelKey} className="surface-card p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[1.05rem] tracking-[-0.03em] text-black/88">{group.modelName}</p>
+              <p className="text-[1.05rem] tracking-[-0.03em] text-black/88">{group.modelKey}</p>
               <p className="mt-1 text-xs uppercase tracking-[0.16em] text-black/48">最近生效：北京时间 {formatDateTime(group.latestRow.effectiveFrom)}</p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:min-w-[18rem]">
@@ -467,10 +464,6 @@ export function RelayPricingHistoryPanel({
       ))}
     </div>
   );
-}
-
-export function modelsLabelFromPricingRows(rows: Shared.RelayPricingHistoryResponse["rows"]) {
-  return rows[0]?.modelKey ?? "未命名模型";
 }
 
 export function RelayIncidentTimeline({ rows }: { rows: Shared.RelayIncidentsResponse["rows"] }) {

@@ -257,7 +257,7 @@ export function getRelayOptionLabel(relay: AdminRelaysResponse["rows"][number]) 
 }
 
 export function getModelOptionLabel(model: AdminModel) {
-  return model.isActive ? model.name : `${model.name} · 已停用`;
+  return model.isActive ? model.key : `${model.key} · 已停用`;
 }
 
 export function formatModelStatus(isActive: boolean) {

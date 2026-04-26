@@ -15,7 +15,6 @@ export type CatalogModelPriceRow = {
 type CatalogModel = {
   id: string;
   key: string;
-  name: string;
   vendor: string;
   family: string;
 };
@@ -45,21 +44,12 @@ function inferFamily(modelKey: string) {
   return parts.slice(1).join("-") || normalized;
 }
 
-function inferName(modelKey: string) {
-  return modelKey
-    .trim()
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((part) => part.toUpperCase() === part ? part : part[0]?.toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 async function resolveOrCreateCatalogModel(db: DbExecutor, rawModelKey: string): Promise<CatalogModel> {
   const input = rawModelKey.trim();
   const normalizedKey = slugifyModelKey(input);
   const existingModels = await db
     .selectFrom("models")
-    .select(["id", "key", "name", "vendor", "family"])
+    .select(["id", "key", "vendor", "family"])
     .execute();
 
   const exact = existingModels.find((model) => model.key === input || model.key === normalizedKey);
@@ -81,7 +71,6 @@ async function resolveOrCreateCatalogModel(db: DbExecutor, rawModelKey: string):
     .values({
       key: normalizedKey || `custom-${Date.now()}`,
       vendor: inferVendor(input),
-      name: inferName(input) || input,
       family: inferFamily(input),
       input_price_unit: "USD / 1M tokens",
       output_price_unit: "USD / 1M tokens",
@@ -89,7 +78,7 @@ async function resolveOrCreateCatalogModel(db: DbExecutor, rawModelKey: string):
       created_at: createdAt,
       updated_at: createdAt,
     })
-    .returning(["id", "key", "name", "vendor", "family"])
+    .returning(["id", "key", "vendor", "family"])
     .executeTakeFirstOrThrow();
 
   return created;

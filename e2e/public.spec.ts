@@ -32,7 +32,7 @@ function getAdminApiHeaders() {
 }
 
 async function gotoHome(page: Page) {
-  const heroHeading = page.getByRole("heading", { name: /发现优质大模型API服务站/i });
+  const heroHeading = page.getByRole("heading", { name: /发现优质AI服务商/i });
   const fetchError = page.getByText("Failed to fetch");
 
   await page.goto("/");
@@ -49,28 +49,22 @@ async function gotoHome(page: Page) {
 }
 
 async function expectRelayDetailModules(page: Page) {
+  const modelTable = page.locator(".data-table").last();
+
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "延迟" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "状态" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "模型支持" })).toBeVisible();
+  await expect(page.getByText("以下状态、可用性与延迟均按模型展示", { exact: false })).toBeVisible();
+  await expect(page.getByText("模型数")).toBeVisible();
+  await expect(page.getByText("起始输入 / 1M")).toBeVisible();
+  await expect(page.getByText("起始输出 / 1M")).toBeVisible();
+  await expect(modelTable.getByText(/^openai-gpt-4\.1$/)).toBeVisible();
+  await expect(modelTable.getByText(/^anthropic-claude-sonnet-4\.6$/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "价格历史" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "事故时间线" })).toHaveCount(0);
-  await expect(page.getByTestId("relay-latency-bar")).toHaveCount(30);
-  await expect(page.getByTestId("relay-status-bar")).toHaveCount(30);
-  await expect(page.getByTestId("relay-models-table")).toHaveCount(2);
+  await expect(page.getByTestId("relay-latency-chart")).toHaveCount(0);
+  await expect(page.getByTestId("relay-status-chart")).toHaveCount(0);
+  await expect(page.getByTestId("relay-models-table")).toHaveCount(0);
   await expect(page.getByText("Capabilities")).toHaveCount(0);
-
-  const latencyChartBox = await page.getByTestId("relay-latency-chart").boundingBox();
-  const statusChartBox = await page.getByTestId("relay-status-chart").boundingBox();
-  expect(latencyChartBox).not.toBeNull();
-  expect(statusChartBox).not.toBeNull();
-  expect(Math.abs(latencyChartBox!.width - statusChartBox!.width)).toBeLessThan(2);
-
-  await page.getByTestId("score-popover-toggle").click();
-  await expect(page.getByTestId("score-popover")).toBeVisible();
-  await expect(page.getByTestId("score-popover")).toContainText("评分拆解");
-  await page.getByRole("heading", { name: "Aurora Relay" }).click();
-  await expect(page.getByTestId("score-popover")).toHaveCount(0);
+  await expect(page.getByTestId("score-popover-toggle")).toHaveCount(0);
 }
 
 async function expectLeaderboardRules(page: Page) {
@@ -113,12 +107,12 @@ async function expectPageMetadata(page: Page, expectation: {
 
 test("public site renders the main discovery flow", async ({ page }) => {
   await gotoHome(page);
-  await expect(page.getByRole("heading", { name: /发现优质大模型API服务站/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /发现优质AI服务商/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "开始测试" })).toBeVisible();
   await expect(page.getByText("快速测试", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "打开完整测试页" })).toBeVisible();
-  await expect(page.getByText("赞助商")).toBeVisible();
+  await expect(page.getByText("赞助商").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "最近事件" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Watchlist" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Incidents" })).toHaveCount(0);
@@ -128,7 +122,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
   if (isDeployedRun) {
     await page.getByRole("link", { name: "榜单" }).click();
     await expect(page).toHaveURL(/\/leaderboard$/);
-    await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
     await expectLeaderboardRules(page);
 
     await page.getByRole("link", { name: "评测方式" }).click();
@@ -142,27 +136,27 @@ test("public site renders the main discovery flow", async ({ page }) => {
   }
 
   await expect(page.getByRole("heading", { name: "站点榜单" })).toHaveCount(0);
-  await page.getByRole("link", { name: "查看全部站点" }).click();
-  await expect(page).toHaveURL(/\/leaderboard\/directory$/);
-  await expect(page.getByText("榜单目录")).toBeVisible();
+  await page.getByRole("link", { name: "查看全部模型" }).click();
+  await expect(page).toHaveURL(/\/leaderboard$/);
+  await expect(page.getByText("模型目录")).toBeVisible();
   await expect(page.getByLabel("Search lanes")).toHaveCount(0);
   await page.getByRole("button", { name: "Google" }).click();
-  await expect(page.getByRole("heading", { name: "Gemini 3.1" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sonnet 4.6" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "google-gemini-3.1" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "anthropic-claude-sonnet-4.6" })).toHaveCount(0);
 
   await gotoHome(page);
-  const featuredSection = page.locator("section").filter({ has: page.getByRole("link", { name: "查看全部站点" }) }).first();
-  await expect(featuredSection.getByRole("heading", { name: "Sonnet 4.6" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "Opus 4.6" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "Gemini 3.1" })).toBeVisible();
-  await expect(featuredSection.getByText("anthropic-claude-sonnet-4.6")).toHaveCount(0);
-  await expect(featuredSection.getByText("anthropic-claude-opus-4.6")).toHaveCount(0);
-  await expect(featuredSection.getByText("openai-gpt-5.4")).toHaveCount(0);
-  await expect(featuredSection.getByText("google-gemini-3.1")).toHaveCount(0);
+  const featuredSection = page.locator("section").filter({ has: page.getByRole("link", { name: "查看全部模型" }) }).first();
+  await expect(featuredSection.getByRole("heading", { name: "anthropic-claude-sonnet-4.6" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "anthropic-claude-opus-4.6" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "google-gemini-3.1" })).toBeVisible();
+  await expect(featuredSection.getByText("Sonnet 4.6")).toHaveCount(0);
+  await expect(featuredSection.getByText("Opus 4.6")).toHaveCount(0);
+  await expect(featuredSection.getByText("GPT 5.4")).toHaveCount(0);
+  await expect(featuredSection.getByText("Gemini 3.1")).toHaveCount(0);
 
   const gptBoardCard = featuredSection.locator("section").filter({
-    has: page.getByRole("heading", { name: "GPT 5.4" }),
+    has: page.getByRole("heading", { name: "openai-gpt-5.4" }),
   });
   const gptBoardLink = gptBoardCard.getByRole("link", { name: "查看完整榜单" });
   const gptBoardHref = await gptBoardLink.getAttribute("href");
@@ -203,7 +197,7 @@ test("submit flow works from the public site", async ({ page }) => {
   await page.getByLabel("站点网站").fill("https://example.com");
   await page.getByLabel("联系方式").fill("Telegram: @beacon_ops");
   await page.getByLabel("大模型API服务站简介").fill("Playwright 中文提交流程覆盖，用于验证公开站点审核入口。");
-  await page.getByLabel("模型").fill("openai-gpt-5.4");
+  await page.getByRole("textbox", { name: "模型", exact: true }).fill("openai-gpt-5.4");
   await page.getByLabel("Input价格").fill("4.6");
   await page.getByLabel("Output价格").fill("13.2");
   await page.getByLabel("测试API Key").fill("sk-submit-check");
@@ -220,7 +214,7 @@ test("submit flow validates malformed relay URLs before sending", async ({ page 
   await page.getByLabel("站点网站").fill("not-a-url");
   await page.getByLabel("联系方式").fill("");
   await page.getByLabel("大模型API服务站简介").fill("");
-  await page.getByLabel("模型").fill("");
+  await page.getByRole("textbox", { name: "模型", exact: true }).fill("");
   await page.getByRole("button", { name: "提交" }).click();
 
   await expect(page.getByText("请先修正高亮字段后再提交。")).toBeVisible();
@@ -370,14 +364,14 @@ test("public mobile navigation routes to the primary pages", async ({ page }) =>
   let mobileNav = page.locator("#mobile-primary-nav");
 
   await expect(mobileNav.getByRole("link", { name: "首页" })).toBeVisible();
-  await expect(mobileNav.getByRole("link", { name: "榜单" })).toBeVisible();
+  await expect(mobileNav.getByRole("link", { name: "目录" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "评测方式" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "提交站点" })).toBeVisible();
   await expect(mobileNav.getByRole("link", { name: "站点测试" })).toBeVisible();
 
-  await mobileNav.getByRole("link", { name: "榜单" }).click();
+  await mobileNav.getByRole("link", { name: "目录" }).click();
   await expect(page).toHaveURL(/\/leaderboard$/);
-  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
 
   await page.getByRole("button", { name: "打开菜单" }).click();
   mobileNav = page.locator("#mobile-primary-nav");
@@ -397,7 +391,7 @@ test("homepage prioritizes quick probe on mobile", async ({ page }) => {
   await gotoHome(page);
 
   const quickProbeHeading = page.getByText("快速测试", { exact: true });
-  const heroHeading = page.getByRole("heading", { name: /发现优质大模型API服务站/i });
+  const heroHeading = page.getByRole("heading", { name: /发现优质AI服务商/i });
   const quickProbeBox = await quickProbeHeading.boundingBox();
   const heroHeadingBox = await heroHeading.boundingBox();
 
@@ -421,16 +415,14 @@ test("probe page stays compact on mobile", async ({ page }) => {
   await expect(page.getByRole("button", { name: "开始测试" })).toBeVisible();
 });
 
-test("leaderboard remains readable on mobile", async ({ page }) => {
+test("leaderboard directory remains readable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/leaderboard");
 
-  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Aurora Relay" })).toBeVisible();
-  await expect(page.getByText("24h 可用性").first()).toBeVisible();
-  await expect(page.getByText("P50 延迟").first()).toBeVisible();
-  await expectVisibleText(page.locator("main"), /评测排名|评测方式|赞助分离/);
-  await expect(page.getByText("当前榜单不含赞助方")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+  await expect(page.locator("main").getByRole("link", { name: /Aurora Relay/ }).first()).toBeVisible();
+  await expect(page.getByText("按服务商筛选")).toBeVisible();
+  await expect(page.getByText(/个模型/).first()).toBeVisible();
 });
 
 test.describe("public metadata smoke", () => {
@@ -443,11 +435,11 @@ test.describe("public metadata smoke", () => {
     });
 
     await page.goto("/leaderboard?foo=bar#metadata");
-    await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/leaderboard",
-      descriptionPattern: /评测排名|赞助方展示|relay/i,
-      titlePattern: /GPT 5\.4|站点榜单|relaynew\.ai/i,
+      descriptionPattern: /按模型分类浏览|状态|延迟|价格信号/i,
+      titlePattern: /模型目录|relaynew\.ai/i,
     });
 
     await page.goto("/methodology?from=metadata#governance");
@@ -478,7 +470,7 @@ test.describe("public metadata smoke", () => {
     await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/relay/aurora-relay",
-      descriptionPattern: /延迟走势|模型支持|当前价格|Aurora Relay/i,
+      descriptionPattern: /当前状态|7天可用性|当前价格|Aurora Relay/i,
       titlePattern: /Aurora Relay|Relay 详情|relaynew\.ai/i,
     });
   });

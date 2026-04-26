@@ -34,7 +34,6 @@ export interface ModelsTable {
   id: Generated<string>;
   key: string;
   vendor: string;
-  name: string;
   family: string;
   input_price_unit: string | null;
   output_price_unit: string | null;

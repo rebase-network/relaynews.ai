@@ -426,7 +426,6 @@ async function loadLatestRelayModelPriceRows(db: DbExecutor, relayIds: string[])
     return new Map<string, Array<{
       modelId: string | null;
       modelKey: string;
-      modelName: string;
       currency: string;
       inputPricePer1M: number | null;
       outputPricePer1M: number | null;
@@ -441,7 +440,6 @@ async function loadLatestRelayModelPriceRows(db: DbExecutor, relayIds: string[])
       "rp.relay_id as relayId",
       "m.id as modelId",
       "m.key as modelKey",
-      "m.name as modelName",
       "rp.currency",
       "rp.input_price_per_1m as inputPricePer1M",
       "rp.output_price_per_1m as outputPricePer1M",
@@ -456,7 +454,6 @@ async function loadLatestRelayModelPriceRows(db: DbExecutor, relayIds: string[])
   const grouped = new Map<string, Array<{
     modelId: string | null;
     modelKey: string;
-    modelName: string;
     currency: string;
     inputPricePer1M: number | null;
     outputPricePer1M: number | null;
@@ -475,7 +472,6 @@ async function loadLatestRelayModelPriceRows(db: DbExecutor, relayIds: string[])
     current.push({
       modelId: row.modelId,
       modelKey: row.modelKey,
-      modelName: row.modelName,
       currency: row.currency,
       inputPricePer1M: row.inputPricePer1M,
       outputPricePer1M: row.outputPricePer1M,
@@ -573,7 +569,6 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .select([
         "id",
         "key",
-        "name",
         "vendor",
         "family",
         "input_price_unit as inputPriceUnit",
@@ -581,7 +576,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         "is_active as isActive",
         "updated_at as updatedAt",
       ])
-      .orderBy("name", "asc")
+      .orderBy("key", "asc")
       .execute();
 
     return adminModelsResponseSchema.parse({ rows });
@@ -594,7 +589,6 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .values({
         key: body.key,
         vendor: body.vendor,
-        name: body.name,
         family: body.family,
         input_price_unit: body.inputPriceUnit ?? null,
         output_price_unit: body.outputPriceUnit ?? null,
@@ -620,7 +614,6 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .set({
         key: body.key,
         vendor: body.vendor,
-        name: body.name,
         family: body.family,
         input_price_unit: body.inputPriceUnit ?? null,
         output_price_unit: body.outputPriceUnit ?? null,
@@ -1371,7 +1364,6 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         "r.slug",
         "r.name",
         "m.key as modelKey",
-        "m.name as modelName",
         "rp.currency",
         "rp.input_price_per_1m as inputPricePer1M",
         "rp.output_price_per_1m as outputPricePer1M",
@@ -1391,7 +1383,6 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           name: row.name,
         },
         modelKey: row.modelKey,
-        modelName: row.modelName,
         currency: row.currency,
         inputPricePer1M: row.inputPricePer1M,
         outputPricePer1M: row.outputPricePer1M,

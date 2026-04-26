@@ -91,12 +91,12 @@ export function LeaderboardPage() {
   const trackedRelayCount = rows.length;
   const healthyRelayCount = rows.filter((row) => row.healthStatus === "healthy").length;
   const degradedRelayCount = rows.filter((row) => row.healthStatus === "degraded").length;
-  const modelName = data?.model.name ?? "Relay";
+  const modelLabel = data?.model.key ?? "Relay";
   usePageMetadata({
-    title: `${modelName} 站点榜单｜relaynew.ai`,
+    title: `${modelLabel} 站点榜单｜relaynew.ai`,
     description:
       data
-        ? `查看 ${data.model.name} 模型分类下的站点评测排名，基于可用性、延迟、稳定性、价格与可信度；赞助方展示与排名严格分离。`
+        ? `查看 ${data.model.key} 模型分类下的站点评测排名，基于可用性、延迟、稳定性、价格与可信度；赞助方展示与排名严格分离。`
         : "查看站点评测排名与实测数据，理解健康状态、延迟表现与赞助方展示分离规则。",
   });
 
@@ -111,7 +111,7 @@ export function LeaderboardPage() {
           <div className="space-y-3">
             <p className="kicker !mb-1">榜单</p>
             <div className="space-y-2">
-              <h1 className="text-[2.6rem] leading-[0.94] tracking-[-0.05em] md:text-[3.1rem]">{data.model.name}</h1>
+              <h1 className="text-[2.6rem] leading-[0.94] tracking-[-0.05em] md:text-[3.1rem]">{data.model.key}</h1>
               <p className="text-sm leading-6 text-black/64">
                 以最近一轮自动化测试为基础，综合可用性、延迟、稳定性、价格与可信度生成当前排名。
               </p>
@@ -145,7 +145,7 @@ export function LeaderboardPage() {
                 )}
                 to={getLeaderboardPath(board.modelKey)}
               >
-                {board.modelName}
+                {board.modelKey}
               </Link>
             ))}
           </div>

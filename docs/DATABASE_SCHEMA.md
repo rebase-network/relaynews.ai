@@ -53,6 +53,11 @@ The current executable schema is built by these migrations, in order:
 - `apps/api/db/migrations/0002_probe_credentials.sql`
 - `apps/api/db/migrations/0003_submission_description.sql`
 - `apps/api/db/migrations/0004_submission_prices_and_contacts.sql`
+- `apps/api/db/migrations/0005_probe_first_token_ms.sql`
+- `apps/api/db/migrations/0006_relay_credibility_checks.sql`
+- `apps/api/db/migrations/0007_relay_model_monitoring.sql`
+- `apps/api/db/migrations/0008_model_keys_as_public_labels.sql`
+- `apps/api/db/migrations/0009_drop_models_name.sql`
 
 Concrete choices in that migration:
 - UUID primary keys use `gen_random_uuid()`, so the database enables `pgcrypto`
@@ -129,7 +134,6 @@ Suggested columns:
 - `id` uuid primary key
 - `key` text unique not null
 - `vendor` text not null
-- `name` text not null
 - `family` text not null
 - `input_price_unit` text null
 - `output_price_unit` text null
@@ -141,6 +145,11 @@ Indexes:
 - unique index on `key`
 - index on `vendor`
 - index on `family`
+
+Notes:
+- public and admin product surfaces should display `key` directly
+- `0009_drop_models_name.sql` removes the old `name` column after the product was
+  simplified to treat `key` as the only model label
 
 ### relay_models
 Support matrix between relays and models.

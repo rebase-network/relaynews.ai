@@ -226,16 +226,11 @@ export function inferModelFamily(modelKey: string) {
   return parts.slice(1).join("-") || normalized;
 }
 
-export function inferModelDisplayName(modelKey: string) {
-  return modelKey.trim() || "";
-}
-
 export function validateModelForm(form: AdminModelUpsert) {
   const key = trimString(form.key);
   const payload: AdminModelUpsert = {
     key,
     vendor: inferModelVendor(key),
-    name: inferModelDisplayName(key),
     family: inferModelFamily(key),
     inputPriceUnit: emptyToNull(form.inputPriceUnit),
     outputPriceUnit: emptyToNull(form.outputPriceUnit),
@@ -302,7 +297,6 @@ export function createDefaultModelFormState(): AdminModelUpsert {
   return {
     key: "",
     vendor: "",
-    name: "",
     family: "",
     inputPriceUnit: "USD / 1M tokens",
     outputPriceUnit: "USD / 1M tokens",

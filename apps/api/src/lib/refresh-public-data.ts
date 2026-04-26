@@ -140,7 +140,7 @@ function asHealthStatus(statusLabel: string) {
 }
 
 function selectHomeLeaderboardModels(
-  models: Array<{ id: string; key: string; name: string; vendor: string }>,
+  models: Array<{ id: string; key: string; vendor: string }>,
   latestModelScores: LatestModelScore[],
 ) {
   const availableModelIds = new Set(latestModelScores.map((row) => row.modelId));
@@ -185,9 +185,9 @@ export async function refreshPublicData(db: Kysely<Database>) {
 
   const models = await db
     .selectFrom("models")
-    .select(["id", "key", "name", "vendor"])
+    .select(["id", "key", "vendor"])
     .where("is_active", "=", true)
-    .orderBy("name", "asc")
+    .orderBy("key", "asc")
     .execute();
 
   const latestRelayScoresRaw = await sql<LatestRelayAggregate>`
@@ -524,7 +524,6 @@ export async function refreshPublicData(db: Kysely<Database>) {
 
       return {
         modelKey: model.key,
-        modelName: model.name,
         measuredAt,
         rows: snapshotRows.map((row) => ({
           rank: row.rank,

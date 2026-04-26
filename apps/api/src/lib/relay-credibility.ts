@@ -20,14 +20,13 @@ type RelayCredibilityCredential = {
 type TrackedModel = {
   id: string;
   key: string;
-  name: string;
   family: string;
 };
 
 async function loadActiveModels(db: Kysely<Database>) {
   return db
     .selectFrom("models")
-    .select(["id", "key", "name", "family"])
+    .select(["id", "key", "family"])
     .where("is_active", "=", true)
     .execute() as Promise<TrackedModel[]>;
 }

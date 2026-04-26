@@ -7,19 +7,16 @@ const models = [
   {
     id: "model-gpt-54",
     key: "openai-gpt-5.4",
-    name: "GPT 5.4",
     family: "gpt-5",
   },
   {
     id: "model-sonnet-46",
     key: "anthropic-claude-sonnet-4.6",
-    name: "Sonnet 4.6",
     family: "claude-4.6",
   },
   {
     id: "model-gemini-31",
     key: "google-gemini-3.1",
-    name: "Gemini 3.1",
     family: "gemini-3",
   },
 ];
@@ -29,8 +26,8 @@ test("resolveTrackedModel matches vendorless model keys", () => {
   assert.equal(match?.id, "model-gpt-54");
 });
 
-test("resolveTrackedModel matches display names and short names", () => {
-  assert.equal(resolveTrackedModel(models, "Sonnet 4.6")?.id, "model-sonnet-46");
+test("resolveTrackedModel matches vendorless model keys and short names", () => {
+  assert.equal(resolveTrackedModel(models, "claude-sonnet-4.6")?.id, "model-sonnet-46");
   assert.equal(resolveTrackedModel(models, "gemini-3.1")?.id, "model-gemini-31");
 });
 

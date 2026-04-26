@@ -87,7 +87,7 @@ export function LeaderboardPreviewCard({
     <section className="panel leaderboard-preview-card h-full">
       <div className="leaderboard-preview-header">
         <div>
-          <h2 className="leaderboard-preview-title">{board.modelName}</h2>
+          <h2 className="leaderboard-preview-title">{board.modelKey}</h2>
           <p className="leaderboard-preview-meta">最新快照 · {formatDateTime(board.measuredAt)}</p>
         </div>
         <Link className="leaderboard-preview-link" to={getLeaderboardPath(board.modelKey)}>

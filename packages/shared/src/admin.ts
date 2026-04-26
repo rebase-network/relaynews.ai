@@ -45,7 +45,6 @@ export const adminRelayCredentialSummarySchema = z.object({
 export const adminRelayModelPriceSchema = z.object({
   modelId: internalIdSchema.nullable(),
   modelKey: z.string().min(1),
-  modelName: z.string().min(1),
   currency: z.string().min(1),
   inputPricePer1M: z.number().min(0).nullable(),
   outputPricePer1M: z.number().min(0).nullable(),
@@ -203,7 +202,6 @@ export const adminPriceRecordSchema = z.object({
   modelId: internalIdSchema,
   relay: relaySummarySchema,
   modelKey: z.string().min(1),
-  modelName: z.string().min(1),
   currency: z.string().min(1),
   inputPricePer1M: z.number().min(0).nullable(),
   outputPricePer1M: z.number().min(0).nullable(),
@@ -237,7 +235,6 @@ export const adminModelSchema = z.object({
   id: internalIdSchema,
   key: z.string().min(1),
   vendor: z.string().min(1),
-  name: z.string().min(1),
   family: z.string().min(1),
   inputPriceUnit: z.string().nullable(),
   outputPriceUnit: z.string().nullable(),
@@ -252,7 +249,6 @@ export const adminModelsResponseSchema = z.object({
 export const adminModelUpsertSchema = z.object({
   key: requiredNonEmptyStringSchema,
   vendor: requiredNonEmptyStringSchema,
-  name: requiredNonEmptyStringSchema,
   family: requiredNonEmptyStringSchema,
   inputPriceUnit: nullableNonEmptyStringSchema.optional(),
   outputPriceUnit: nullableNonEmptyStringSchema.optional(),

@@ -61,7 +61,7 @@ export function RelayModelHealthSection({
                 <div key={row.modelKey} className="surface-card p-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-lg tracking-[-0.03em]">{row.modelName}</p>
+                      <p className="text-lg tracking-[-0.03em]">{row.modelKey}</p>
                       <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
                     </div>
                     <div className="text-right">
@@ -122,7 +122,7 @@ export function RelayModelHealthSection({
                   {rows.map((row) => (
                     <tr key={row.modelKey} className="leaderboard-table-row align-top">
                       <td className="py-3 pr-3">
-                        <p className="text-[0.98rem] leading-5 tracking-[-0.03em]">{row.modelName}</p>
+                        <p className="text-[0.98rem] leading-5 tracking-[-0.03em]">{row.modelKey}</p>
                         <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-black/40">
                           {row.vendor} · {formatSupportStatusLabel(row.supportStatus)}
                         </p>

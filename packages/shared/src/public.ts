@@ -26,7 +26,6 @@ const leaderboardPreviewRowSchema = z.object({
 
 const leaderboardPreviewSchema = z.object({
   modelKey: z.string().min(1),
-  modelName: z.string().min(1),
   measuredAt: isoTimestampSchema,
   rows: z.array(leaderboardPreviewRowSchema),
 });
@@ -65,7 +64,6 @@ export const leaderboardQuerySchema = z.object({
 export const leaderboardResponseSchema = z.object({
   model: z.object({
     key: z.string().min(1),
-    name: z.string().min(1),
     vendor: z.string().min(1),
   }),
   region: regionSchema,
@@ -118,7 +116,6 @@ export const relayModelHealthResponseSchema = z.object({
   rows: z.array(
     z.object({
       modelKey: z.string().min(1),
-      modelName: z.string().min(1),
       vendor: z.string().min(1),
       supportStatus: supportStatusSchema,
       currentStatus: healthStatusSchema,
@@ -168,7 +165,6 @@ export const relayModelsResponseSchema = z.object({
   rows: z.array(
     z.object({
       modelKey: z.string().min(1),
-      modelName: z.string().min(1),
       vendor: z.string().min(1),
       supportStatus: supportStatusSchema,
       supportsStream: z.boolean(),
