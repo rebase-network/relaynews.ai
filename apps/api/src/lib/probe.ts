@@ -16,6 +16,7 @@ import {
   computeProbeCredibilityLevel,
   parseSelfReportedIdentity,
 } from "./probe-credibility";
+import { PROBE_LIMITS } from "./probe-settings";
 import {
   getDeepScanProbeModes,
   probeAdapterRegistry,
@@ -39,8 +40,6 @@ const BLOCKED_CIDRS = [
   "ff00::/8",
 ] as const;
 
-const MAX_RESPONSE_BYTES = 256 * 1024;
-const REQUEST_TIMEOUT_MS = 8_000;
 const RETRIABLE_HTTP_STATUSES = new Set([400, 404, 405, 415]);
 
 function sanitizeMessage(value: unknown) {
@@ -453,7 +452,7 @@ function failureHealthStatus(result: ProbeAttemptResult) {
 
 async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promise<ProbeAttemptResult> {
   const startedAt = Date.now();
-  const timeoutMs = attempt.timeoutMs ?? REQUEST_TIMEOUT_MS;
+  const timeoutMs = attempt.timeoutMs ?? PROBE_LIMITS.primary.timeoutMs;
   const headers: Record<string, string> = {
     accept: "text/event-stream,application/json,text/plain;q=0.9,*/*;q=0.8",
     "content-type": "application/json",
@@ -481,7 +480,7 @@ async function executeProbeAttempt(attempt: ProbeAttempt, apiKey: string): Promi
   const adapter = probeAdapterRegistry[attempt.mode];
   const { body, firstTokenMs } = await readLimitedText(
     response.body,
-    MAX_RESPONSE_BYTES,
+    PROBE_LIMITS.responseBodyBytes,
     adapter.hasFirstTokenText,
     contentType,
     startedAt,

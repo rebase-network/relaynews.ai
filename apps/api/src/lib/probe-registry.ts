@@ -4,6 +4,8 @@ import {
   type PublicProbeRequest,
 } from "@relaynews/shared";
 
+import { PROBE_LIMITS } from "./probe-settings";
+
 export type ProbeModelFamily = "openai" | "anthropic" | "chat-first" | "gemini-native" | "generic";
 
 export type ProbeAttempt = {
@@ -302,7 +304,7 @@ function buildOpenAiResponsesBody(model: string, prompt = PRIMARY_PROBE_PROMPT, 
       },
     ],
     stream: options.stream ?? true,
-    max_output_tokens: options.maxOutputTokens ?? 64,
+    max_output_tokens: options.maxOutputTokens ?? PROBE_LIMITS.primary.outputTokens,
   });
 }
 
@@ -319,7 +321,7 @@ function buildOpenAiChatBody(model: string, prompt = PRIMARY_PROBE_PROMPT, optio
       },
     ],
     stream: options.stream ?? true,
-    max_tokens: options.maxTokens ?? 64,
+    max_tokens: options.maxTokens ?? PROBE_LIMITS.primary.outputTokens,
   });
 }
 
@@ -329,7 +331,7 @@ function buildAnthropicMessagesBody(model: string, prompt = PRIMARY_PROBE_PROMPT
 } = {}) {
   return JSON.stringify({
     model,
-    max_tokens: options.maxTokens ?? 64,
+    max_tokens: options.maxTokens ?? PROBE_LIMITS.primary.outputTokens,
     stream: options.stream ?? true,
     messages: [
       {
@@ -360,7 +362,7 @@ function buildGoogleGeminiGenerateContentBody(prompt = PRIMARY_PROBE_PROMPT, opt
       },
     ],
     generationConfig: {
-      maxOutputTokens: options.maxOutputTokens ?? 64,
+      maxOutputTokens: options.maxOutputTokens ?? PROBE_LIMITS.primary.outputTokens,
     },
   });
 }
@@ -621,9 +623,9 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
       url: normalizeMatchedUrl(attempt),
       body: buildOpenAiResponsesBody(request.model, buildCredibilityPrompt(observed), {
         stream: false,
-        maxOutputTokens: 2048,
+        maxOutputTokens: PROBE_LIMITS.credibility.outputTokens,
       }),
-      timeoutMs: 16_000,
+      timeoutMs: PROBE_LIMITS.credibility.timeoutMs,
     }),
     matches: matchOpenAiResponses,
     hasFirstTokenText: hasOpenAiResponsesFirstToken,
@@ -640,9 +642,9 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
       url: normalizeMatchedUrl(attempt),
       body: buildOpenAiChatBody(request.model, buildCredibilityPrompt(observed), {
         stream: false,
-        maxTokens: 2048,
+        maxTokens: PROBE_LIMITS.credibility.outputTokens,
       }),
-      timeoutMs: 16_000,
+      timeoutMs: PROBE_LIMITS.credibility.timeoutMs,
     }),
     matches: matchOpenAiChatCompletions,
     hasFirstTokenText: hasOpenAiChatCompletionsFirstToken,
@@ -668,9 +670,9 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
       url: normalizeMatchedUrl(attempt),
       body: buildAnthropicMessagesBody(request.model, buildCredibilityPrompt(observed), {
         stream: false,
-        maxTokens: 2048,
+        maxTokens: PROBE_LIMITS.credibility.outputTokens,
       }),
-      timeoutMs: 16_000,
+      timeoutMs: PROBE_LIMITS.credibility.timeoutMs,
     }),
     matches: matchAnthropicMessages,
     hasFirstTokenText: hasAnthropicMessagesFirstToken,
@@ -690,9 +692,9 @@ export const probeAdapterRegistry: Record<ProbeResolvedCompatibilityMode, ProbeA
         ...attempt,
         url,
         body: buildGoogleGeminiGenerateContentBody(buildCredibilityPrompt(observed), {
-          maxOutputTokens: 2048,
+          maxOutputTokens: PROBE_LIMITS.credibility.outputTokens,
         }),
-        timeoutMs: 16_000,
+        timeoutMs: PROBE_LIMITS.credibility.timeoutMs,
       };
     },
     matches: matchGoogleGeminiGenerateContent,
