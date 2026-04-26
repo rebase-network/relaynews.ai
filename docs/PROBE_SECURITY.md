@@ -202,7 +202,6 @@ Suggested response shape:
         "responseReportedVersion": null,
         "selfReportedProvider": "OpenAI",
         "selfReportedModel": "gpt-4.1",
-        "selfReportedVersion": null,
         "identityProbeOk": true,
         "identityConfidence": "high",
         "message": null

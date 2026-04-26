@@ -228,14 +228,12 @@ function hasNonEmptyJsonStringField(body: string, field: string) {
 
 function buildCredibilityPrompt(observed: ProbeReportedModelMetadata) {
   const observedModel = observed.model ?? "null";
-  const observedVersion = observed.version ?? "null";
 
   return [
     "Return exactly one compact JSON object on a single line.",
-    'Use these keys only: {"provider":null,"model_name":null,"model_version":null,"matches_observed":null}.',
+    'Use these keys only: {"provider":null,"model_name":null,"matches_observed":null}.',
     `Observed API-reported model: ${observedModel}.`,
-    `Observed API-reported version: ${observedVersion}.`,
-    "If the observed model or version matches your runtime identity, repeat it exactly and set matches_observed to true.",
+    "If the observed model matches your runtime identity, repeat it exactly and set matches_observed to true.",
     "If it does not match but you know your runtime identity, provide the correct exact values and set matches_observed to false.",
     "If a value is truly unavailable, use null.",
     "Do not guess.",

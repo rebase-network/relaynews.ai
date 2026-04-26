@@ -44,7 +44,6 @@ export const publicProbeMatchedModeSchema = z.object({
     responseReportedVersion: z.string().min(1).nullable(),
     selfReportedProvider: z.string().min(1).nullable(),
     selfReportedModel: z.string().min(1).nullable(),
-    selfReportedVersion: z.string().min(1).nullable(),
     identityProbeOk: z.boolean(),
     identityConfidence: probeCredibilityLevelSchema,
     message: z.string().min(1).nullable(),

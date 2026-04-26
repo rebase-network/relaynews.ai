@@ -267,7 +267,6 @@ async function buildCredibilityForMatchedResult(
       responseReportedVersion: responseReported.version,
       selfReportedProvider: selfReported?.provider ?? null,
       selfReportedModel: selfReported?.modelName ?? null,
-      selfReportedVersion: selfReported?.modelVersion ?? null,
       identityProbeOk: identityResult.response.ok && selfReported !== null,
       identityConfidence: computeProbeCredibilityLevel({
         requestedModel: request.model,
@@ -287,7 +286,6 @@ async function buildCredibilityForMatchedResult(
       responseReportedVersion: responseReported.version,
       selfReportedProvider: null,
       selfReportedModel: null,
-      selfReportedVersion: null,
       identityProbeOk: false,
       identityConfidence: "unknown",
       message: sanitizeMessage(error),

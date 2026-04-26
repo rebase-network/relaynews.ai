@@ -3,7 +3,6 @@ import type { ProbeCredibilityLevel } from "@relaynews/shared";
 export type ProbeSelfReportedIdentity = {
   provider: string | null;
   modelName: string | null;
-  modelVersion: string | null;
   matchesObserved: boolean | null;
   confidence: number | null;
   notes: string | null;
@@ -51,7 +50,6 @@ export function parseSelfReportedIdentity(text: string | null): ProbeSelfReporte
     return {
       provider: asStringOrNull(parsed.provider),
       modelName: asStringOrNull(parsed.model_name),
-      modelVersion: asStringOrNull(parsed.model_version),
       matchesObserved: asBooleanOrNull(parsed.matches_observed),
       confidence: asNumberOrNull(parsed.confidence),
       notes: asStringOrNull(parsed.notes),

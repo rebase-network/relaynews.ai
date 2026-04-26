@@ -380,7 +380,7 @@ Exit criteria:
 - credibility probe output is presented as evidence such as:
   - requested model
   - response-reported model
-  - self-reported model / version
+  - self-reported model
   - credibility level
 - timing metrics remain sourced only from the primary probe request, not from the
   credibility probe

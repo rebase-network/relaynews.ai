@@ -54,7 +54,7 @@ async function insertRelayCredibilityCheck(
       response_reported_version: credibility.responseReportedVersion,
       self_reported_provider: credibility.selfReportedProvider,
       self_reported_model: credibility.selfReportedModel,
-      self_reported_version: credibility.selfReportedVersion,
+      self_reported_version: null,
       identity_confidence: credibility.identityConfidence,
       identity_probe_ok: credibility.identityProbeOk,
       message: credibility.message,

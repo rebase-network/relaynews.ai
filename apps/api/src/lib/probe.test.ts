@@ -180,7 +180,7 @@ test("public probe deep scan returns every matched mode in auto detection order"
 
     if (requestUrl.pathname.endsWith("/chat/completions")) {
       if (requestBody.includes("model_name")) {
-        return new Response('{"model":"gpt-5.4","object":"chat.completion","choices":[{"message":{"role":"assistant","content":"{\\"provider\\":\\"OpenAI\\",\\"model_name\\":\\"gpt-5.4\\",\\"model_version\\":null,\\"matches_observed\\":true}"}}]}', {
+        return new Response('{"model":"gpt-5.4","object":"chat.completion","choices":[{"message":{"role":"assistant","content":"{\\"provider\\":\\"OpenAI\\",\\"model_name\\":\\"gpt-5.4\\",\\"matches_observed\\":true}"}}]}', {
           status: 200,
           headers: { "content-type": "application/json" },
         });
@@ -201,7 +201,7 @@ test("public probe deep scan returns every matched mode in auto detection order"
 
     if (requestUrl.pathname.includes(":generateContent") || requestUrl.pathname.includes(":streamGenerateContent")) {
       if (requestBody.includes("model_name")) {
-        return new Response('{"modelVersion":"gemini-2.5-flash","candidates":[{"content":{"role":"model","parts":[{"text":"{\\"provider\\":\\"Google\\",\\"model_name\\":\\"gemini-2.5-flash\\",\\"model_version\\":\\"gemini-2.5-flash\\",\\"matches_observed\\":true}"}]}}]}', {
+        return new Response('{"modelVersion":"gemini-2.5-flash","candidates":[{"content":{"role":"model","parts":[{"text":"{\\"provider\\":\\"Google\\",\\"model_name\\":\\"gemini-2.5-flash\\",\\"matches_observed\\":true}"}]}}]}', {
           status: 200,
           headers: { "content-type": "application/json" },
         });
