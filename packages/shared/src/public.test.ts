@@ -15,6 +15,8 @@ import {
   publicProbeResponseSchema,
   publicSubmissionRequestSchema,
   relayHistoryQuerySchema,
+  relayModelHealthQuerySchema,
+  relayModelHealthResponseSchema,
 } from "./index";
 
 test("home summary example parses", () => {
@@ -96,10 +98,53 @@ test("leaderboard directory example parses", () => {
 test("query defaults are applied", () => {
   const leaderboardQuery = leaderboardQuerySchema.parse({});
   const relayHistoryQuery = relayHistoryQuerySchema.parse({ window: "7d" });
+  const relayModelHealthQuery = relayModelHealthQuerySchema.parse({});
 
   assert.equal(leaderboardQuery.region, "global");
   assert.equal(leaderboardQuery.limit, 20);
   assert.equal(relayHistoryQuery.region, "global");
+  assert.equal(relayModelHealthQuery.region, "global");
+  assert.equal(relayModelHealthQuery.window, "7d");
+});
+
+test("relay model health example parses", () => {
+  const parsed = relayModelHealthResponseSchema.parse({
+    relay: {
+      slug: "sample-relay",
+      name: "Sample Relay",
+    },
+    window: "7d",
+    rows: [
+      {
+        modelKey: "gpt-5.4",
+        modelName: "gpt-5.4",
+        vendor: "gpt",
+        supportStatus: "active",
+        currentStatus: "healthy",
+        availability7d: 0.991,
+        latestLatencyP50Ms: 842,
+        statusTrend7d: [
+          { dateKey: "2026-04-09", status: "healthy", availability: 1 },
+          { dateKey: "2026-04-10", status: "healthy", availability: 1 },
+          { dateKey: "2026-04-11", status: "healthy", availability: 0.99 },
+          { dateKey: "2026-04-12", status: "degraded", availability: 0.82 },
+          { dateKey: "2026-04-13", status: "healthy", availability: 1 },
+          { dateKey: "2026-04-14", status: "healthy", availability: 1 },
+          { dateKey: "2026-04-15", status: "healthy", availability: 1 },
+        ],
+        currentPrice: {
+          currency: "USD",
+          inputPricePer1M: 2.5,
+          outputPricePer1M: 15,
+        },
+        lastVerifiedAt: "2026-04-15T10:00:00.000Z",
+      },
+    ],
+    measuredAt: "2026-04-15T10:00:00.000Z",
+  });
+
+  assert.equal(parsed.rows[0]?.modelKey, "gpt-5.4");
+  assert.equal(parsed.rows[0]?.statusTrend7d.length, 7);
 });
 
 test("probe request requires https", () => {

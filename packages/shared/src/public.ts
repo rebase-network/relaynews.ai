@@ -107,6 +107,41 @@ export const relayOverviewResponseSchema = z.object({
   measuredAt: isoTimestampSchema,
 });
 
+export const relayModelHealthQuerySchema = z.object({
+  window: z.enum(["7d"]).default("7d"),
+  region: regionSchema.default("global"),
+});
+
+export const relayModelHealthResponseSchema = z.object({
+  relay: relaySummarySchema,
+  window: z.enum(["7d"]),
+  rows: z.array(
+    z.object({
+      modelKey: z.string().min(1),
+      modelName: z.string().min(1),
+      vendor: z.string().min(1),
+      supportStatus: supportStatusSchema,
+      currentStatus: healthStatusSchema,
+      availability7d: z.number().min(0).max(1).nullable(),
+      latestLatencyP50Ms: z.number().int().nonnegative().nullable(),
+      statusTrend7d: z.array(
+        z.object({
+          dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          status: healthStatusSchema,
+          availability: z.number().min(0).max(1).nullable(),
+        }),
+      ).length(7),
+      currentPrice: z.object({
+        currency: z.string().min(1),
+        inputPricePer1M: z.number().min(0).nullable(),
+        outputPricePer1M: z.number().min(0).nullable(),
+      }).nullable(),
+      lastVerifiedAt: isoTimestampSchema.nullable(),
+    }),
+  ),
+  measuredAt: isoTimestampSchema,
+});
+
 export const relayHistoryQuerySchema = z.object({
   window: relayHistoryWindowSchema,
   region: regionSchema.default("global"),
@@ -206,6 +241,8 @@ export type LeaderboardDirectoryResponse = z.infer<
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
 export type RelayOverviewResponse = z.infer<typeof relayOverviewResponseSchema>;
+export type RelayModelHealthQuery = z.infer<typeof relayModelHealthQuerySchema>;
+export type RelayModelHealthResponse = z.infer<typeof relayModelHealthResponseSchema>;
 export type RelayHistoryQuery = z.infer<typeof relayHistoryQuerySchema>;
 export type RelayHistoryResponse = z.infer<typeof relayHistoryResponseSchema>;
 export type RelayModelsResponse = z.infer<typeof relayModelsResponseSchema>;

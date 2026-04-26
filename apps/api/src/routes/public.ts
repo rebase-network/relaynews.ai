@@ -8,6 +8,8 @@ import {
   methodologyResponseSchema,
   relayHistoryQuerySchema,
   relayHistoryResponseSchema,
+  relayModelHealthQuerySchema,
+  relayModelHealthResponseSchema,
   relayIncidentsQuerySchema,
   relayIncidentsResponseSchema,
   relayModelsResponseSchema,
@@ -18,10 +20,15 @@ import {
   publicSubmissionResponseSchema,
 } from "@relaynews/shared";
 import type { FastifyInstance } from "fastify";
+import { sql } from "kysely";
 
 import { orderLeaderboardModels } from "../lib/leaderboard-order";
 import { getMethodologyPayload } from "../lib/methodology";
 import { runPublicProbe } from "../lib/probe";
+import {
+  buildRelayModelStatusTrend7d,
+  computeHealthStatusFromAvailability,
+} from "../lib/relay-model-health";
 import { replaceSubmissionModelPrices } from "../lib/relay-catalog";
 import {
   toProbeCredentialVerification,
@@ -226,6 +233,207 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       scoreSummary: row.scoreSummary,
       badges: Array.isArray(row.badges) ? row.badges : [],
       measuredAt: row.measuredAt,
+    });
+  });
+
+  app.get("/public/relay/:slug/model-health", async (request) => {
+    const params = request.params as { slug: string };
+    const query = relayModelHealthQuerySchema.parse(request.query ?? {});
+    const relay = assertRelayFound(
+      await app.db
+        .selectFrom("relays")
+        .select(["id", "slug", "name"])
+        .where("slug", "=", params.slug)
+        .where("status", "=", "active")
+        .executeTakeFirst(),
+    );
+
+    const modelRows = await app.db
+      .selectFrom("relay_models as rm")
+      .innerJoin("models as m", "m.id", "rm.model_id")
+      .select([
+        "m.id as modelId",
+        "m.key as modelKey",
+        "m.name as modelName",
+        "m.vendor",
+        "rm.status as supportStatus",
+        "rm.last_verified_at as lastVerifiedAt",
+      ])
+      .where("rm.relay_id", "=", relay.id)
+      .where("rm.status", "<>", "unsupported")
+      .orderBy("m.name", "asc")
+      .execute();
+
+    if (modelRows.length === 0) {
+      return relayModelHealthResponseSchema.parse({
+        relay: {
+          slug: relay.slug,
+          name: relay.name,
+        },
+        window: query.window,
+        rows: [],
+        measuredAt: new Date().toISOString(),
+      });
+    }
+
+    const modelIds = modelRows.map((row) => row.modelId);
+    const modelIdList = sql.join(modelIds.map((modelId) => sql`${modelId}`));
+    const trendStart = new Date();
+    trendStart.setUTCHours(0, 0, 0, 0);
+    trendStart.setUTCDate(trendStart.getUTCDate() - 6);
+    const trendStartIso = trendStart.toISOString();
+
+    const latestStatusRows = await sql<{
+      modelId: string;
+      bucketStart: string;
+      availability: number;
+      sampleCount: number;
+    }>`
+      select distinct on (model_id)
+        model_id as "modelId",
+        bucket_start as "bucketStart",
+        availability_ratio as "availability",
+        sample_count as "sampleCount"
+      from relay_status_5m
+      where relay_id = ${relay.id}
+        and probe_region = ${query.region}
+        and model_id in (${modelIdList})
+      order by model_id, bucket_start desc
+    `.execute(app.db);
+
+    const availability7dRows = await sql<{
+      modelId: string;
+      successCount: number;
+      sampleCount: number;
+    }>`
+      select
+        model_id as "modelId",
+        sum(success_count) as "successCount",
+        sum(sample_count) as "sampleCount"
+      from relay_status_5m
+      where relay_id = ${relay.id}
+        and probe_region = ${query.region}
+        and model_id in (${modelIdList})
+        and bucket_start >= ${trendStartIso}
+      group by model_id
+    `.execute(app.db);
+
+    const trendRows = await sql<{
+      modelId: string;
+      dateKey: string;
+      successCount: number;
+      sampleCount: number;
+    }>`
+      select
+        model_id as "modelId",
+        to_char(bucket_start at time zone 'UTC', 'YYYY-MM-DD') as "dateKey",
+        sum(success_count) as "successCount",
+        sum(sample_count) as "sampleCount"
+      from relay_status_5m
+      where relay_id = ${relay.id}
+        and probe_region = ${query.region}
+        and model_id in (${modelIdList})
+        and bucket_start >= ${trendStartIso}
+      group by model_id, to_char(bucket_start at time zone 'UTC', 'YYYY-MM-DD')
+      order by model_id, "dateKey" asc
+    `.execute(app.db);
+
+    const latestLatencyRows = await sql<{
+      modelId: string;
+      bucketStart: string;
+      latencyP50Ms: number | null;
+    }>`
+      select distinct on (model_id)
+        model_id as "modelId",
+        bucket_start as "bucketStart",
+        latency_p50_ms as "latencyP50Ms"
+      from relay_latency_5m
+      where relay_id = ${relay.id}
+        and probe_region = ${query.region}
+        and model_id in (${modelIdList})
+      order by model_id, bucket_start desc
+    `.execute(app.db);
+
+    const latestPriceRows = await sql<{
+      modelId: string;
+      currency: string;
+      inputPricePer1M: number | null;
+      outputPricePer1M: number | null;
+    }>`
+      select distinct on (model_id)
+        model_id as "modelId",
+        currency,
+        input_price_per_1m as "inputPricePer1M",
+        output_price_per_1m as "outputPricePer1M"
+      from relay_prices
+      where relay_id = ${relay.id}
+        and model_id in (${modelIdList})
+      order by model_id, effective_from desc
+    `.execute(app.db);
+
+    const latestStatusByModelId = new Map(latestStatusRows.rows.map((row) => [row.modelId, row]));
+    const availability7dByModelId = new Map(
+      availability7dRows.rows.map((row) => [
+        row.modelId,
+        row.sampleCount > 0 ? row.successCount / row.sampleCount : null,
+      ]),
+    );
+    const trendByModelId = new Map<string, Array<{ dateKey: string; availability: number | null; sampleCount: number }>>();
+    for (const row of trendRows.rows) {
+      const availability = row.sampleCount > 0 ? row.successCount / row.sampleCount : null;
+      const current = trendByModelId.get(row.modelId) ?? [];
+      current.push({
+        dateKey: row.dateKey,
+        availability,
+        sampleCount: row.sampleCount,
+      });
+      trendByModelId.set(row.modelId, current);
+    }
+    const latestLatencyByModelId = new Map(latestLatencyRows.rows.map((row) => [row.modelId, row]));
+    const latestPriceByModelId = new Map(latestPriceRows.rows.map((row) => [row.modelId, row]));
+
+    const measuredAtCandidates = [
+      ...latestStatusRows.rows.map((row) => row.bucketStart),
+      ...latestLatencyRows.rows.map((row) => row.bucketStart),
+      ...modelRows.map((row) => row.lastVerifiedAt).filter((value): value is string => Boolean(value)),
+    ].sort();
+    const measuredAt = measuredAtCandidates.at(-1) ?? new Date().toISOString();
+
+    return relayModelHealthResponseSchema.parse({
+      relay: {
+        slug: relay.slug,
+        name: relay.name,
+      },
+      window: query.window,
+      rows: modelRows.map((row) => {
+        const latestStatus = latestStatusByModelId.get(row.modelId);
+        const latestLatency = latestLatencyByModelId.get(row.modelId);
+        const latestPrice = latestPriceByModelId.get(row.modelId);
+
+        return {
+          modelKey: row.modelKey,
+          modelName: row.modelName,
+          vendor: row.vendor,
+          supportStatus: row.supportStatus,
+          currentStatus: computeHealthStatusFromAvailability(
+            latestStatus?.availability ?? null,
+            latestStatus?.sampleCount ?? 0,
+          ),
+          availability7d: availability7dByModelId.get(row.modelId) ?? null,
+          latestLatencyP50Ms: latestLatency?.latencyP50Ms ?? null,
+          statusTrend7d: buildRelayModelStatusTrend7d({
+            measuredAt,
+            rows: trendByModelId.get(row.modelId) ?? [],
+          }),
+          currentPrice: latestPrice ? {
+            currency: latestPrice.currency,
+            inputPricePer1M: latestPrice.inputPricePer1M,
+            outputPricePer1M: latestPrice.outputPricePer1M,
+          } : null,
+          lastVerifiedAt: row.lastVerifiedAt,
+        };
+      }),
+      measuredAt,
     });
   });
 
