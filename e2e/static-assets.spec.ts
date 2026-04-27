@@ -47,5 +47,5 @@ test("critical route HTML exposes route-level fallback content", async ({ reques
   expect(relay.ok()).toBeTruthy();
   const relayHtml = await relay.text();
   expect(relayHtml).toContain("Aurora Relay 详情");
-  expect(relayHtml).toContain("查看 Aurora Relay 的 Base URL");
+  expect(relayHtml).toContain("查看 Aurora Relay 的官网地址");
 });

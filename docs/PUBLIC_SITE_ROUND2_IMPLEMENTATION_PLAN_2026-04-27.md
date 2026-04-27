@@ -22,11 +22,11 @@
 
 ### Slice 3：Relay 详情页
 
-- Hero 中展示 Base URL。
+- Hero 中只展示官网地址和联系方式，不展示 Base URL。
 - 联系信息支持 URL、邮箱、Telegram handle 的可点击链接。
 - 模型健康区增加标题、说明和摘要指标。
 - 模型健康移动卡片长 key 安全换行。
-- 补充 Playwright 验证 Base URL、摘要标题与移动端无横向溢出。
+- 补充 Playwright 验证公开详情页不展示 Base URL、摘要标题与移动端无横向溢出。
 
 ### Slice 4：首页赞助区
 

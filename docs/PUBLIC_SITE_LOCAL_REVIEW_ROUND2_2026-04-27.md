@@ -15,7 +15,7 @@
 
 - 让用户发现和比较大模型 API Relay，重点看健康度、延迟、价格、模型覆盖和可信度。
 - 让模型榜单排序可解释，并保持赞助展示与自然排名明确分离。
-- 让 Relay 详情页解释站点身份、Base URL/endpoint 摘要、支持模型、近期可用性、延迟、价格和最近验证时间。
+- 让 Relay 详情页解释站点身份、官网地址、联系方式、支持模型、近期可用性、延迟、价格和最近验证时间。
 - 让用户可以提交站点和进行自助测试，同时避免在页面或 API 响应中回显用户输入的 API Key。
 - 公开页面应适合中文用户阅读、移动端浏览、搜索引擎索引和链接分享。
 
@@ -88,11 +88,11 @@
 - 问题：站点地图缺少本地当前真实有效路径，例如 `/leaderboard/openai-gpt-5.4`、`/leaderboard/anthropic-claude-sonnet-4.6`、`/relay/aurora-relay`。
 - 影响：搜索引擎会被引导到错误 URL，同时漏掉真实可访问页面。后续如果生产数据变化，静态 sitemap 也容易再次过期。
 
-### P1. Relay 详情页缺少明确 Base URL / endpoint 摘要
+### P1. Relay 详情页公开身份信息口径需修正
 
 - 页面：`/relay/aurora-relay`、`/relay/ember-gateway`、`/relay/solstice-router`
-- 问题：API 数据中有 `baseUrl`，例如 `https://aurora.relaynew.ai/v1`，但详情页顶部只展示“官网”和“联系”，未展示正在被监控和测试的 Base URL 或 endpoint 摘要。
-- 影响：用户无法直接判断榜单测试的是哪个接口路径，也不利于运营者核对收录信息。该项与 Relay 详情页应解释 endpoint 摘要的目标不一致。
+- 问题：评审中曾把 Base URL / endpoint 摘要视为公开详情页信息，但产品口径已修正：公开 Relay 详情页只展示官网地址和联系方式，不展示 Base URL。
+- 影响：如果继续在公开详情页暴露 Base URL，会把运营/监控字段误认为站点公开身份信息，也会让用户混淆官网地址与接口 endpoint。
 
 ### P1. Relay 详情内容存在数据质量与中文一致性问题
 

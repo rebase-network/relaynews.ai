@@ -54,11 +54,11 @@ async function expectRelayDetailModules(page: Page) {
 
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
   await expect(page.getByText("🌍 聚合全球顶尖模型：汇聚各厂商的主流大模型")).toBeVisible();
-  await expect(page.getByText("Base URL")).toBeVisible();
-  await expect(page.getByText("aurora.relaynew.ai/v1")).toBeVisible();
-  await expect(page.getByText("联系")).toBeVisible();
+  await expect(heroPanel.getByText("Base URL")).toHaveCount(0);
+  await expect(heroPanel.getByText("aurora.relaynew.ai/v1")).toHaveCount(0);
+  await expect(page.getByText("联系方式")).toBeVisible();
   await expect(page.getByText("Telegram：@aurora_ops")).toBeVisible();
-  await expect(page.getByText("官网")).toBeVisible();
+  await expect(page.getByText("官网地址")).toBeVisible();
   await expect(page.getByRole("link", { name: "aurora.relaynew.ai" })).toBeVisible();
   await expect(heroPanel.getByText("已跟踪模型")).toHaveCount(0);
   await expect(heroPanel.getByText("最近快照")).toHaveCount(0);
@@ -503,7 +503,7 @@ test("critical mobile public pages do not create root horizontal overflow", asyn
 
   await page.goto("/relay/aurora-relay");
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
-  await expect(page.getByText("Base URL")).toBeVisible();
+  await expect(page.locator(".relay-hero-panel").getByText("Base URL")).toHaveCount(0);
   await expectNoPageHorizontalOverflow(page);
 
   await page.goto("/submit");

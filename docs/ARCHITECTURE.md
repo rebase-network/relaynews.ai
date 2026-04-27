@@ -38,6 +38,9 @@ The product should:
   current status, 7-day availability, 7-day status mini trend, representative
   latency, and current price for each supported model; relay-level latency/status charts and standalone
   incident or full price-history panels are not rendered in the shipped UI
+- Public relay detail pages should show official website and contact context only;
+  Base URL remains a submission, admin, probe, and monitoring field rather than a
+  public detail-page identity field.
 - The admin SPA uses `/relays` as its effective landing page; `GET /admin/overview`
   currently remains as an auth/bootstrap endpoint rather than a primary visible page
 

@@ -1483,16 +1483,6 @@ textarea {
   color: rgba(31, 31, 31, 0.86);
 }
 
-.relay-hero-meta-item-wide {
-  flex: 1 1 18rem;
-}
-
-.relay-hero-meta-code {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: -0.02em;
-}
-
 .relay-trend-legend {
   display: flex;
   flex-wrap: wrap;

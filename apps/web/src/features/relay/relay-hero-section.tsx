@@ -66,12 +66,8 @@ export function RelayHeroSection({
               </p>
             ) : null}
           </div>
-          {contactInfo || overview.relay.websiteUrl || overview.relay.baseUrl ? (
+          {contactInfo || overview.relay.websiteUrl ? (
             <div className="relay-hero-meta-strip">
-              <div className="relay-hero-meta-item relay-hero-meta-item-wide">
-                <span className="relay-hero-meta-label">Base URL</span>
-                <span className="relay-hero-meta-value relay-hero-meta-code break-all">{getRelayWebsiteLabel(overview.relay.baseUrl)}</span>
-              </div>
               {overview.relay.websiteUrl ? (
                 <a
                   className="relay-hero-meta-item relay-hero-meta-link"
@@ -79,7 +75,7 @@ export function RelayHeroSection({
                   rel="noreferrer"
                   target="_blank"
                 >
-                  <span className="relay-hero-meta-label">官网</span>
+                  <span className="relay-hero-meta-label">官网地址</span>
                   <span className="relay-hero-meta-value">{getRelayWebsiteLabel(overview.relay.websiteUrl)}</span>
                 </a>
               ) : null}
@@ -91,14 +87,14 @@ export function RelayHeroSection({
                     rel={contactHref.startsWith("http") ? "noreferrer" : undefined}
                     target={contactHref.startsWith("http") ? "_blank" : undefined}
                   >
-                    <span className="relay-hero-meta-label">联系</span>
+                    <span className="relay-hero-meta-label">联系方式</span>
                     <span className="relay-hero-meta-value break-words">{getRelayWebsiteLabel(contactInfo)}</span>
                   </a>
                 ) : (
-                <div className="relay-hero-meta-item">
-                  <span className="relay-hero-meta-label">联系</span>
-                  <span className="relay-hero-meta-value break-words">{contactInfo}</span>
-                </div>
+                  <div className="relay-hero-meta-item">
+                    <span className="relay-hero-meta-label">联系方式</span>
+                    <span className="relay-hero-meta-value break-words">{contactInfo}</span>
+                  </div>
                 )
               ) : null}
             </div>

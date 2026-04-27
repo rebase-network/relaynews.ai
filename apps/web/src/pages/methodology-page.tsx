@@ -245,7 +245,7 @@ export function MethodologyPage() {
             className="methodology-governance-action"
           >
             <p className="methodology-governance-copy">
-              如果你是站点运营者，建议先确认公开 Base URL、支持模型与测试结果，再提交资料或发起复核。目录优先保留可验证、能复测、能持续观察的信息。
+              如果你是站点运营者，建议先确认官网地址、联系方式、支持模型与测试结果，再提交资料或发起复核。目录优先保留可验证、能复测、能持续观察的信息。
             </p>
             <div className="methodology-governance-actions">
               <Link className="button-dark" to="/submit">提交站点</Link>

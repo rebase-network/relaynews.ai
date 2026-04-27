@@ -31,7 +31,7 @@ const relayRoutes = [
 ].map(([slug, name]) => ({
   path: `/relay/${slug}`,
   title: `${name} 详情｜relaynew.ai`,
-  description: `查看 ${name} 的 Base URL、支持模型、7 天可用性、当前价格和最近验证时间。`,
+  description: `查看 ${name} 的官网地址、联系方式、支持模型、7 天可用性、当前价格和最近验证时间。`,
   heading: `${name} 详情`,
   eyebrow: "Relay 详情",
   body: "详情页展示该站点当前公开观测到的模型健康、延迟、价格和最近验证信息。",
