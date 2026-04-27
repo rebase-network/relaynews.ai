@@ -8,6 +8,7 @@ import {
   formatHealthStatusLabel,
   formatIncidentSeverityLabel,
   formatLatency,
+  formatModelDisplayName,
   getDisplayBadges,
   getIncidentToneClasses,
   getLeaderboardPath,
@@ -83,12 +84,14 @@ export function LeaderboardPreviewCard({
   rowLimit?: number;
 }) {
   const rows = board.rows.slice(0, rowLimit ?? board.rows.length);
+  const displayName = formatModelDisplayName(board.modelKey);
 
   return (
     <section className="panel leaderboard-preview-card h-full">
       <div className="leaderboard-preview-header">
         <div>
-          <h2 className="leaderboard-preview-title">{board.modelKey}</h2>
+          <h2 className="leaderboard-preview-title" title={board.modelKey}>{displayName}</h2>
+          <p className="leaderboard-preview-key">{board.modelKey}</p>
           <p className="leaderboard-preview-meta">最新快照 · {formatDateTime(board.measuredAt)}</p>
         </div>
         <Link className="leaderboard-preview-link" to={getLeaderboardPath(board.modelKey)}>

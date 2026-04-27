@@ -54,6 +54,8 @@ async function expectRelayDetailModules(page: Page) {
 
   await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
   await expect(page.getByText("🌍 聚合全球顶尖模型：汇聚各厂商的主流大模型")).toBeVisible();
+  await expect(page.getByText("Base URL")).toBeVisible();
+  await expect(page.getByText("aurora.relaynew.ai/v1")).toBeVisible();
   await expect(page.getByText("联系")).toBeVisible();
   await expect(page.getByText("Telegram：@aurora_ops")).toBeVisible();
   await expect(page.getByText("官网")).toBeVisible();
@@ -64,6 +66,8 @@ async function expectRelayDetailModules(page: Page) {
   await expect(heroPanel.getByText("P50 延迟")).toHaveCount(0);
   await expect(page.getByText("起始输入 / 1M")).toHaveCount(0);
   await expect(page.getByText("起始输出 / 1M")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "支持模型健康概览" })).toBeVisible();
+  await expect(page.getByText("已观测模型")).toBeVisible();
   await expect(modelTable.getByText(/^openai-gpt-4\.1$/)).toBeVisible();
   await expect(modelTable.getByText(/^anthropic-claude-sonnet-4\.6$/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "价格历史" })).toHaveCount(0);
@@ -113,6 +117,15 @@ async function expectPageMetadata(page: Page, expectation: {
   expect(canonicalUrl.hash).toBe("");
 }
 
+async function expectNoPageHorizontalOverflow(page: Page) {
+  const metrics = await page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
 test("public site renders the main discovery flow", async ({ page }) => {
   await gotoHome(page);
   await expect(page.getByRole("heading", { name: /发现优质AI服务商/i })).toBeVisible();
@@ -121,6 +134,9 @@ test("public site renders the main discovery flow", async ({ page }) => {
   await expect(page.getByText("快速测试", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "打开完整测试页" })).toBeVisible();
   await expect(page.getByText("赞助商").first()).toBeVisible();
+  const sponsorSection = page.locator("section").filter({ has: page.getByText("赞助展示") }).last();
+  await expect(sponsorSection.getByText("商业合作位，独立展示，不参与评分或榜单排序。")).toBeVisible();
+  await expect(sponsorSection.getByText("查看站点资料")).toBeVisible();
   await expect(page.getByRole("heading", { name: "最近事件" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Watchlist" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Incidents" })).toHaveCount(0);
@@ -130,7 +146,7 @@ test("public site renders the main discovery flow", async ({ page }) => {
   if (isDeployedRun) {
     await page.getByRole("link", { name: "站点目录" }).click();
     await expect(page).toHaveURL(/\/leaderboard$/);
-    await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
     await expectLeaderboardRules(page);
 
     await page.getByRole("link", { name: "评测方式" }).click();
@@ -149,22 +165,20 @@ test("public site renders the main discovery flow", async ({ page }) => {
   await expect(page.getByText("按模型分类浏览已跟踪的 Relay 站点。")).toBeVisible();
   await expect(page.getByLabel("Search lanes")).toHaveCount(0);
   await page.getByRole("button", { name: "Google" }).click();
-  await expect(page.getByRole("heading", { name: "google-gemini-3.1" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Gemini 3.1" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "anthropic-claude-sonnet-4.6" })).toHaveCount(0);
 
   await gotoHome(page);
   const featuredSection = page.locator("section").filter({ has: page.getByRole("link", { name: "查看全部模型" }) }).first();
-  await expect(featuredSection.getByRole("heading", { name: "anthropic-claude-sonnet-4.6" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "anthropic-claude-opus-4.6" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
-  await expect(featuredSection.getByRole("heading", { name: "google-gemini-3.1" })).toBeVisible();
-  await expect(featuredSection.getByText("Sonnet 4.6")).toHaveCount(0);
-  await expect(featuredSection.getByText("Opus 4.6")).toHaveCount(0);
-  await expect(featuredSection.getByText("GPT 5.4")).toHaveCount(0);
-  await expect(featuredSection.getByText("Gemini 3.1")).toHaveCount(0);
+  await expect(featuredSection.getByRole("heading", { name: "Claude Sonnet 4.6" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "Claude Opus 4.6" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+  await expect(featuredSection.getByRole("heading", { name: "Gemini 3.1" })).toBeVisible();
+  await expect(featuredSection.getByText("anthropic-claude-sonnet-4.6")).toBeVisible();
+  await expect(featuredSection.getByText("openai-gpt-5.4")).toBeVisible();
 
   const gptBoardCard = featuredSection.locator("section").filter({
-    has: page.getByRole("heading", { name: "openai-gpt-5.4" }),
+    has: page.getByRole("heading", { name: "GPT 5.4" }),
   });
   const gptBoardLink = gptBoardCard.getByRole("link", { name: "查看完整榜单" });
   const gptBoardHref = await gptBoardLink.getAttribute("href");
@@ -197,8 +211,8 @@ test("submit flow works from the public site", async ({ page }) => {
   const relayBaseUrl = `https://example.com/relay/${Date.now()}`;
 
   await page.goto("/submit");
-  await expect(page.getByRole("heading", { name: /把你的Relay站点信息提交，收录到站点目录中/i })).toBeVisible();
-  await expect(page.getByText(/这些信息将由社区运营志愿者整理后作为站点说明和价格表/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "提交你的 Relay 站点" })).toBeVisible();
+  await expect(page.getByText(/审核通过后会进入后续评测流程，并有机会出现在模型榜单中/)).toBeVisible();
   await expect(page.getByText(/提交后会立即执行一次自动测试，后续会持续测试/)).toBeVisible();
   await page.getByLabel("大模型API服务站名称").fill(relayName);
   await page.getByLabel("Base URL").fill(relayBaseUrl);
@@ -421,13 +435,13 @@ test("public mobile navigation routes to the primary pages", async ({ page }) =>
 
   await mobileNav.getByRole("link", { name: "站点目录" }).click();
   await expect(page).toHaveURL(/\/leaderboard$/);
-  await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
 
   await page.getByRole("button", { name: "打开菜单" }).click();
   mobileNav = page.locator("#mobile-primary-nav");
   await mobileNav.getByRole("link", { name: "提交站点" }).click();
   await expect(page).toHaveURL(/\/submit$/);
-  await expect(page.getByRole("heading", { name: /把你的Relay站点信息提交，收录到站点目录中/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "提交你的 Relay 站点" })).toBeVisible();
 
   await page.getByRole("button", { name: "打开菜单" }).click();
   mobileNav = page.locator("#mobile-primary-nav");
@@ -455,13 +469,13 @@ test("probe page stays compact on mobile", async ({ page }) => {
   await page.goto("/probe");
 
   await expect(page.getByRole("heading", { name: "运行测试" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "测试结果" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "等待测试" })).toBeVisible();
   await expect(page.locator(".input-helper-mobile")).toHaveCount(0);
   await expect(page.locator(".input-helper-desktop")).toHaveCount(0);
   await expect(page.getByText("Before you run")).toHaveCount(0);
   await expect(page.getByText("What the result includes")).toHaveCount(0);
   await expect(page.getByText(/自助测试的API Key等信息不会留存/)).toBeVisible();
-  await expect(page.getByText(/结果面板会展示连通性、协议状态、兼容模式识别结果/)).toBeVisible();
+  await expect(page.getByText(/将展示连通性、协议状态、兼容模式/)).toBeVisible();
   await expect(page.getByRole("button", { name: "开始测试" })).toBeVisible();
 });
 
@@ -469,10 +483,32 @@ test("leaderboard directory remains readable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/leaderboard");
 
-  await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
   await expect(page.locator("main").getByRole("link", { name: /Aurora Relay/ }).first()).toBeVisible();
   await expect(page.getByText("按服务商筛选")).toBeVisible();
   await expect(page.getByText(/个模型/).first()).toBeVisible();
+});
+
+test("critical mobile public pages do not create root horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await page.goto("/leaderboard/anthropic-claude-sonnet-4.6");
+  await expect(page.getByRole("heading", { name: "Claude Sonnet 4.6" })).toBeVisible();
+  await expect(page.getByText("anthropic-claude-sonnet-4.6").first()).toBeVisible();
+  await expectNoPageHorizontalOverflow(page);
+
+  await page.goto("/leaderboard/openai-gpt-5.4");
+  await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
+  await expectNoPageHorizontalOverflow(page);
+
+  await page.goto("/relay/aurora-relay");
+  await expect(page.getByRole("heading", { name: "Aurora Relay" })).toBeVisible();
+  await expect(page.getByText("Base URL")).toBeVisible();
+  await expectNoPageHorizontalOverflow(page);
+
+  await page.goto("/submit");
+  await expect(page.getByRole("heading", { name: "提交你的 Relay 站点" })).toBeVisible();
+  await expectNoPageHorizontalOverflow(page);
 });
 
 test.describe("public metadata smoke", () => {
@@ -485,7 +521,7 @@ test.describe("public metadata smoke", () => {
     });
 
     await page.goto("/leaderboard?foo=bar#metadata");
-    await expect(page.getByRole("heading", { name: "openai-gpt-5.4" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "GPT 5.4" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/leaderboard",
       descriptionPattern: /按模型分类浏览|状态|延迟|价格信号/i,
@@ -501,7 +537,7 @@ test.describe("public metadata smoke", () => {
     });
 
     await page.goto("/submit?from=metadata");
-    await expect(page.getByRole("heading", { name: /把你的Relay站点信息提交，收录到站点目录中/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "提交你的 Relay 站点" })).toBeVisible();
     await expectPageMetadata(page, {
       canonicalPath: "/submit",
       descriptionPattern: /提交站点|初始测试|评测排名/i,

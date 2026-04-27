@@ -52,12 +52,13 @@ export function ProbeResultPanel({
   const firstTokenMs = deepScanSummary?.firstTokenMs ?? result?.connectivity.firstTokenMs ?? null;
   const ttfbLabel = deepScanSummary ? "最佳 TTFB" : "TTFB";
   const firstTokenLabel = deepScanSummary ? "最佳首个有效输出" : "首个有效输出";
+  const waitingForInput = !result && !error;
 
   return (
     <Panel
-      title="测试结果"
+      title={waitingForInput ? "等待测试" : "测试结果"}
       kicker={result ? "诊断输出" : error ? "请求失败" : "等待输入"}
-      className={result || error ? "probe-result-panel" : "panel-soft probe-result-panel"}
+      className={result || error ? "probe-result-panel" : "panel-soft probe-result-panel probe-result-panel-empty"}
     >
       {result ? (
         <>
@@ -306,9 +307,9 @@ export function ProbeResultPanel({
         </div>
       ) : (
         <div className="probe-empty-state">
-          <p className="probe-empty-title">填写左侧信息后开始测试。</p>
+          <p className="probe-empty-title">填写左侧信息后，结果会在这里出现。</p>
           <p className="probe-empty-copy">
-            结果面板会展示连通性、协议状态、兼容模式识别结果、最终解析端点，以及到达上游路由时使用的请求轨迹。
+            将展示连通性、协议状态、兼容模式、最终端点和请求轨迹。
           </p>
         </div>
       )}

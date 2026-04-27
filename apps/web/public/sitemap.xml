@@ -7,31 +7,34 @@
     <loc>https://relaynew.ai/leaderboard</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/claude-opus-4-6</loc>
+    <loc>https://relaynew.ai/leaderboard/anthropic-claude-sonnet-4.6</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/claude-opus-4-7</loc>
+    <loc>https://relaynew.ai/leaderboard/anthropic-claude-opus-4.6</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/claude-sonnet-4-6</loc>
+    <loc>https://relaynew.ai/leaderboard/openai-gpt-5.4</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/gemini-3.1-pro-preview</loc>
+    <loc>https://relaynew.ai/leaderboard/google-gemini-3.1</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/gpt-5.4</loc>
+    <loc>https://relaynew.ai/leaderboard/anthropic-claude-sonnet-4</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/leaderboard/gpt-5.5</loc>
+    <loc>https://relaynew.ai/leaderboard/openai-gpt-4.1</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/relay/easyrouter</loc>
+    <loc>https://relaynew.ai/leaderboard/openai-gpt-4.1-mini</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/relay/vtok-ai</loc>
+    <loc>https://relaynew.ai/relay/aurora-relay</loc>
   </url>
   <url>
-    <loc>https://relaynew.ai/relay/relay-router</loc>
+    <loc>https://relaynew.ai/relay/ember-gateway</loc>
+  </url>
+  <url>
+    <loc>https://relaynew.ai/relay/solstice-router</loc>
   </url>
   <url>
     <loc>https://relaynew.ai/methodology</loc>

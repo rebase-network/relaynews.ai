@@ -3,10 +3,10 @@ export function SubmitHero() {
     <div className="panel hero-panel submit-hero-panel min-h-0">
       <p className="submit-hero-label">提交站点</p>
       <h1 className="submit-hero-title">
-        把你的Relay站点信息提交，收录到站点目录中，有机会进入榜单排行，获得更多用户的认可
+        提交你的 Relay 站点
       </h1>
       <p className="submit-hero-copy">
-        请提供大模型API服务站的介绍，支持的模型、价格信息等等，这些信息将由社区运营志愿者整理后作为站点说明和价格表。
+        把站点信息、支持模型和价格提交到公开目录。审核通过后会进入后续评测流程，并有机会出现在模型榜单中。
       </p>
       <div className="submit-hero-points">
         <div className="submit-hero-point">

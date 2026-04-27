@@ -51,6 +51,7 @@ const {
   formatHealthStatusLabel,
   formatIncidentSeverityLabel,
   formatLatency,
+  formatModelDisplayName,
   formatPricePerMillion,
   formatPricingSourceLabel,
   formatProbeCompatibilityMode,
@@ -93,6 +94,7 @@ export function LeaderboardPage() {
   const healthyRelayCount = rows.filter((row) => row.healthStatus === "healthy").length;
   const degradedRelayCount = rows.filter((row) => row.healthStatus === "degraded").length;
   const modelLabel = data?.model.key ?? "Relay";
+  const modelDisplayName = data ? formatModelDisplayName(data.model.key) : modelLabel;
   const isNotFound = !loading && Boolean(error && /not found|404/i.test(error));
   usePageMetadata({
     title: isNotFound ? "模型榜单不存在｜relaynew.ai" : `${modelLabel} 站点榜单｜relaynew.ai`,
@@ -127,13 +129,14 @@ export function LeaderboardPage() {
   if (error || !data) return <ErrorPanel message={error ?? "榜单加载失败。"} />;
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <section className="panel leaderboard-hero-panel bg-[#fff0c2]">
         <div className="leaderboard-hero-shell">
           <div className="space-y-3">
             <p className="kicker !mb-1">榜单</p>
             <div className="space-y-2">
-              <h1 className="break-words text-[2.22rem] leading-[0.98] tracking-[-0.035em] md:text-[3.1rem] md:leading-[0.94] md:tracking-[-0.05em]">{data.model.key}</h1>
+              <h1 className="leaderboard-model-title" title={data.model.key}>{modelDisplayName}</h1>
+              <p className="leaderboard-model-key">{data.model.key}</p>
               <p className="text-sm leading-6 text-black/64">
                 以最近一轮自动化测试为基础，综合可用性、延迟、稳定性、价格与可信度生成当前排名。
               </p>
@@ -165,9 +168,11 @@ export function LeaderboardPage() {
                   "leaderboard-model-pill",
                   board.modelKey === data.model.key && "leaderboard-model-pill-active",
                 )}
+                title={board.modelKey}
                 to={getLeaderboardPath(board.modelKey)}
               >
-                {board.modelKey}
+                <span>{formatModelDisplayName(board.modelKey)}</span>
+                <span className="leaderboard-model-pill-key">{board.modelKey}</span>
               </Link>
             ))}
           </div>

@@ -208,20 +208,15 @@ export function HomePage() {
               <Link
                 key={relay.slug}
                 to={`/relay/${relay.slug}`}
-                className="surface-link leaderboard-preview-row home-sponsor-card"
+                className="surface-link home-sponsor-card"
               >
-                <div className="leaderboard-preview-main min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="home-sponsor-label">赞助商</p>
-                    <p className="leaderboard-preview-name">{relay.name}</p>
-                  </div>
-                  <CompactBadgeList badges={[formatBadgeLabel(relay.badge)]} className="leaderboard-preview-badges" limit={1} />
+                <div className="min-w-0">
+                  <p className="home-sponsor-label">赞助展示</p>
+                  <p className="home-sponsor-name">{relay.name}</p>
+                  <p className="home-sponsor-copy">商业合作位，独立展示，不参与评分或榜单排序。</p>
                 </div>
-                <div className="leaderboard-preview-score home-sponsor-score">
-                  <div className="leaderboard-preview-scoreline">
-                    <StatusDot status={relay.healthStatus} /> {formatHealthStatusLabel(relay.healthStatus)}
-                  </div>
-                  <p className="leaderboard-preview-metrics">独立展示，不参与榜单排序</p>
+                <div className="home-sponsor-action">
+                  查看站点资料
                 </div>
               </Link>
             ))}

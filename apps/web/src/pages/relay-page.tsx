@@ -29,7 +29,7 @@ export function RelayPage() {
   const isNotFound = !overview.loading && Boolean(overview.error && /not found|404/i.test(overview.error));
 
   usePageMetadata({
-    title: isNotFound ? "Relay 详情不存在｜relaynew.ai" : `${relayName} Relay 详情｜relaynew.ai`,
+    title: isNotFound ? "Relay 详情不存在｜relaynew.ai" : `${relayName} 详情｜relaynew.ai`,
     description:
       isNotFound
         ? "这个 Relay 暂未进入公开目录，可以返回模型目录、提交站点或开始自助测试。"

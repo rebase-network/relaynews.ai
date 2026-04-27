@@ -325,6 +325,32 @@ export function formatBadgeLabel(badge: string) {
   );
 }
 
+function capitalizeModelSegment(segment: string) {
+  return segment.length ? `${segment[0]!.toUpperCase()}${segment.slice(1)}` : segment;
+}
+
+export function formatModelDisplayName(modelKey: string) {
+  const parts = modelKey.split("-").filter(Boolean);
+  const vendor = parts[0] ?? "";
+  const modelParts = LEADERBOARD_VENDOR_LABELS[vendor] ? parts.slice(1) : parts;
+
+  if (modelParts.length === 0) {
+    return modelKey;
+  }
+
+  return modelParts
+    .map((part) => {
+      const upperPart = part.toUpperCase();
+
+      if (["gpt", "api"].includes(part.toLowerCase())) {
+        return upperPart;
+      }
+
+      return capitalizeModelSegment(part);
+    })
+    .join(" ");
+}
+
 export function getDisplayBadges({
   availability,
   badges,

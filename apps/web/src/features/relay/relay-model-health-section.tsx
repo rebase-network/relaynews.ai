@@ -1,12 +1,14 @@
 import * as Shared from "../../shared";
 
 const {
+  MetricGrid,
   Panel,
   clsx,
   formatAvailability,
   formatDate,
   formatHealthStatusLabel,
   formatLatency,
+  formatModelDisplayName,
   formatPricePerMillion,
   formatSupportStatusLabel,
   getStatusToneClass,
@@ -27,6 +29,15 @@ function getTrendSampleCoverage(trend: Shared.RelayModelHealthRow["statusTrend7d
     totalDays: trend.length,
     label: `样本覆盖 ${observedDays}/${trend.length} 天`,
   };
+}
+
+function getLatestVerifiedAt(rows: Shared.RelayModelHealthRow[]) {
+  const timestamps = rows
+    .map((row) => row.lastVerifiedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => new Date(right).getTime() - new Date(left).getTime());
+
+  return timestamps[0] ?? null;
 }
 
 function RelayModelStatusTrend({ trend }: { trend: Shared.RelayModelHealthRow["statusTrend7d"] }) {
@@ -73,10 +84,27 @@ export function RelayModelHealthSection({
   modelHealth: Shared.RelayModelHealthResponse | null;
 }) {
   const rows = modelHealth?.rows ?? [];
+  const healthyCount = rows.filter((row) => row.currentStatus === "healthy").length;
+  const issueCount = rows.filter((row) => row.currentStatus !== "healthy").length;
+  const latestVerifiedAt = getLatestVerifiedAt(rows);
+  const observedCoverage = rows.reduce(
+    (summary, row) => {
+      const coverage = getTrendSampleCoverage(row.statusTrend7d);
+
+      return {
+        observed: summary.observed + coverage.observedDays,
+        total: summary.total + coverage.totalDays,
+      };
+    },
+    { observed: 0, total: 0 },
+  );
 
   return (
     <section className="grid gap-4">
       <Panel
+        kicker="7 天观测"
+        title="支持模型健康概览"
+        titleClassName="text-[2rem] md:text-[2.35rem]"
       >
         {error ? <p className="text-sm text-[#b42318]">{error}</p> : null}
         {!error && loading ? <p className="text-sm text-black/60">正在加载模型健康信息...</p> : null}
@@ -85,16 +113,50 @@ export function RelayModelHealthSection({
         ) : null}
         {!error && !loading && rows.length > 0 ? (
           <>
+            <p className="mb-4 max-w-3xl text-sm leading-6 text-black/64">
+              下方只展示当前仍参与公开观测的模型。可用性为已观测样本口径，灰色状态代表无样本或未知。
+            </p>
+            <MetricGrid
+              columnsClassName="grid-cols-2 xl:grid-cols-4"
+              items={[
+                {
+                  label: "已观测模型",
+                  value: rows.length,
+                  valueClassName: "text-2xl",
+                },
+                {
+                  label: "当前健康",
+                  value: healthyCount,
+                  valueClassName: "text-2xl",
+                },
+                {
+                  label: "需关注",
+                  value: issueCount,
+                  valueClassName: "text-2xl",
+                },
+                {
+                  label: "最近验证",
+                  value: latestVerifiedAt ? formatLastVerifiedAt(latestVerifiedAt) : "尚未验证",
+                  valueClassName: "text-sm leading-6",
+                  valueTitle: latestVerifiedAt ?? "尚未验证",
+                },
+              ]}
+            />
+            <p className="mt-3 mb-4 text-xs leading-5 text-black/52">
+              样本覆盖：{observedCoverage.observed}/{observedCoverage.total} 天观测窗口。
+            </p>
             <RelayTrendLegend />
             <div className="space-y-2.5 lg:hidden">
               {rows.map((row) => {
                 const coverage = getTrendSampleCoverage(row.statusTrend7d);
+                const displayName = formatModelDisplayName(row.modelKey);
 
                 return (
                 <div key={row.modelKey} className="surface-card relay-model-card p-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-lg tracking-[-0.03em]">{row.modelKey}</p>
+                      <p className="relay-model-card-title" title={row.modelKey}>{displayName}</p>
+                      <p className="relay-model-card-key">{row.modelKey}</p>
                       <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-black/44">{row.vendor}</p>
                       <div className="relay-model-status-line">
                         <span className="inline-flex items-center gap-2">
@@ -163,7 +225,12 @@ export function RelayModelHealthSection({
                     return (
                     <tr key={row.modelKey} className="leaderboard-table-row align-top">
                       <td className="py-3 pr-3">
-                        <p className="text-[0.98rem] leading-5 tracking-[-0.03em]">{row.modelKey}</p>
+                        <p className="text-[0.98rem] leading-5 tracking-[-0.03em]" title={row.modelKey}>
+                          {formatModelDisplayName(row.modelKey)}
+                        </p>
+                        <p className="mt-1 break-all font-mono text-[0.58rem] uppercase tracking-[0.12em] text-black/36">
+                          {row.modelKey}
+                        </p>
                         <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-black/40">
                           {row.vendor} · {formatSupportStatusLabel(row.supportStatus)}
                         </p>

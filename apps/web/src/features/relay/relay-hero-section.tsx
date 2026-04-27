@@ -22,12 +22,22 @@ function normalizeContactInfo(value: string | null | undefined) {
 }
 
 function getContactHref(value: string) {
-  if (/^https?:\/\//i.test(value)) {
-    return value;
+  const urlMatch = value.match(/https?:\/\/[^\s，,]+/i);
+
+  if (urlMatch) {
+    return urlMatch[0];
   }
 
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return `mailto:${value}`;
+  const emailMatch = value.match(/[^\s@:：]+@[^\s@:：]+\.[^\s@:：]+/);
+
+  if (emailMatch) {
+    return `mailto:${emailMatch[0]}`;
+  }
+
+  const telegramMatch = value.match(/@([a-zA-Z0-9_]{4,32})/);
+
+  if (telegramMatch?.[1]) {
+    return `https://t.me/${telegramMatch[1]}`;
   }
 
   return null;
@@ -56,8 +66,12 @@ export function RelayHeroSection({
               </p>
             ) : null}
           </div>
-          {contactInfo || overview.relay.websiteUrl ? (
+          {contactInfo || overview.relay.websiteUrl || overview.relay.baseUrl ? (
             <div className="relay-hero-meta-strip">
+              <div className="relay-hero-meta-item relay-hero-meta-item-wide">
+                <span className="relay-hero-meta-label">Base URL</span>
+                <span className="relay-hero-meta-value relay-hero-meta-code break-all">{getRelayWebsiteLabel(overview.relay.baseUrl)}</span>
+              </div>
               {overview.relay.websiteUrl ? (
                 <a
                   className="relay-hero-meta-item relay-hero-meta-link"
